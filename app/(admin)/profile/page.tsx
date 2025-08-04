@@ -1,0 +1,352 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { authClient } from '@/lib/authClient';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  User, 
+  Shield, 
+  Mail, 
+  Calendar,
+  Save,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Camera,
+} from 'lucide-react';
+import AdminHeader from '@/components/navigation/AdminHeader';
+
+export default function Profile() {
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    image: '',
+  });
+  
+  // Avatar upload state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleResendVerification = async () => {
+    try {
+      setIsVerifying(true);
+      await authClient.sendVerificationEmail({
+        email: session?.user?.email || '',
+        callbackURL: '/profile'
+      });
+      setMessage({ type: 'success', text: 'Verification email sent! Please check your inbox.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to send verification email. Please try again.' });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Initialize form data when session loads
+  useEffect(() => {
+    if (session?.user) {
+      setFormData({
+        name: session.user.name || '',
+        image: session.user.image || '',
+      });
+    }
+  }, [session]);
+
+  const user = session?.user;
+  const initials = user?.name 
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : user?.email?.substring(0, 2).toUpperCase() || 'U';
+
+  // Handle avatar file selection
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setMessage({ type: 'error', text: 'Avatar file size must be less than 5MB.' });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setAvatarFile(file);
+    }
+  };
+
+  // Convert file to base64 for Better Auth
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      // Prepare update data
+      const updateData: { name: string; image?: string } = {
+        name: formData.name,
+      };
+
+      // Add avatar if uploaded
+      if (avatarFile) {
+        const avatarBase64 = await fileToBase64(avatarFile);
+        updateData.image = avatarBase64;
+      }
+
+      // Use Better Auth updateUser method
+      const { data, error } = await authClient.updateUser(updateData);
+
+      if (error) {
+        throw new Error(error.message || 'Failed to update profile');
+      }
+
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      
+      // Clear avatar file and preview
+      setAvatarFile(null);
+      setPreviewUrl(null);
+      
+      // Refresh session to get updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to update profile. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!user) return null;
+
+  const headerActions = (
+    <Button 
+      variant="outline" 
+      size="sm"
+      onClick={() => router.back()}
+      className="flex items-center gap-2"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Back
+    </Button>
+  );
+
+  return (
+    <>
+      <AdminHeader actions={headerActions} />
+      
+      <div className="container mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          
+          {/* Page Title */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Profile Settings
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your account information and preferences
+            </p>
+          </div>
+
+          {/* Profile Overview */}
+          <Card className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={previewUrl || user.image || undefined} alt={user.name || 'User'} />
+                    <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xl">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-900 rounded-full p-1 shadow-lg">
+                    <label htmlFor="avatar-upload" className="cursor-pointer">
+                      <Camera className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    </label>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <h2 className="text-2xl font-bold">{user.name || 'User'}</h2>
+                    <p className="text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <Shield className="h-3 w-3 mr-1" />
+                      {'user'}
+                    </Badge>
+                    {user.emailVerified && (
+                      <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Joined {new Date(user.createdAt || '').toLocaleDateString()}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Profile Form */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            <Card className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Personal Information
+                </CardTitle>
+                <CardDescription>
+                  Update your personal details and profile picture.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {message && (
+                    <div className={`p-3 rounded-md flex items-center gap-2 ${
+                      message.type === 'success' 
+                        ? 'bg-green-50 text-green-800 border border-green-200' 
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      {message.type === 'success' ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4" />
+                      )}
+                      <span className="text-sm">{message.text}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
+                        Saving...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Save className="h-4 w-4" />
+                        Save Changes
+                      </div>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Account Security
+                </CardTitle>
+                <CardDescription>
+                  Manage your password and security settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h4 className="font-medium">Email Address</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {user.emailVerified ? (
+                      <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <>
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Not Verified
+                        </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="ml-2"
+                          onClick={handleResendVerification}
+                          disabled={isVerifying}
+                        >
+                          {isVerifying ? 'Sending...' : 'Resend Verification Email'}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => router.push('/profile/settings')}
+                >
+                  Change Password
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

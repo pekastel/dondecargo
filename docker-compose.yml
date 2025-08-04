@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: dondecargo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dondecargo
+      POSTGRES_PASSWORD: dondecargo
+      POSTGRES_DB: dondecargo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    labels:
+      - "com.docker.compose.project=dondecargo"
+
+volumes:
+  postgres_data:
+    name: dondecargo-postgres-data
