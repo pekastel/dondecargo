@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Timer, 
+  MapPin, 
   Github, 
   MessageSquare, 
-  Clock, 
+  DollarSign, 
   Users, 
   BarChart3, 
   Zap,
@@ -18,10 +18,10 @@ import {
   Sparkles,
   ArrowRight,
   BookOpen,
-  Cloud,
-  Star,
+  Database,
+  TrendingUp,
   Shield,
-  Headphones,
+  Search,
 } from "lucide-react";
 
 export default function Home() {
@@ -48,18 +48,29 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-2 shadow-lg">
-                <Timer className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
               <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                <span className="sm:hidden">DondeCargo</span>
-                <span className="hidden sm:inline">DondeCargo MCP</span>
+                DondeCargo
               </span>
+              <Badge variant="secondary" className="text-xs">
+                v2
+              </Badge>
             </div>
             <div className="flex items-center gap-2 md:gap-3">
+              <Button 
+                onClick={() => router.push("/buscar")}
+                size="sm"
+                className="md:size-default"
+              >
+                <Search className="h-4 w-4 mr-1" />
+                Buscar Precios
+              </Button>
               {session ? (
                 <Button 
                   onClick={() => router.push("/dashboard")}
                   size="sm"
+                  variant="outline"
                   className="md:size-default"
                 >
                   Dashboard
@@ -68,6 +79,7 @@ export default function Home() {
                 <Button 
                   onClick={() => router.push("/login")}
                   size="sm"
+                  variant="outline"
                   className="md:size-default"
                 >
                   Sign In
@@ -89,63 +101,39 @@ export default function Home() {
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              Conversational
+              DondeCargo
             </span>
             <br />
-            DondeCargo Time Tracking
+            Precios de Combustibles
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Skip complex screens and track your work with natural language. A collaborative platform where 
-            teams share clients and projects while maintaining individual time tracking privacy.
+            Encuentra los mejores precios de combustibles en Argentina. Datos oficiales + reportes de usuarios validados 
+            con interfaz conversacional y mapa interactivo.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {session ? (
-              <>
-                <Button 
-                  size="lg" 
-                  onClick={() => router.push("/dashboard")}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => router.push("/mcp-help")}
-                  className="px-8 py-3 border-2 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  MCP Setup Guide
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => router.push("/login")}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3"
-                >
-                  Sign In
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => router.push("/mcp-help")}
-                  className="px-8 py-3 border-2 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  MCP Setup Guide
-                </Button>
-              </>
-            )}
+            <Button 
+              size="lg" 
+              onClick={() => router.push("/buscar")}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3"
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Buscar Precios
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => router.push("/mcp-help")}
+              className="px-8 py-3 border-2 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            >
+              <BookOpen className="h-5 w-5 mr-2" />
+              MCP Setup Guide
+            </Button>
           </div>
 
           <p className="text-sm text-muted-foreground mt-4 opacity-70">
-            Need help connecting to Claude? Check our setup guide above
+            ¿Necesitas ayuda configurando Claude? Consulta nuestra guía de configuración MCP
           </p>
         </div>
       </section>
@@ -153,31 +141,32 @@ export default function Home() {
       {/* Features Grid */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center space-y-6 mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold">Why DondeCargo MCP?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">¿Por qué DondeCargo v2?</h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            DondeCargo MCP implements a <strong>conversational-first architecture</strong> that fundamentally reimagines software interaction patterns. Instead of adapting users to interface constraints, the system adapts to natural language expression.
+            DondeCargo v2 implementa una <strong>arquitectura conversacional-first</strong> que combina datos oficiales 
+            del gobierno argentino con reportes validados de usuarios para proporcionar información precisa de precios de combustibles.
           </p>
           
           <div className="max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Key Architectural Principles</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Características Principales</h3>
             <div className="grid md:grid-cols-2 gap-8 text-left">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                  <span className="font-medium">Conversational Primary Interface</span>
+                  <span className="font-medium">Datos Oficiales + Comunidad</span>
                 </div>
                 <p className="text-sm text-muted-foreground ml-4">
-                  All core functionality accessible through natural language commands via MCP protocol
+                  Integración directa con datos.energia.gob.ar + reportes validados de usuarios
                 </p>
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                  <span className="font-medium">Extensible Intent System</span>
+                  <span className="font-medium">Interfaz Conversacional</span>
                 </div>
                 <p className="text-sm text-muted-foreground ml-4">
-                  New capabilities added through MCP tools without UI redesign
+                  Consulta precios y encuentra estaciones mediante comandos en lenguaje natural
                 </p>
               </div>
             </div>
@@ -186,11 +175,12 @@ export default function Home() {
           <div className="bg-muted/30 rounded-lg p-6 max-w-3xl mx-auto">
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <div className="w-3 h-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
-              Interface Hierarchy
+              Combustibles Soportados
             </h4>
             <div className="text-sm text-muted-foreground space-y-2 text-left">
-              <p><strong>1. Primary Interface (MCP Protocol):</strong> Complete functionality accessible through natural language commands in any MCP-compatible client</p>
-              <p><strong>2. Secondary Interface (Web Dashboard):</strong> Optional visualization layer for data consultation, basic timer operations, and report generation</p>
+              <p><strong>⛽ Nafta Super (92-95 RON)</strong> • <strong>⛽ Nafta Premium (+95 RON)</strong></p>
+              <p><strong>🚛 Gasoil Grado 2</strong> • <strong>🚛 Gasoil Grado 3 (Premium)</strong> • <strong>⚡ GNC</strong></p>
+              <p className="text-xs opacity-75 mt-2">Precios diurnos y nocturnos • Actualización diaria automática</p>
             </div>
           </div>
         </div>
@@ -198,72 +188,78 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-8">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <MessageSquare className="h-12 w-12 text-blue-600 mb-4" />
-              <CardTitle>MCP-Powered Conversation</CardTitle>
+              <Search className="h-12 w-12 text-blue-600 mb-4" />
+              <CardTitle>Búsqueda Inteligente</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                All functionality implemented via MCP tools. Create clients, track time, generate reports - all through natural conversation.
+                Encuentra estaciones cerca de ti con filtros por combustible, empresa, precio y radio de búsqueda. 
+                Geolocalización automática y mapa interactivo.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <Users className="h-12 w-12 text-purple-600 mb-4" />
-              <CardTitle>Team Collaboration</CardTitle>
+              <Database className="h-12 w-12 text-purple-600 mb-4" />
+              <CardTitle>Datos Confiables</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Shared clients and projects across the team, while individual time entries remain completely private. No ownership barriers.
+                Integración directa con datos oficiales del gobierno argentino. Actualización automática diaria 
+                desde datos.energia.gob.ar con validación de consistencia.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <BarChart3 className="h-12 w-12 text-green-600 mb-4" />
-              <CardTitle>Rich Reporting</CardTitle>
+              <Users className="h-12 w-12 text-green-600 mb-4" />
+              <CardTitle>Comunidad Validada</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Get daily, weekly and custom summaries. Track productivity and analyze your time patterns effortlessly.
+                Los usuarios pueden reportar precios que son validados antes de publicarse. 
+                Sistema de reputación y verificación para garantizar calidad de datos.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <Clock className="h-12 w-12 text-orange-600 mb-4" />
-              <CardTitle>MCP-First Design</CardTitle>
+              <MessageSquare className="h-12 w-12 text-orange-600 mb-4" />
+              <CardTitle>Interfaz Conversacional</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Complete functionality through MCP conversation. Dashboard serves as visual supplement for charts and basic operations.
+                Encuentra precios y estaciones usando comandos en lenguaje natural via MCP. 
+                Compatible con Claude y otros clientes MCP.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <Zap className="h-12 w-12 text-yellow-600 mb-4" />
-              <CardTitle>Data Integrity</CardTitle>
+              <TrendingUp className="h-12 w-12 text-yellow-600 mb-4" />
+              <CardTitle>Historial y Tendencias</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Clients and projects with tracked time cannot be deactivated. Automatic safeguards prevent data loss and preserve history.
+                Visualiza el historial de precios, tendencias temporales y variaciones por región. 
+                Gráficos interactivos para análisis de mercado.
               </p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
-              <Globe className="h-12 w-12 text-teal-600 mb-4" />
-              <CardTitle>Dashboard as Supplement</CardTitle>
+              <Shield className="h-12 w-12 text-teal-600 mb-4" />
+              <CardTitle>SEO Optimizado</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Web interface provides charts, visual reports, and basic timer controls. Full productivity lives in MCP conversation.
+                Páginas individuales por estación indexables por Google. Meta tags dinámicos, 
+                datos estructurados y URLs amigables para máxima visibilidad.
               </p>
             </CardContent>
           </Card>
@@ -274,27 +270,27 @@ export default function Home() {
       <section className="bg-muted/30 py-20">
         <div className="container mx-auto px-6">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold">Built with Modern Tech</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Tecnología Moderna</h2>
             <p className="text-xl text-muted-foreground">
-              Leveraging the latest technologies for optimal performance and developer experience.
+              Construido con las últimas tecnologías para óptimo rendimiento y experiencia de usuario.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { name: "Next.js 15", desc: "App Router & TypeScript" },
-              { name: "Better Auth", desc: "Enhanced PKCE & OAuth" },
-              { name: "PostgreSQL", desc: "Reliable data storage" },
-              { name: "MCP Protocol", desc: "Conversational interface" },
-              { name: "Loops.js", desc: "Email verification (optional)", optional: true },
-              { name: "Redis", desc: "Session cache (optional)", optional: true }
+              { name: "PostgreSQL", desc: "Base de datos confiable" },
+              { name: "Drizzle ORM", desc: "Type-safe database queries" },
+              { name: "MCP Protocol", desc: "Interfaz conversacional" },
+              { name: "OpenStreetMap", desc: "Mapas interactivos" },
+              { name: "Better Auth", desc: "Autenticación & OAuth", optional: true }
             ].map((tech, i) => (
               <Card key={i} className="text-center border-0 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <h3 className="font-semibold text-lg">{tech.name}</h3>
                     {tech.optional && (
-                      <Badge variant="secondary" className="text-xs">Optional</Badge>
+                      <Badge variant="secondary" className="text-xs">Opcional</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{tech.desc}</p>
@@ -310,40 +306,30 @@ export default function Home() {
         <Card className="border-0 shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <CardContent className="p-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Ready to Transform Your DondeCargo Time Tracking?
+              ¿Listo para Encontrar los Mejores Precios?
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Join developers and teams who&apos;ve simplified their workflow with conversational time tracking.
+              Únete a miles de usuarios que ya ahorran combustible con DondeCargo. 
+              Datos oficiales + comunidad validada = información confiable.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {session ? (
-                <Button 
-                  size="lg" 
-                  variant="secondary"
-                  onClick={() => router.push("/dashboard")}
-                  className="px-8 py-3 bg-white text-blue-600 hover:bg-gray-100"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-              ) : (
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => router.push("/login")}
-                  className="px-8 py-3 bg-white text-blue-600 hover:bg-gray-100"
-                >
-                  Sign In
-                </Button>
-              )}
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => router.push("/buscar")}
+                className="px-8 py-3 bg-white text-blue-600 hover:bg-gray-100"
+              >
+                <Search className="h-5 w-5 mr-2" />
+                Buscar Precios Ahora
+              </Button>
               <Button 
                 size="lg" 
                 variant="outline"
-                onClick={() => window.open('https://github.com/lumile/dondecargo-v2', '_blank')}
+                onClick={() => window.open('https://github.com/pekastel/dondecargo-v2', '_blank')}
                 className="px-8 py-3 border-white text-white bg-transparent hover:bg-white hover:text-blue-600"
               >
                 <Github className="h-5 w-5 mr-2" />
-                View on GitHub
+                Ver en GitHub
               </Button>
             </div>
           </CardContent>
