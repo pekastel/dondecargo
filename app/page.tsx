@@ -101,7 +101,7 @@ export default function Home() {
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              DondeCargo
+              <Image src="/brand.png" alt="Logo" width={256} height={256} className="inline-block border-2 border-blue-600 rounded-lg" />
             </span>
             <br />
             Precios de Combustibles

@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
 
     const lat = params.lat ? parseFloat(params.lat) : undefined
     const lng = params.lng ? parseFloat(params.lng) : undefined
-    const radius = params.radius ? parseFloat(params.radius) : 10 // default 10km
-    const limit = params.limit ? parseInt(params.limit) : 50
+    const radius = params.radius ? Math.min(parseFloat(params.radius), 50) : 10 // default 10km, max 50km
+    const limit = params.limit ? parseInt(params.limit) : 100
     const offset = params.offset ? parseInt(params.offset) : 0
 
     let query = db

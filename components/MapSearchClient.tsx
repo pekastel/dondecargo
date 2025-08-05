@@ -66,6 +66,8 @@ export function MapSearchClient() {
   
   const [stations, setStations] = useState<Station[]>([])
   const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
   const [locationError, setLocationError] = useState<string | null>(null)
@@ -147,8 +149,14 @@ export function MapSearchClient() {
     }
   }, [filters])
 
-  const fetchStations = async () => {
-    setLoading(true)
+  const fetchStations = async (offset = 0, append = false) => {
+    if (offset === 0) {
+      setLoading(true)
+      setHasMore(false)
+    } else {
+      setIsLoadingMore(true)
+    }
+    
     try {
       const params = new URLSearchParams()
       
@@ -166,7 +174,10 @@ export function MapSearchClient() {
         params.append('empresa', filters.companies.join(','))
       }
       
-      params.append('limit', '50')
+      // Dynamic limit based on radius - more stations for larger areas
+      const limit = Math.min(100, Math.max(50, Math.round(filters.radius * 2)))
+      params.append('limit', limit.toString())
+      params.append('offset', offset.toString())
       
       const response = await fetch(`/api/estaciones?${params.toString()}`)
       
@@ -194,12 +205,34 @@ export function MapSearchClient() {
         }))
       }))
       
-      setStations(transformedStations)
+      if (append) {
+        // Remove duplicates when appending
+        setStations(prev => {
+          const existingIds = new Set(prev.map(s => s.id))
+          const newStations = transformedStations.filter(s => !existingIds.has(s.id))
+          return [...prev, ...newStations]
+        })
+      } else {
+        setStations(transformedStations)
+      }
+      
+      setHasMore(data.pagination.hasMore && transformedStations.length > 0)
+      
     } catch (error) {
       console.error('Error fetching stations:', error)
-      setStations([])
+      if (!append) {
+        setStations([])
+      }
+      setHasMore(false)
     } finally {
       setLoading(false)
+      setIsLoadingMore(false)
+    }
+  }
+
+  const loadMoreStations = () => {
+    if (!isLoadingMore && hasMore) {
+      fetchStations(stations.length, true)
     }
   }
 
@@ -371,13 +404,30 @@ export function MapSearchClient() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">
-                  {stations.length} estaciones encontradas
+                  {stations.length} estaciones{hasMore ? '+' : ''} encontradas
                 </Badge>
                 {loading && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                     Actualizando...
                   </div>
+                )}
+                {hasMore && !loading && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadMoreStations}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
+                        Cargando...
+                      </>
+                    ) : (
+                      'Cargar más'
+                    )}
+                  </Button>
                 )}
               </div>
               
