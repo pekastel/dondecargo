@@ -1,5 +1,5 @@
 {
-  "id": "012f9e46-0a39-4229-8f8e-8c479bad85be",
+  "id": "bcdc1190-c6ce-4de7-b193-faaca891662b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -12,6 +12,12 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true
+        },
+        "idempresa": {
+          "name": "idempresa",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true
         },
         "nombre": {
@@ -161,11 +167,34 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "estaciones_idempresa_idx": {
+          "name": "estaciones_idempresa_idx",
+          "columns": [
+            {
+              "expression": "idempresa",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "estaciones_idempresa_unique": {
+          "name": "estaciones_idempresa_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempresa"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

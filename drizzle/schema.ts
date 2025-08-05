@@ -10,6 +10,7 @@ export * from './better-auth-schema';
 // Estaciones de servicio
 export const estaciones = pgTable('estaciones', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
+  idempresa: text('idempresa').notNull().unique(),
   nombre: text('nombre').notNull(),
   empresa: text('empresa').notNull(),
   cuit: text('cuit').notNull(),
@@ -27,6 +28,7 @@ export const estaciones = pgTable('estaciones', {
   provinciaLocalidadIdx: index('estaciones_provincia_localidad_idx').on(table.provincia, table.localidad),
   empresaIdx: index('estaciones_empresa_idx').on(table.empresa),
   cuitIdx: index('estaciones_cuit_idx').on(table.cuit),
+  idempresaIdx: index('estaciones_idempresa_idx').on(table.idempresa),
 }));
 
 // Precios de combustibles

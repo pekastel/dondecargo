@@ -35,6 +35,7 @@ interface CSVRow {
 
 interface ProcessedStation {
   id: string
+  idempresa: string
   nombre: string
   empresa: string
   cuit: string
@@ -191,8 +192,8 @@ class OfficialDataLoader {
     
     for (const row of processedRows) {
       try {
-        // Process station
-        const stationKey = `${row.cuit}-${row.idempresa}`
+        // Process station using idempresa as unique key
+        const stationKey = row.idempresa
         
         if (!stationsMap.has(stationKey)) {
           const lat = parseFloat(row.latitud)
@@ -205,6 +206,7 @@ class OfficialDataLoader {
           
           const station: ProcessedStation = {
             id: createId(),
+            idempresa: row.idempresa,
             nombre: row.empresabandera || row.empresa || 'Estación sin nombre',
             empresa: row.empresabandera || row.empresa,
             cuit: row.cuit,
@@ -282,11 +284,11 @@ class OfficialDataLoader {
       
       for (const station of stations) {
         try {
-          // Check if station exists
+          // Check if station exists by idempresa
           const existing = await this.db
             .select()
             .from(estaciones)
-            .where(eq(estaciones.cuit, station.cuit))
+            .where(eq(estaciones.idempresa, station.idempresa))
             .limit(1)
           
           if (existing.length === 0) {
@@ -300,7 +302,7 @@ class OfficialDataLoader {
                 ...station,
                 fechaActualizacion: new Date()
               })
-              .where(eq(estaciones.cuit, station.cuit))
+              .where(eq(estaciones.idempresa, station.idempresa))
           }
         } catch (error) {
           console.warn(`⚠️  Error inserting station ${station.nombre}:`, error)

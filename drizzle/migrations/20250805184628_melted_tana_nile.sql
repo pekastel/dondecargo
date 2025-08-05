@@ -1,5 +1,6 @@
 CREATE TABLE "estaciones" (
 	"id" text PRIMARY KEY NOT NULL,
+	"idempresa" text NOT NULL,
 	"nombre" text NOT NULL,
 	"empresa" text NOT NULL,
 	"cuit" text NOT NULL,
@@ -11,7 +12,8 @@ CREATE TABLE "estaciones" (
 	"longitud" double precision NOT NULL,
 	"geojson" json,
 	"fecha_creacion" timestamp DEFAULT now() NOT NULL,
-	"fecha_actualizacion" timestamp DEFAULT now() NOT NULL
+	"fecha_actualizacion" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "estaciones_idempresa_unique" UNIQUE("idempresa")
 );
 --> statement-breakpoint
 CREATE TABLE "favoritos" (
@@ -174,6 +176,7 @@ CREATE INDEX "estaciones_lat_lng_idx" ON "estaciones" USING btree ("latitud","lo
 CREATE INDEX "estaciones_provincia_localidad_idx" ON "estaciones" USING btree ("provincia","localidad");--> statement-breakpoint
 CREATE INDEX "estaciones_empresa_idx" ON "estaciones" USING btree ("empresa");--> statement-breakpoint
 CREATE INDEX "estaciones_cuit_idx" ON "estaciones" USING btree ("cuit");--> statement-breakpoint
+CREATE INDEX "estaciones_idempresa_idx" ON "estaciones" USING btree ("idempresa");--> statement-breakpoint
 CREATE INDEX "favoritos_usuario_estacion_idx" ON "favoritos" USING btree ("usuario_id","estacion_id");--> statement-breakpoint
 CREATE INDEX "precios_estacion_tipo_combustible_idx" ON "precios" USING btree ("estacion_id","tipo_combustible");--> statement-breakpoint
 CREATE INDEX "precios_fecha_vigencia_idx" ON "precios" USING btree ("fecha_vigencia");--> statement-breakpoint
