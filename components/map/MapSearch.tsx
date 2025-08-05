@@ -223,68 +223,55 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       const markerHtml = `
         <div class="station-marker-container cursor-pointer relative" data-station-id="${station.id}">
           <!-- Floating Price Details Card (shown when selected) -->
-          <div class="absolute z-50 bottom-full mb-3 left-1/2 transform -translate-x-1/2 
-                      bg-white rounded-lg shadow-xl border border-gray-200 
-                      px-4 py-3 min-w-[280px] max-w-[320px]
+          <div class="absolute z-50 bottom-full mb-2 left-1/2 transform -translate-x-1/2 
+                      bg-white rounded-md shadow-lg border border-gray-100 
+                      px-3 py-2.5 min-w-[240px] max-w-[280px]
                       ${isSelected ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}
-                      transition-all duration-300 ease-in-out station-popup-card">
+                      transition-all duration-200 ease-out station-popup-card">
             
             <!-- Arrow -->
-            <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-              <div class="w-3 h-3 bg-white border-r border-b border-gray-200 transform rotate-45"></div>
+            <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-0.5">
+              <div class="w-2 h-2 bg-white border-r border-b border-gray-100 transform rotate-45"></div>
             </div>
             
             <!-- Station Header -->
-            <div class="flex items-center space-x-3 mb-3">
-              <div class="w-12 h-12 relative flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                <img src="${logoPath}" alt="${station.empresa} logo" 
-                     class="w-full h-full object-contain p-1"
+            <div class="flex items-center gap-2.5 mb-2.5">
+              <div class="w-8 h-8 relative flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
+                <img src="${logoPath}" alt="${station.empresa}" 
+                     class="w-full h-full object-contain p-0.5"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                <div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                <div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-xs">
                   ${station.empresa.charAt(0)}
                 </div>
               </div>
-              
               <div class="flex-grow min-w-0">
-                <h3 class="text-sm font-semibold text-gray-800 truncate">${station.nombre}</h3>
-                <p class="text-xs text-gray-500 truncate">${station.direccion}</p>
-                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">${station.empresa}</span>
+                <h3 class="text-sm font-medium text-gray-900 truncate">${station.nombre}</h3>
+                <p class="text-xs text-gray-500 truncate">${station.empresa}</p>
               </div>
-
-              <!-- Close button -->
-              <button class="ml-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 station-close-btn" 
+              <button class="ml-1 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600" 
                       onclick="event.stopPropagation(); this.closest('.station-marker-container').click();">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                ×
               </button>
             </div>
             
             <!-- Fuel Prices Grid -->
-            <div class="space-y-2 mb-3">
-              <h4 class="text-xs font-medium text-gray-600 uppercase tracking-wide">Precios por combustible</h4>
-              <div class="grid grid-cols-2 gap-2">
-                ${station.precios.length > 0 ? station.precios.map(precio => `
-                  <div class="text-center p-2 rounded-lg ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'} transition-colors">
-                    <div class="text-xs text-gray-600 mb-1">
-                      ${getFuelIcon(precio.tipoCombustible)} ${getFuelLabel(precio.tipoCombustible)}
-                    </div>
-                    <div class="font-bold text-sm ${selectedFuelType === precio.tipoCombustible ? 'text-blue-600' : 'text-gray-800'}">
-                      $${Math.round(precio.precio)}
-                    </div>
-                  </div>
-                `).join('') : '<div class="col-span-2 text-center text-gray-500 text-sm py-2">No hay precios disponibles</div>'}
-              </div>
+            <div class="grid grid-cols-2 gap-1.5 mb-2.5">
+              ${station.precios.length > 0 ? station.precios.map(precio => `
+                <div class="flex justify-between items-center px-2 py-1.5 rounded ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'}">
+                  <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
+                  <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+                </div>
+              `).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'}
             </div>
             
             <!-- Action Buttons -->
-            <div class="flex gap-2 pt-2 border-t border-gray-100">
-              <button class="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors"
+            <div class="flex gap-1.5">
+              <button class="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-center transition-colors"
                       onclick="window.location.href='/estacion/${station.id}'">
-                📍 Ver detalles
+                Detalles
               </button>
-              <button class="flex-1 text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md transition-colors">
-                💰 Reportar precio
+              <button class="flex-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-center transition-colors">
+                Reportar
               </button>
             </div>
           </div>
@@ -402,10 +389,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
   const getFuelLabel = (fuelType: string) => {
     const labels: Record<string, string> = {
-      nafta: 'Nafta Super',
-      nafta_premium: 'Nafta Premium',
-      gasoil: 'Gasoil Común',
-      gasoil_premium: 'Gasoil Premium',
+      nafta: 'Nafta',
+      nafta_premium: 'Premium',
+      gasoil: 'Gasoil',
+      gasoil_premium: 'G. Premium',
       gnc: 'GNC'
     }
     return labels[fuelType] || fuelType
@@ -437,9 +424,12 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         }
         .station-popup-card {
           z-index: 1000;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          backdrop-filter: blur(8px);
         }
-        .station-close-btn:hover {
-          background-color: rgba(0, 0, 0, 0.1);
+        .station-popup-card button {
+          font-weight: 500;
+          letter-spacing: 0.025em;
         }
       `}</style>
       <div ref={mapRef} className="w-full h-full" />

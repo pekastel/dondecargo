@@ -6,8 +6,8 @@ import { authClient } from "@/lib/authClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { 
-  MapPin, 
   Github, 
   MessageSquare, 
   DollarSign, 
@@ -47,8 +47,8 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-2 shadow-lg">
-                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-1 shadow-lg">
+                <Image src="/icon0.svg" alt="Logo" width={34} height={34} />
               </div>
               <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 DondeCargo

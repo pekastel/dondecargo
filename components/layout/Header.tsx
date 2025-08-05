@@ -10,6 +10,7 @@ import { authClient } from '@/lib/authClient'
 import { MapPin, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
+import Image from 'next/image'
 
 export function Header() {
   const router = useRouter()
@@ -28,8 +29,8 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600">
-              <MapPin className="h-5 w-5 text-white" />
+            <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-1 shadow-lg">
+              <Image src="/icon0.svg" alt="Logo" width={34} height={34} />
             </div>
             <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               DondeCargo
