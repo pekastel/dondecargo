@@ -275,7 +275,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
           <div style="display: flex; gap: 8px; margin-top: 12px;">
             <button onclick="window.location.href='/estacion/${station.id}'" 
                     style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-              📍 Ver detalles
+              📍 Ver detalles 
             </button>
             <button style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
               💰 Reportar

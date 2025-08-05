@@ -18,7 +18,6 @@ components/
 ├── ui/                        # shadcn/ui components
 ├── map/
 │   ├── MapSearch.tsx         # Componente principal del mapa
-│   ├── StationMarker.tsx     # Marcadores de estaciones
 │   ├── MapFilters.tsx        # Filtros del mapa
 │   └── LocationSearch.tsx    # Buscador de ubicaciones
 ├── station/

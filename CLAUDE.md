@@ -53,7 +53,6 @@ components/
 ├── ui/                        # shadcn/ui components
 ├── map/
 │   ├── MapSearch.tsx         # Componente principal del mapa
-│   ├── StationMarker.tsx     # Marcadores personalizados
 │   ├── MapFilters.tsx        # Filtros por tipo de combustible
 │   └── LocationSearch.tsx    # Buscador de ubicaciones
 ├── station/
@@ -366,7 +365,6 @@ Key files and setup:
 
 ### Componentes UI Clave
 - **MapSearch**: Componente principal del mapa interactivo
-- **StationMarker**: Marcadores personalizados con precios visibles
 - **MapFilters**: Panel de filtros avanzado (combustibles, precios, empresas)
 - **StationDetail**: Vista completa de detalle de estación
 - **PriceHistory**: Gráficos temporales de variaciones de precio

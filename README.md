@@ -340,7 +340,6 @@ components/
 ├── ui/                        # Componentes shadcn/ui
 ├── map/
 │   ├── MapSearch.tsx         # Componente principal del mapa
-│   ├── StationMarker.tsx     # Marcadores personalizados
 │   ├── MapFilters.tsx        # Filtros por tipo de combustible
 │   └── LocationSearch.tsx    # Buscador de ubicaciones
 ├── station/
