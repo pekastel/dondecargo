@@ -70,6 +70,7 @@ export function MapSearchClient() {
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
   const [locationError, setLocationError] = useState<string | null>(null)
   const [gettingLocation, setGettingLocation] = useState(true)
+  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
 
   // Get user location on mount
   useEffect(() => {
@@ -185,7 +186,7 @@ export function MapSearchClient() {
         provincia: station.provincia,
         latitud: station.latitud,
         longitud: station.longitud,
-        precios: station.precios.map((precio: any) => ({
+        precios: (station.precios || []).map((precio: any) => ({
           tipoCombustible: precio.tipoCombustible,
           precio: parseFloat(precio.precio),
           horario: precio.horario,
@@ -297,6 +298,30 @@ export function MapSearchClient() {
               </Button>
             )}
           </div>
+
+          {/* Fuel Type Selector */}
+          <div className="mb-4">
+            <h4 className="text-sm font-medium mb-2">💰 Precio preferido en marcadores:</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedFuelType === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedFuelType(null)}
+              >
+                📊 Menor precio
+              </Button>
+              {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+                <Button
+                  key={fuel}
+                  variant={selectedFuelType === fuel ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedFuelType(fuel as FuelType)}
+                >
+                  {FUEL_ICONS[fuel as FuelType]} {label}
+                </Button>
+              ))}
+            </div>
+          </div>
           
           <div className="flex flex-wrap gap-2 mb-4">
             <Button
@@ -397,6 +422,7 @@ export function MapSearchClient() {
                   radius={filters.radius}
                   loading={loading}
                   visible={viewMode === 'map'}
+                  selectedFuelType={selectedFuelType}
                   onStationSelect={(station) => {
                     // Navigate to station detail
                     window.location.href = `/estacion/${station.id}`

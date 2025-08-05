@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Station } from '@/components/MapSearchClient'
+import { Station, FuelType } from '@/components/MapSearchClient'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ interface MapSearchProps {
   radius: number // in kilometers
   loading: boolean
   visible?: boolean // to trigger map resize when becoming visible
+  selectedFuelType: FuelType | null
   onStationSelect: (station: Station) => void
 }
 
@@ -20,6 +21,7 @@ interface LeafletMap {
   setView: (latlng: [number, number], zoom: number) => void
   invalidateSize: () => void
   remove: () => void
+  removeLayer: (layer: any) => void
 }
 
 interface LeafletMarker {
@@ -53,11 +55,12 @@ declare global {
   }
 }
 
-export function MapSearch({ stations, center, radius, loading, visible = true, onStationSelect }: MapSearchProps) {
+export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, onStationSelect }: MapSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const radiusCircleRef = useRef<LeafletCircle | null>(null)
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null)
+  const markersRef = useRef<LeafletMarker[]>([])
+  const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
 
   // Load Leaflet dynamically
@@ -133,6 +136,34 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
     }
   }, [center])
 
+  // Helper function to get display price based on selected fuel type
+  const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
+    if (selectedFuelType) {
+      const fuelPrice = station.precios.find(p => p.tipoCombustible === selectedFuelType)
+      if (fuelPrice) {
+        return { price: fuelPrice.precio, label: getFuelLabel(selectedFuelType) }
+      } else {
+        return { price: null, label: getFuelLabel(selectedFuelType) }
+      }
+    } else {
+      // Show lowest price - check if prices array exists and has items
+      if (!station.precios || station.precios.length === 0) {
+        return { price: null, label: 'Sin precios' }
+      }
+      
+      const validPrices = station.precios
+        .map(p => p.precio)
+        .filter(price => price != null && !isNaN(price) && isFinite(price))
+      
+      if (validPrices.length === 0) {
+        return { price: null, label: 'Sin precios' }
+      }
+      
+      const lowestPrice = Math.min(...validPrices)
+      return { price: lowestPrice, label: 'Menor' }
+    }
+  }
+
   // Helper function to get company logo path
   const getCompanyLogoPath = (empresa: string): string => {
     const normalizedCompany = empresa.toLowerCase()
@@ -166,81 +197,44 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
     return `/logos/icono-default.svg`
   }
 
+  // Clear existing markers
+  const clearMarkers = () => {
+    markersRef.current.forEach(marker => {
+      if (leafletMapRef.current && leafletMapRef.current.removeLayer) {
+        leafletMapRef.current.removeLayer(marker)
+      }
+    })
+    markersRef.current = []
+  }
+
   // Add station markers
   useEffect(() => {
     if (!leafletMapRef.current || !mapLoaded) return
 
-    console.log('🗺️ Adding markers for', stations.length, 'stations')
+    // Clear existing markers first
+    clearMarkers()
     
     stations.forEach((station, index) => {
-      const prices = station.precios
-      const lowestPrice = Math.min(...prices.map(p => p.precio))
+      const displayPrice = getDisplayPrice(station)
       const logoPath = getCompanyLogoPath(station.empresa)
-      
-      console.log(`📍 Adding marker ${index + 1}:`, station.nombre, 'at', station.latitud, station.longitud)
+      const isSelected = selectedStations.some(s => s.id === station.id)
 
-      // Create floating card marker with HTML/CSS
+      // Create simple marker with no hover behavior
       const markerHtml = `
-        <div class="station-marker-container group cursor-pointer relative">
-          <!-- Floating Card (tooltip) -->
-          <div class="absolute z-50 bottom-full mb-3 left-1/2 transform -translate-x-1/2 
-                      bg-white rounded-lg shadow-lg border border-gray-100 
-                      px-4 py-3 min-w-[220px] max-w-[280px]
-                      opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100
-                      transition-all duration-300 ease-in-out pointer-events-none">
-            
-            <!-- Arrow -->
-            <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-              <div class="w-3 h-3 bg-white border-r border-b border-gray-100 transform rotate-45"></div>
-            </div>
-            
-            <div class="flex items-center space-x-3">
-              <!-- Company Logo -->
-              <div class="w-12 h-12 relative flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                <img src="${logoPath}" alt="${station.empresa} logo" 
-                     class="w-full h-full object-contain p-1"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                <div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
-                  ${station.empresa.charAt(0)}
-                </div>
-              </div>
-              
-              <!-- Station Details -->
-              <div class="flex-grow min-w-0">
-                <h3 class="text-sm font-semibold text-gray-800 truncate mb-1">${station.nombre}</h3>
-                <div class="flex items-center space-x-2">
-                  <span class="text-xs text-gray-500">${station.empresa}</span>
-                </div>
-                <p class="text-blue-600 font-bold text-lg leading-none">$${lowestPrice.toFixed(2)}</p>
-              </div>
-            </div>
-            
-            ${prices.length > 1 ? `
-              <div class="mt-3 pt-3 border-t border-gray-100">
-                <div class="flex flex-wrap gap-2">
-                  ${prices.slice(0, 3).map(precio => `
-                    <div class="text-xs bg-gray-50 px-2 py-1 rounded">
-                      ${getFuelIcon(precio.tipoCombustible)} $${precio.precio}
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-
+        <div class="station-marker-container cursor-pointer relative" data-station-id="${station.id}">
           <!-- Base Marker Pin -->
-          <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 
+          <div class="w-8 h-8 rounded-full border-2 border-white ${isSelected ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'} 
                       flex items-center justify-center text-white text-xs font-bold shadow-lg 
-                      hover:scale-110 transition-all duration-200 relative z-10">
+                      transition-all duration-200 relative z-10">
             <img src="${logoPath}" alt="${station.empresa}" 
                  class="w-6 h-6 object-contain rounded-full"
                  onerror="this.style.display='none'; this.parentElement.textContent='${station.empresa.charAt(0)}';" />
           </div>
           
           <!-- Price Badge -->
-          <div class="absolute -bottom-1 -right-1 z-20 bg-white border border-gray-200 rounded-full 
-                      px-2 py-0.5 text-xs font-semibold text-blue-600 shadow-md min-w-[40px] text-center">
-            $${lowestPrice}
+          <div class="absolute -bottom-1 -right-1 z-20 ${isSelected ? 'bg-green-500 text-white' : 'bg-white border border-gray-200 text-blue-600'} rounded-full 
+                      px-2 py-0.5 text-xs font-semibold shadow-md min-w-[40px] text-center">
+            ${displayPrice.price !== null ? `$${Math.round(displayPrice.price)}` : 'N/A'}
           </div>
         </div>
       `
@@ -249,47 +243,38 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
       const customIcon = window.L.divIcon({
         html: markerHtml,
         className: 'custom-marker',
-        iconSize: [60, 60],
-        iconAnchor: [30, 60],
-        popupAnchor: [0, -60]
+        iconSize: [60, 60], 
+        iconAnchor: [30, 50],
+        popupAnchor: [0, -50]
       })
 
       const marker = window.L.marker([station.latitud, station.longitud], {
         icon: customIcon
       }).addTo(leafletMapRef.current!)
 
-      // Create popup content
-      const popupContent = `
-        <div class="station-popup" style="min-width: 250px;">
-          <div style="font-weight: 600; margin-bottom: 8px;">
-            ${station.nombre} - ${station.direccion}
-          </div>
-          <div style="margin-bottom: 8px;">
-            ${prices.map(precio => `
-              <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-                <span>${getFuelIcon(precio.tipoCombustible)} ${getFuelLabel(precio.tipoCombustible)}:</span>
-                <span style="font-weight: 600;">$${precio.precio}</span>
-              </div>
-            `).join('')}
-          </div>
-          <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <button onclick="window.location.href='/estacion/${station.id}'" 
-                    style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-              📍 Ver detalles 
-            </button>
-            <button style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-              💰 Reportar
-            </button>
-          </div>
-        </div>
-      `
-
-      marker.bindPopup(popupContent)
+      // Add click handler
       marker.on('click', () => {
-        setSelectedStation(station)
+        setSelectedStations(prev => {
+          const isAlreadySelected = prev.some(s => s.id === station.id)
+          if (isAlreadySelected) {
+            return prev.filter(s => s.id !== station.id)
+          } else {
+            return [...prev, station]
+          }
+        })
       })
+
+      // Store marker reference
+      markersRef.current.push(marker)
     })
-  }, [stations, mapLoaded])
+  }, [stations, mapLoaded, selectedStations, selectedFuelType])
+
+  // Cleanup markers on unmount
+  useEffect(() => {
+    return () => {
+      clearMarkers()
+    }
+  }, [])
 
   // Add/update radius circle
   useEffect(() => {
@@ -383,12 +368,6 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
           background: none !important;
           border: none !important;
         }
-        .custom-marker .group:hover .opacity-0 {
-          opacity: 1 !important;
-        }
-        .custom-marker .group:hover .scale-90 {
-          transform: scale(1) !important;
-        }
       `}</style>
       <div ref={mapRef} className="w-full h-full" />
       
@@ -401,50 +380,73 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
         </div>
       )}
 
-      {selectedStation && (
-        <Card className="absolute bottom-4 left-4 right-4 p-4 shadow-lg bg-background/95 backdrop-blur-sm">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h4 className="font-semibold">{selectedStation.nombre}</h4>
-              <p className="text-sm text-muted-foreground">{selectedStation.direccion}</p>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline">{selectedStation.empresa}</Badge>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setSelectedStation(null)}
-              >
-                ✕
-              </Button>
-            </div>
-          </div>
-          
-          <Separator className="my-3" />
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-            {selectedStation.precios.map(precio => (
-              <div key={precio.tipoCombustible} className="text-center p-2 rounded-lg bg-muted/50">
-                <div className="text-xs text-muted-foreground">
-                  {getFuelIcon(precio.tipoCombustible)} {getFuelLabel(precio.tipoCombustible)}
+      {selectedStations.length > 0 && (
+        <div className="absolute bottom-4 left-4 right-4 max-h-80 overflow-y-auto space-y-3">
+          {selectedStations.map((station) => (
+            <Card key={station.id} className="p-4 shadow-lg bg-background/95 backdrop-blur-sm">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h4 className="font-semibold">{station.nombre}</h4>
+                  <p className="text-sm text-muted-foreground">{station.direccion}</p>
                 </div>
-                <div className="font-semibold">${precio.precio}</div>
+                <div className="flex gap-2">
+                  <Badge variant="outline">{station.empresa}</Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedStations(prev => prev.filter(s => s.id !== station.id))}
+                  >
+                    ✕
+                  </Button>
+                </div>
               </div>
-            ))}
-          </div>
+              
+              <Separator className="my-3" />
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                {station.precios.map(precio => (
+                  <div key={precio.tipoCombustible} className={`text-center p-2 rounded-lg ${
+                    selectedFuelType === precio.tipoCombustible ? 'bg-primary/20 border border-primary/30' : 'bg-muted/50'
+                  }`}>
+                    <div className="text-xs text-muted-foreground">
+                      {getFuelIcon(precio.tipoCombustible)} {getFuelLabel(precio.tipoCombustible)}
+                    </div>
+                    <div className="font-semibold">${precio.precio}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => onStationSelect(station)}
+                  className="flex-1"
+                >
+                  📍 Ver detalles
+                </Button>
+                <Button variant="outline">
+                  💰 Reportar precio  
+                </Button>
+              </div>
+            </Card>
+          ))}
           
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => onStationSelect(selectedStation)}
-              className="flex-1"
-            >
-              📍 Ver detalles
-            </Button>
-            <Button variant="outline">
-              💰 Reportar precio
-            </Button>
-          </div>
-        </Card>
+          {selectedStations.length > 1 && (
+            <Card className="p-3 shadow-lg bg-primary/10 backdrop-blur-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">
+                  {selectedStations.length} estaciones seleccionadas
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setSelectedStations([])}
+                >
+                  Limpiar todo
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   )

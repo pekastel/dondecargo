@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { estaciones, precios } from '@/drizzle/schema'
-import { eq, and, sql, desc, asc } from 'drizzle-orm'
+import { eq, and, sql, desc, asc, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 // Create connection with error handling
@@ -152,7 +152,10 @@ export async function GET(request: NextRequest) {
             esValidado: precios.esValidado,
           })
           .from(precios)
-          .where(eq(precios.horario, params.horario || 'diurno'))
+          .where(and(
+            inArray(precios.estacionId, stationIds),
+            eq(precios.horario, params.horario || 'diurno')
+          ))
           .orderBy(desc(precios.fechaVigencia))
           .limit(500) // Reasonable limit
         
