@@ -69,13 +69,29 @@ export function MapSearchClient() {
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [gettingLocation, setGettingLocation] = useState(true)
 
   // Get user location on mount
   useEffect(() => {
-    if (navigator.geolocation) {
-      setLoading(true)
+    const getLocation = () => {
+      if (!navigator.geolocation) {
+        setLocationError('La geolocalización no está disponible en este navegador.')
+        setGettingLocation(false)
+        return
+      }
+
+      setGettingLocation(true)
+      setLocationError(null)
+      
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 seconds timeout
+        maximumAge: 300000 // 5 minutes cache
+      }
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('📍 Ubicación obtenida:', position.coords.latitude, position.coords.longitude)
           setFilters(prev => ({
             ...prev,
             location: {
@@ -83,14 +99,44 @@ export function MapSearchClient() {
               lng: position.coords.longitude
             }
           }))
-          setLoading(false)
+          setGettingLocation(false)
         },
         (error) => {
-          setLocationError('No se pudo obtener tu ubicación. Intenta buscar manualmente.')
-          setLoading(false)
-        }
+          console.error('❌ Error de geolocalización:', error)
+          let errorMessage = 'No se pudo obtener tu ubicación.'
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Permisos de ubicación denegados. Habilita la geolocalización para una mejor experiencia.'
+              break
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Información de ubicación no disponible.'
+              break
+            case error.TIMEOUT:
+              errorMessage = 'Tiempo agotado al obtener la ubicación. Intenta de nuevo.'
+              break
+            default:
+              errorMessage = 'Error desconocido al obtener la ubicación.'
+              break
+          }
+          
+          setLocationError(errorMessage)
+          setGettingLocation(false)
+          
+          // Set default location to Buenos Aires if geolocation fails
+          setFilters(prev => ({
+            ...prev,
+            location: {
+              lat: -34.6037,
+              lng: -58.3816
+            }
+          }))
+        },
+        options
       )
     }
+
+    getLocation()
   }, [])
 
   // Fetch stations when filters change
@@ -157,26 +203,51 @@ export function MapSearchClient() {
   }
 
   const handleRetryLocation = () => {
-    setLocationError(null)
-    if (navigator.geolocation) {
-      setLoading(true)
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setFilters(prev => ({
-            ...prev,
-            location: {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            }
-          }))
-          setLoading(false)
-        },
-        (error) => {
-          setLocationError('No se pudo obtener tu ubicación. Intenta buscar manualmente.')
-          setLoading(false)
-        }
-      )
+    if (!navigator.geolocation) {
+      setLocationError('La geolocalización no está disponible en este navegador.')
+      return
     }
+
+    setGettingLocation(true)
+    setLocationError(null)
+    
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0 // Force fresh location on retry
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFilters(prev => ({
+          ...prev,
+          location: {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          }
+        }))
+        setGettingLocation(false)
+      },
+      (error) => {
+        let errorMessage = 'No se pudo obtener tu ubicación.'
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Permisos de ubicación denegados. Habilita la geolocalización para una mejor experiencia.'
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Información de ubicación no disponible.'
+            break
+          case error.TIMEOUT:
+            errorMessage = 'Tiempo agotado al obtener la ubicación. Intenta de nuevo.'
+            break
+        }
+        
+        setLocationError(errorMessage)
+        setGettingLocation(false)
+      },
+      options
+    )
   }
 
   const toggleFuelType = (fuelType: FuelType) => {
@@ -208,11 +279,18 @@ export function MapSearchClient() {
           <div className="flex items-center gap-2 mb-4">
             <MapPin className="h-5 w-5 text-primary" />
             <span className="text-sm text-muted-foreground">
-              {filters.location 
-                ? `${filters.location.lat.toFixed(4)}, ${filters.location.lng.toFixed(4)}`
-                : locationError || 'Obteniendo ubicación...'}
+              {gettingLocation ? (
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full" />
+                  Obteniendo ubicación...
+                </span>
+              ) : filters.location ? (
+                `📍 ${filters.location.lat.toFixed(4)}, ${filters.location.lng.toFixed(4)}`
+              ) : (
+                locationError || 'Ubicación no disponible'
+              )}
             </span>
-            {locationError && (
+            {locationError && !gettingLocation && (
               <Button variant="outline" size="sm" onClick={handleRetryLocation}>
                 <RotateCcw className="h-4 w-4 mr-1" />
                 Reintentar
@@ -313,6 +391,7 @@ export function MapSearchClient() {
               {/* Map - Always rendered but hidden when in list mode */}
               <div className={`absolute inset-0 ${viewMode === 'map' ? 'block' : 'hidden'}`}>
                 <MapSearch 
+                  key={`map-${filters.location?.lat}-${filters.location?.lng}`}
                   stations={stations}
                   center={filters.location}
                   radius={filters.radius}

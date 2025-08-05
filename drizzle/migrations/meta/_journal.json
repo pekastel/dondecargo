@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1754399269469,
-      "tag": "20250805130749_stale_gravity",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1754399924159,
-      "tag": "20250805131844_volatile_payback",
+      "when": 1754416793197,
+      "tag": "20250805175953_faulty_lyja",
       "breakpoints": true
     }
   ]

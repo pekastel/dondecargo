@@ -425,7 +425,7 @@ async function main() {
 }
 
 // Show usage if no arguments
-if (process.argv.length === 2) {
+if (process.argv.length === 1) {
   console.log(`
 Usage: tsx scripts/load-official-data.ts [options]
 

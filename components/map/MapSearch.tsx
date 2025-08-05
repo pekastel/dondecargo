@@ -63,19 +63,37 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
   // Load Leaflet dynamically
   useEffect(() => {
     const loadLeaflet = async () => {
-      if (typeof window === 'undefined' || window.L) return
+      if (typeof window === 'undefined') return
 
-      // Load Leaflet CSS
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
+      // Check if Leaflet is already loaded
+      if (window.L) {
+        setMapLoaded(true)
+        return
+      }
 
-      // Load Leaflet JS
-      const script = document.createElement('script')
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-      script.onload = () => setMapLoaded(true)
-      document.head.appendChild(script)
+      // Check if CSS is already loaded
+      const existingCSS = document.querySelector('link[href*="leaflet.css"]')
+      if (!existingCSS) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+        document.head.appendChild(link)
+      }
+
+      // Check if JS is already loaded or loading
+      const existingScript = document.querySelector('script[src*="leaflet.js"]')
+      if (!existingScript) {
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+        script.onload = () => setMapLoaded(true)
+        script.onerror = () => {
+          console.error('Failed to load Leaflet')
+          setMapLoaded(false)
+        }
+        document.head.appendChild(script)
+      } else if (window.L) {
+        setMapLoaded(true)
+      }
     }
 
     loadLeaflet()
@@ -83,8 +101,15 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
 
   // Initialize map
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !center || leafletMapRef.current) return
+    if (!mapLoaded || !mapRef.current || !center) return
 
+    // Clean up existing map if it exists
+    if (leafletMapRef.current) {
+      leafletMapRef.current.remove()
+      leafletMapRef.current = null
+    }
+
+    // Create new map
     const map = window.L.map(mapRef.current).setView([center.lat, center.lng], 13)
 
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
