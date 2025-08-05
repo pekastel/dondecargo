@@ -133,47 +133,125 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
     }
   }, [center])
 
+  // Helper function to get company logo path
+  const getCompanyLogoPath = (empresa: string): string => {
+    const normalizedCompany = empresa.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+    
+    const logoMap: Record<string, string> = {
+      'ypf': 'icono-ypf.png',
+      'shell': 'icono-shell.png',
+      'axion': 'icono-axion.png',
+      'petrobras': 'icono-petrobras.png',
+      'gulf': 'icono-gulf.png',
+      'puma': 'icono-puma.png',
+      'esso': 'icono-esso.png',
+      'oil': 'icono-oil.png'
+    }
+    
+    // Try to find exact match first
+    const exactMatch = logoMap[normalizedCompany]
+    if (exactMatch) {
+      return `/logos/${exactMatch}`
+    }
+    
+    // Try partial matches
+    for (const [key, logo] of Object.entries(logoMap)) {
+      if (normalizedCompany.includes(key) || key.includes(normalizedCompany)) {
+        return `/logos/${logo}`
+      }
+    }
+    
+    return `/logos/icono-default.svg`
+  }
+
   // Add station markers
   useEffect(() => {
     if (!leafletMapRef.current || !mapLoaded) return
 
-    // Clear existing markers (in a real implementation, you'd track markers)
+    console.log('🗺️ Adding markers for', stations.length, 'stations')
     
-    stations.forEach(station => {
+    stations.forEach((station, index) => {
       const prices = station.precios
       const lowestPrice = Math.min(...prices.map(p => p.precio))
+      const logoPath = getCompanyLogoPath(station.empresa)
       
-      // Custom marker with price display
+      console.log(`📍 Adding marker ${index + 1}:`, station.nombre, 'at', station.latitud, station.longitud)
+
+      // Create floating card marker with HTML/CSS
       const markerHtml = `
-        <div class="station-marker" style="
-          background: white;
-          border: 2px solid #3b82f6;
-          border-radius: 8px;
-          padding: 4px 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          text-align: center;
-          font-size: 12px;
-          font-weight: 600;
-          color: #1e40af;
-          min-width: 60px;
-        ">
-          <div style="font-size: 10px; color: #6b7280;">${station.empresa}</div>
-          <div>$${lowestPrice}</div>
+        <div class="station-marker-container group cursor-pointer relative">
+          <!-- Floating Card (tooltip) -->
+          <div class="absolute z-50 bottom-full mb-3 left-1/2 transform -translate-x-1/2 
+                      bg-white rounded-lg shadow-lg border border-gray-100 
+                      px-4 py-3 min-w-[220px] max-w-[280px]
+                      opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100
+                      transition-all duration-300 ease-in-out pointer-events-none">
+            
+            <!-- Arrow -->
+            <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+              <div class="w-3 h-3 bg-white border-r border-b border-gray-100 transform rotate-45"></div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <!-- Company Logo -->
+              <div class="w-12 h-12 relative flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
+                <img src="${logoPath}" alt="${station.empresa} logo" 
+                     class="w-full h-full object-contain p-1"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
+                  ${station.empresa.charAt(0)}
+                </div>
+              </div>
+              
+              <!-- Station Details -->
+              <div class="flex-grow min-w-0">
+                <h3 class="text-sm font-semibold text-gray-800 truncate mb-1">${station.nombre}</h3>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-gray-500">${station.empresa}</span>
+                </div>
+                <p class="text-blue-600 font-bold text-lg leading-none">$${lowestPrice.toFixed(2)}</p>
+              </div>
+            </div>
+            
+            ${prices.length > 1 ? `
+              <div class="mt-3 pt-3 border-t border-gray-100">
+                <div class="flex flex-wrap gap-2">
+                  ${prices.slice(0, 3).map(precio => `
+                    <div class="text-xs bg-gray-50 px-2 py-1 rounded">
+                      ${getFuelIcon(precio.tipoCombustible)} $${precio.precio}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Base Marker Pin -->
+          <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 
+                      flex items-center justify-center text-white text-xs font-bold shadow-lg 
+                      hover:scale-110 transition-all duration-200 relative z-10">
+            <img src="${logoPath}" alt="${station.empresa}" 
+                 class="w-6 h-6 object-contain rounded-full"
+                 onerror="this.style.display='none'; this.parentElement.textContent='${station.empresa.charAt(0)}';" />
+          </div>
+          
+          <!-- Price Badge -->
+          <div class="absolute -bottom-1 -right-1 z-20 bg-white border border-gray-200 rounded-full 
+                      px-2 py-0.5 text-xs font-semibold text-blue-600 shadow-md min-w-[40px] text-center">
+            $${lowestPrice}
+          </div>
         </div>
       `
 
-      const customIcon = window.L.icon({
-        iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-          <svg width="80" height="40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="80" height="30" rx="6" fill="white" stroke="#3b82f6" stroke-width="2"/>
-            <text x="40" y="12" text-anchor="middle" font-size="8" fill="#6b7280">${station.empresa}</text>
-            <text x="40" y="24" text-anchor="middle" font-size="10" font-weight="600" fill="#1e40af">$${lowestPrice}</text>
-            <polygon points="35,30 40,40 45,30" fill="#3b82f6"/>
-          </svg>
-        `),
-        iconSize: [80, 40],
-        iconAnchor: [40, 40],
-        popupAnchor: [0, -40]
+      // Create custom icon with HTML content
+      const customIcon = window.L.divIcon({
+        html: markerHtml,
+        className: 'custom-marker',
+        iconSize: [60, 60],
+        iconAnchor: [30, 60],
+        popupAnchor: [0, -60]
       })
 
       const marker = window.L.marker([station.latitud, station.longitud], {
@@ -300,6 +378,18 @@ export function MapSearch({ stations, center, radius, loading, visible = true, o
 
   return (
     <div className="relative w-full h-full">
+      <style jsx global>{`
+        .custom-marker {
+          background: none !important;
+          border: none !important;
+        }
+        .custom-marker .group:hover .opacity-0 {
+          opacity: 1 !important;
+        }
+        .custom-marker .group:hover .scale-90 {
+          transform: scale(1) !important;
+        }
+      `}</style>
       <div ref={mapRef} className="w-full h-full" />
       
       {loading && (
