@@ -150,6 +150,16 @@ export function MapSearchClient() {
       if (filters.companies.length > 0) {
         params.append('empresa', filters.companies.join(','))
       }
+      
+      // Only send price range if user has modified from defaults
+      if (filters.priceRange && (filters.priceRange.min !== 800 || filters.priceRange.max !== 1000)) {
+        if (filters.priceRange.min > 0) {
+          params.append('precioMin', filters.priceRange.min.toString())
+        }
+        if (filters.priceRange.max < 5000) {
+          params.append('precioMax', filters.priceRange.max.toString())
+        }
+      }
 
       // Dynamic limit based on radius - more stations for larger areas
       const limit = Math.min(100, Math.max(50, Math.round(filters.radius * 2)))

@@ -30,6 +30,12 @@ const searchParamsSchema = z.object({
   localidad: z.string().optional(),
   combustible: z.string().optional(),
   horario: z.enum(['diurno', 'nocturno']).optional(),
+  precioMin: z.string().refine((val) => val === undefined || !isNaN(Number(val)), {
+    message: "precioMin debe ser un número válido"
+  }).optional(),
+  precioMax: z.string().refine((val) => val === undefined || !isNaN(Number(val)), {
+    message: "precioMax debe ser un número válido"
+  }).optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
 })
@@ -54,6 +60,14 @@ export async function GET(request: NextRequest) {
     const radius = params.radius ? Math.min(parseFloat(params.radius), 50) : 10 // default 10km, max 50km
     const limit = params.limit ? parseInt(params.limit) : 100
     const offset = params.offset ? parseInt(params.offset) : 0
+    
+    // Validate price range - only apply if provided by user
+    const precioMin = params.precioMin && params.precioMin.trim() !== '' 
+      ? Math.max(0, parseFloat(params.precioMin)) 
+      : undefined
+    const precioMax = params.precioMax && params.precioMax.trim() !== '' 
+      ? Math.min(5000, parseFloat(params.precioMax)) 
+      : undefined
 
     let query = db
       .select({
@@ -146,6 +160,19 @@ export async function GET(request: NextRequest) {
         const stationIds = result.map(s => s.id)
         console.log(`🔍 Fetching prices for ${stationIds.length} stations`)
         
+        let priceConditions = [
+          inArray(precios.estacionId, stationIds),
+          eq(precios.horario, params.horario || 'diurno')
+        ]
+        
+        // Add price range filter
+        if (precioMin !== undefined) {
+          priceConditions.push(sql`${precios.precio} >= ${precioMin}`)
+        }
+        if (precioMax !== undefined) {
+          priceConditions.push(sql`${precios.precio} <= ${precioMax}`)
+        }
+        
         const currentPrices = await db
           .select({
             estacionId: precios.estacionId,
@@ -157,10 +184,7 @@ export async function GET(request: NextRequest) {
             esValidado: precios.esValidado,
           })
           .from(precios)
-          .where(and(
-            inArray(precios.estacionId, stationIds),
-            eq(precios.horario, params.horario || 'diurno')
-          ))
+          .where(and(...priceConditions))
           .orderBy(desc(precios.fechaVigencia))
           .limit(500) // Reasonable limit
         

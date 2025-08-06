@@ -171,16 +171,19 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
   }
 
   const handlePriceRangeChange = (type: 'min' | 'max', value: number) => {
+    // Validate input values
+    const validatedValue = Math.max(0, Math.min(5000, value))
+    
     const newPriceRange = {
       ...filters.priceRange,
-      [type]: value
+      [type]: validatedValue
     }
     // Ensure min <= max
-    if (type === 'min' && value > filters.priceRange.max) {
-      newPriceRange.max = value
+    if (type === 'min' && validatedValue > filters.priceRange.max) {
+      newPriceRange.max = validatedValue
     }
-    if (type === 'max' && value < filters.priceRange.min) {
-      newPriceRange.min = value
+    if (type === 'max' && validatedValue < filters.priceRange.min) {
+      newPriceRange.min = validatedValue
     }
     updateFilters({ priceRange: newPriceRange })
   }
@@ -368,9 +371,14 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
             <Input
               id="minPrice"
               type="number"
+              min="0"
+              max="5000"
               placeholder="Min"
               value={filters.priceRange.min}
-              onChange={(e) => handlePriceRangeChange('min', parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 0
+                handlePriceRangeChange('min', value)
+              }}
             />
           </div>
           <div>
@@ -378,9 +386,14 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
             <Input
               id="maxPrice"
               type="number"
+              min="0"
+              max="5000"
               placeholder="Max"
               value={filters.priceRange.max}
-              onChange={(e) => handlePriceRangeChange('max', parseInt(e.target.value) || 9999)}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 5000
+                handlePriceRangeChange('max', value)
+              }}
             />
           </div>
         </div>
