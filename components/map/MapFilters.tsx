@@ -38,7 +38,7 @@ const FUEL_TYPES: { id: FuelType; label: string }[] = [
 ]
 
 const COMPANIES = [
-  'YPF', 'Shell', 'Axion Energy', 'Puma Energy', 'Trafigura', 'Petrobras', 'Esso'
+  'YPF', 'Shell', 'Axion', 'Puma', 'Trafigura', 'Petrobras', 'Esso'
 ]
 
 export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
