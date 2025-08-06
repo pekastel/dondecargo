@@ -1,10 +1,11 @@
 import {
   createAuthClient
 } from "better-auth/react";
-import { oidcClient, adminClient } from "better-auth/client/plugins"
+import { oidcClient, adminClient, inferAdditionalFields } from "better-auth/client/plugins"
+import { auth } from "./auth";
 
 export const authClient = createAuthClient({
-  plugins: [oidcClient(), adminClient()]
+  plugins: [oidcClient(), adminClient(), inferAdditionalFields<typeof auth>()]
 })
 
 export const {

@@ -62,7 +62,6 @@ DondeCargo v2 implementa una arquitectura **conversacional-first** que redefine 
 2. **Integración de datos en tiempo real**: Conexión directa con APIs oficiales del gobierno argentino
 3. **Gestión colaborativa de datos**: Usuarios autenticados pueden proponer actualizaciones
 4. **Sistema de intenciones extensible**: Nuevas capacidades sin rediseño de UI
-5. **UI como capa de visualización**: Interfaz web como dashboard opcional
 
 ### Arquitectura Técnica
 
@@ -109,7 +108,6 @@ submit_price_correction, review_user_submissions, approve_price_change
 #### Interface Hierarchy
 
 1. **Primary Interface (MCP Protocol)**: Complete functionality accessible through natural language commands in any MCP-compatible client
-2. **Secondary Interface (Web Dashboard)**: Optional visualization layer with interactive map, station details, and price comparison tools
 
 This architecture ensures all business logic remains accessible through conversational interaction while providing traditional UI elements for visual preference.
 

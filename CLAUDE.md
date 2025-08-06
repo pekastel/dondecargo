@@ -24,7 +24,6 @@ DondeCargo v2 implementa una arquitectura **conversacional-first** que prioriza 
 2. **Integración de datos en tiempo real**: Conexión directa con APIs oficiales del gobierno argentino
 3. **Gestión colaborativa de datos**: Usuarios autenticados pueden proponer actualizaciones
 4. **Sistema de intenciones extensible**: Nuevas capacidades sin rediseño de UI
-5. **UI como capa de visualización**: Interfaz web como dashboard opcional
 
 ### Stack Tecnológico
 - **Frontend**: Next.js 15 con App Router
@@ -191,10 +190,6 @@ The test suite covers:
 - ✅ Export functionality
 
 See `TESTING.md` for detailed testing guide and best practices.
-
-## Development Data Seeding
-
-For testing dashboard and reports functionality, you can seed the database with sample data:
 
 ### Quick Start (Recommended)
 ```bash

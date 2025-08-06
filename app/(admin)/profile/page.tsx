@@ -49,9 +49,9 @@ export default function Profile() {
         email: session?.user?.email || '',
         callbackURL: '/profile'
       });
-      setMessage({ type: 'success', text: 'Verification email sent! Please check your inbox.' });
+      setMessage({ type: 'success', text: 'Correo de verificación enviado. ¡Por favor revisa tu bandeja de entrada!' });
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to send verification email. Please try again.' });
+      setMessage({ type: 'error', text: 'Error al enviar el correo de verificación. Por favor intenta nuevamente.' });
     } finally {
       setIsVerifying(false);
     }
@@ -77,7 +77,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setMessage({ type: 'error', text: 'Avatar file size must be less than 5MB.' });
+        setMessage({ type: 'error', text: 'El tamaño del avatar debe ser menor a 5MB.' });
         return;
       }
       
@@ -123,10 +123,10 @@ export default function Profile() {
       const { data, error } = await authClient.updateUser(updateData);
 
       if (error) {
-        throw new Error(error.message || 'Failed to update profile');
+        throw new Error(error.message || 'Error al actualizar el perfil');
       }
 
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setMessage({ type: 'success', text: '¡Perfil actualizado exitosamente!' });
       
       // Clear avatar file and preview
       setAvatarFile(null);
@@ -138,7 +138,7 @@ export default function Profile() {
       console.error('Error updating profile:', error);
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to update profile. Please try again.' 
+        text: error instanceof Error ? error.message : 'Error al actualizar el perfil. Por favor intenta nuevamente.' 
       });
     } finally {
       setIsLoading(false);
@@ -147,32 +147,18 @@ export default function Profile() {
 
   if (!user) return null;
 
-  const headerActions = (
-    <Button 
-      variant="outline" 
-      size="sm"
-      onClick={() => router.back()}
-      className="flex items-center gap-2"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      Back
-    </Button>
-  );
-
   return (
     <>
-      <AdminHeader actions={headerActions} />
-      
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Page Title */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Profile Settings
+              Configuración de Perfil
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your account information and preferences
+              Administra tu información de cuenta y preferencias
             </p>
           </div>
 
@@ -208,17 +194,17 @@ export default function Profile() {
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
                       <Shield className="h-3 w-3 mr-1" />
-                      {'user'}
+                      {'usuario'}
                     </Badge>
                     {user.emailVerified && (
                       <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Verified
+                        Verificado
                       </Badge>
                     )}
                     <Badge variant="outline" className="text-xs">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Joined {new Date(user.createdAt || '').toLocaleDateString()}
+                      Registrado el {new Date(user.createdAt || '').toLocaleDateString()}
                     </Badge>
                   </div>
                 </div>
@@ -232,10 +218,10 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Personal Information
+                  Información Personal
                 </CardTitle>
                 <CardDescription>
-                  Update your personal details and profile picture.
+                  Actualiza tus datos personales y foto de perfil.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -256,12 +242,12 @@ export default function Profile() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Nombre Completo</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Enter your full name"
+                      placeholder="Ingresa tu nombre completo"
                     />
                   </div>
 
@@ -275,12 +261,12 @@ export default function Profile() {
                     {isLoading ? (
                       <div className="flex items-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                        Saving...
+                        Guardando...
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Save className="h-4 w-4" />
-                        Save Changes
+                        Guardar Cambios
                       </div>
                     )}
                   </Button>
@@ -292,10 +278,10 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  Account Security
+                  Seguridad de la Cuenta
                 </CardTitle>
                 <CardDescription>
-                  Manage your password and security settings.
+                  Administra tu contraseña y configuración de seguridad.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -303,7 +289,7 @@ export default function Profile() {
                   <div className="flex items-center gap-3 mb-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <h4 className="font-medium">Email Address</h4>
+                      <h4 className="font-medium">Correo Electrónico</h4>
                       <p className="text-sm text-muted-foreground">
                         {user.email}
                       </p>
@@ -313,13 +299,13 @@ export default function Profile() {
                     {user.emailVerified ? (
                       <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Verified
+                        Verificado
                       </Badge>
                     ) : (
                       <>
                         <Badge variant="destructive" className="text-xs">
                           <AlertCircle className="h-3 w-3 mr-1" />
-                          Not Verified
+                          No Verificado
                         </Badge>
                         <Button 
                           variant="outline" 
@@ -328,7 +314,7 @@ export default function Profile() {
                           onClick={handleResendVerification}
                           disabled={isVerifying}
                         >
-                          {isVerifying ? 'Sending...' : 'Resend Verification Email'}
+                          {isVerifying ? 'Enviando...' : 'Reenviar Correo de Verificación'}
                         </Button>
                       </>
                     )}
@@ -340,7 +326,7 @@ export default function Profile() {
                   className="w-full"
                   onClick={() => router.push('/profile/settings')}
                 >
-                  Change Password
+                  Cambiar Contraseña
                 </Button>
               </CardContent>
             </Card>

@@ -70,12 +70,6 @@ const toolsNavigation: NavigationItem[] = [
 
 const adminNavigation: NavigationItem[] = [
   {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: <Database className="h-4 w-4" />,
-    description: 'Panel de administración'
-  },
-  {
     name: 'Usuarios',
     href: '/usuarios',
     icon: <Users className="h-4 w-4" />,

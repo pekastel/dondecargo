@@ -19,8 +19,7 @@ import {
   Settings, 
   LogOut, 
   Shield,
-  BarChart3,
-  TrendingUp,
+  Search,
   Home,
   BookOpen,
 } from 'lucide-react';
@@ -72,7 +71,7 @@ export default function UserMenu() {
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent className="w-64" align="end" forceMount>
+        <DropdownMenuContent className="w-64 z-2000" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-2">
               <div className="flex items-center gap-3">
@@ -98,7 +97,7 @@ export default function UserMenu() {
                 </Badge>
                 {user.emailVerified && (
                   <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
-                    Verified
+                    Verificado
                   </Badge>
                 )}
               </div>
@@ -112,33 +111,33 @@ export default function UserMenu() {
             <span>Home</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={() => router.push('/reports')}>
-            <BarChart3 className="mr-2 h-4 w-4" />
-            <span>Reports</span>
+          <DropdownMenuItem onClick={() => router.push('/buscar')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>Buscar</span>
           </DropdownMenuItem>
           
           <DropdownMenuItem onClick={() => router.push('/mcp-help')}>
             <BookOpen className="mr-2 h-4 w-4" />
-            <span>MCP Setup Guide</span>
+            <span>Manual MCP</span>
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={() => router.push('/profile')}>
             <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>Perfil</span>
           </DropdownMenuItem>
           
           <DropdownMenuItem onClick={() => router.push('/profile/settings')}>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>Configuración</span>
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Sign out</span>
+            <span>Salir</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

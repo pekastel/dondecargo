@@ -218,7 +218,7 @@ Crea tu cuenta para colaborar
                 name: `${firstName} ${lastName}`,
                 image: image ? await convertImageToBase64(image) : "",
                 acceptedTerms: acceptedTerms,
-                callbackURL: "/",
+                callbackURL: "/login",
                 fetchOptions: {
                   onResponse: () => {
                     setLoading(false);

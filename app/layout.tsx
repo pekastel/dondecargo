@@ -52,31 +52,25 @@ export default function RootLayout({
 											</span>
 										</div>
 										<p className="text-sm text-muted-foreground max-w-md">
-											Conversational time tracking powered by the Model Context Protocol. 
-											Skip complex screens and track your work with natural language.
+											Seguimiento conversacional potenciado por el Model Context Protocol. 
+											Olvidate de pantallas complejas y registrá tu trabajo con lenguaje natural.
 										</p>
 									</div>
 
 									{/* Navigation */}
 									<div>
-										<h3 className="font-semibold mb-4">Navigation</h3>
+										<h3 className="font-semibold mb-4">Navegación</h3>
 										<ul className="space-y-2 text-sm">
 											<li>
 												<Link href="/" className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2">
 													<Home className="h-3 w-3" />
-													Home
+													Inicio
 												</Link>
-											</li>
-											<li>
-												<FooterLink href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2" requireAuth>
-													<BarChart3 className="h-3 w-3" />
-													Dashboard
-												</FooterLink>
 											</li>
 											<li>
 												<Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2">
 													<LogIn className="h-3 w-3" />
-													Sign In
+													Iniciar sesión
 												</Link>
 											</li>
 										</ul>
@@ -84,7 +78,7 @@ export default function RootLayout({
 
 									{/* GitHub Links */}
 									<div>
-										<h3 className="font-semibold mb-4">Community</h3>
+										<h3 className="font-semibold mb-4">Comunidad</h3>
 										<ul className="space-y-2 text-sm">
 											<li>
 												<Link 
@@ -94,7 +88,7 @@ export default function RootLayout({
 													rel="noopener noreferrer"
 												>
 													<Github className="h-3 w-3" />
-													View on GitHub
+													Ver en GitHub
 												</Link>
 											</li>
 											<li>
@@ -105,7 +99,7 @@ export default function RootLayout({
 													rel="noopener noreferrer"
 												>
 													<Star className="h-3 w-3" />
-													Star on GitHub
+													Marcar con estrella en GitHub
 												</Link>
 											</li>
 										</ul>
@@ -115,7 +109,7 @@ export default function RootLayout({
 								{/* Bottom Bar */}
 								<div className="border-t mt-8 pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-muted-foreground">
 									<div className="flex justify-center sm:justify-start">
-										Made with <span className="text-red-500 mx-1">❤️</span> by 
+										Hecho con <span className="text-red-500 mx-1">❤️</span> por 
 										<Link 
 											href="https://www.lumile.com.ar" 
 											className="font-medium underline underline-offset-4 ml-1" 

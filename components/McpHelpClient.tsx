@@ -77,31 +77,6 @@ export default function McpHelpClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      {/* Header */}
-      <header className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/")}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Button>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-sm px-3 py-1">
-                <BookOpen className="h-4 w-4 mr-2" />
-                MCP Setup Guide
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-12">
         <div className="text-center space-y-6 max-w-4xl mx-auto">

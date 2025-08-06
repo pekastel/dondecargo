@@ -42,14 +42,14 @@ export default function ProfileSettings() {
 
     // Validate passwords match
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match.' });
+      setMessage({ type: 'error', text: 'Las contraseñas nuevas no coinciden.' });
       setIsLoading(false);
       return;
     }
 
     // Validate password length
     if (passwordData.newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters long.' });
+      setMessage({ type: 'error', text: 'La contraseña debe tener al menos 8 caracteres.' });
       setIsLoading(false);
       return;
     }
@@ -62,10 +62,10 @@ export default function ProfileSettings() {
       });
 
       if (error) {
-        throw new Error(error.message || 'Failed to update password');
+        throw new Error(error.message || 'Error al actualizar la contraseña');
       }
 
-      setMessage({ type: 'success', text: 'Password updated successfully!' });
+      setMessage({ type: 'success', text: '¡Contraseña actualizada exitosamente!' });
       
       // Clear form
       setPasswordData({
@@ -77,7 +77,7 @@ export default function ProfileSettings() {
       console.error('Error updating password:', error);
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to update password. Please try again.' 
+        text: error instanceof Error ? error.message : 'Error al actualizar la contraseña. Por favor intenta nuevamente.' 
       });
     } finally {
       setIsLoading(false);
@@ -94,24 +94,22 @@ export default function ProfileSettings() {
       className="flex items-center gap-2"
     >
       <ArrowLeft className="h-4 w-4" />
-      Back to Profile
+      Volver al Perfil
     </Button>
   );
 
   return (
     <>
-      <AdminHeader actions={headerActions} />
-      
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Page Title */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Security Settings
+              Configuración de Seguridad
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your password and security preferences
+              Administra tu contraseña y preferencias de seguridad
             </p>
           </div>
 
@@ -121,10 +119,10 @@ export default function ProfileSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Key className="h-5 w-5" />
-                  Change Password
+                  Cambiar Contraseña
                 </CardTitle>
                 <CardDescription>
-                  Update your password to keep your account secure.
+                  Actualiza tu contraseña para mantener tu cuenta segura.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -145,13 +143,13 @@ export default function ProfileSettings() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Label htmlFor="currentPassword">Contraseña Actual</Label>
                     <Input
                       id="currentPassword"
                       type="password"
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      placeholder="Enter your current password"
+                      placeholder="Ingresa tu contraseña actual"
                       required
                     />
                   </div>
@@ -159,29 +157,29 @@ export default function ProfileSettings() {
                   <Separator />
 
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword">Nueva Contraseña</Label>
                     <Input
                       id="newPassword"
                       type="password"
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      placeholder="Enter your new password"
+                      placeholder="Ingresa tu nueva contraseña"
                       required
                       minLength={8}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Password must be at least 8 characters long
+                      La contraseña debe tener al menos 8 caracteres
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      placeholder="Confirm your new password"
+                      placeholder="Confirma tu nueva contraseña"
                       required
                       minLength={8}
                     />
@@ -195,12 +193,12 @@ export default function ProfileSettings() {
                     {isLoading ? (
                       <div className="flex items-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                        Updating Password...
+                        Actualizando Contraseña...
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Save className="h-4 w-4" />
-                        Update Password
+                        Actualizar Contraseña
                       </div>
                     )}
                   </Button>
@@ -212,10 +210,10 @@ export default function ProfileSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
-                  Security Guidelines
+                  Directrices de Seguridad
                 </CardTitle>
                 <CardDescription>
-                  Follow these best practices to keep your account secure.
+                  Sigue estas mejores prácticas para mantener tu cuenta segura.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -223,9 +221,9 @@ export default function ProfileSettings() {
                   <div className="flex items-start gap-3">
                     <Lock className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Use a Strong Password</h4>
+                      <h4 className="font-medium text-sm">Usa una Contraseña Fuerte</h4>
                       <p className="text-xs text-muted-foreground">
-                        Include uppercase, lowercase, numbers, and special characters
+                        Incluye mayúsculas, minúsculas, números y caracteres especiales
                       </p>
                     </div>
                   </div>
@@ -233,9 +231,9 @@ export default function ProfileSettings() {
                   <div className="flex items-start gap-3">
                     <Lock className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Don&apos;t Reuse Passwords</h4>
+                      <h4 className="font-medium text-sm">No Reutilices Contraseñas</h4>
                       <p className="text-xs text-muted-foreground">
-                        Use a unique password for your DondeCargo account
+                        Usa una contraseña única para tu cuenta de DondeCargo
                       </p>
                     </div>
                   </div>
@@ -243,9 +241,9 @@ export default function ProfileSettings() {
                   <div className="flex items-start gap-3">
                     <Lock className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-sm">Regular Updates</h4>
+                      <h4 className="font-medium text-sm">Actualizaciones Regulares</h4>
                       <p className="text-xs text-muted-foreground">
-                        Change your password periodically for better security
+                        Cambia tu contraseña periódicamente para mayor seguridad
                       </p>
                     </div>
                   </div>
@@ -255,8 +253,8 @@ export default function ProfileSettings() {
 
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                   <p className="text-xs text-amber-800 dark:text-amber-200">
-                    <strong>Note:</strong> Better Auth handles password encryption and security automatically. 
-                    Your passwords are never stored in plain text.
+                    <strong>Nota:</strong> Better Auth maneja el cifrado y la seguridad de contraseñas automáticamente. 
+                    Tus contraseñas nunca se almacenan en texto plano.
                   </p>
                 </div>
               </CardContent>

@@ -21,7 +21,7 @@ export default function AdminBreadcrumb() {
     }
     
     const breadcrumbs: BreadcrumbItem[] = [
-      { label: 'Dashboard', href: '/dashboard' }
+      { label: 'Buscar', href: '/buscar' }
     ];
     
     if (segments.length === 0) {

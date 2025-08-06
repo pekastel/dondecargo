@@ -14,9 +14,8 @@ export default function SignUpPage() {
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    // Si el usuario está autenticado, redirigir al dashboard
     if (session && !isPending) {
-      router.push("/dashboard");
+      router.push("/buscar");
     }
   }, [session, isPending, router]);
 
