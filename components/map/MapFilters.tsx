@@ -444,38 +444,6 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
         </div>
         )}
       </div>
-
-      {/* Time of Day */}
-      <div className="space-y-3">
-        <button
-          onClick={() => toggleSection('timeOfDay')}
-          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
-        >
-          <div className="flex items-center gap-2">
-            <Label className="font-semibold text-base cursor-pointer">Horario</Label>
-          </div>
-          {expandedSections.timeOfDay ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-        
-        {expandedSections.timeOfDay && (
-        <div className="px-2">
-          <RadioGroup
-            value={filters.timeOfDay}
-            onValueChange={(value: 'diurno' | 'nocturno') => updateFilters({ timeOfDay: value })}
-            className="space-y-3"
-          >
-            <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-              <RadioGroupItem value="diurno" id="diurno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-              <Label htmlFor="diurno" className="text-sm font-medium cursor-pointer flex-1">️Actual (Diurno)</Label>
-            </div>
-            <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-              <RadioGroupItem value="nocturno" id="nocturno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-              <Label htmlFor="nocturno" className="text-sm font-medium cursor-pointer flex-1">Nocturno</Label>
-            </div>
-          </RadioGroup>
-        </div>
-        )}
-      </div>
     </div>
   )
 }
