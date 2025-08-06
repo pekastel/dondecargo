@@ -348,42 +348,6 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
         )}
       </div>
 
-      {/* Fuel Types */}
-      <div className="space-y-3">
-        <button
-          onClick={() => toggleSection('fuelTypes')}
-          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
-        >
-          <Label className="font-semibold text-base cursor-pointer flex items-center gap-2">
-            Tipos de combustible
-          </Label>
-          {expandedSections.fuelTypes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </button>
-        
-        {expandedSections.fuelTypes && (
-        <div className="px-2">
-        <div className="grid grid-cols-1 gap-2">
-          {FUEL_TYPES.map(fuel => (
-            <div key={fuel.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-              <Checkbox
-                id={fuel.id}
-                checked={filters.fuelTypes.includes(fuel.id)}
-                onCheckedChange={() => toggleFuelType(fuel.id)}
-                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-              <Label 
-                htmlFor={fuel.id}
-                className="text-sm cursor-pointer font-medium flex-1"
-              >
-                {fuel.label}
-              </Label>
-            </div>
-          ))}
-        </div>
-        </div>
-        )}
-      </div>
-
       {/* Price Range */}
       <div className="space-y-3">
         <button
