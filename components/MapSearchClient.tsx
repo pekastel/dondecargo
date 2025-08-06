@@ -410,9 +410,9 @@ export function MapSearchClient() {
       </div>
 
       {/* Mobile Quick Filter Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-400 safe-area-bottom">
+        <div className="container px-4 py-3 mx-auto">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-medium">Filtros rápidos:</h4>
               <Badge variant="secondary" className="text-xs">
@@ -423,7 +423,7 @@ export function MapSearchClient() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(true)}
-              className="text-xs"
+              className="text-xs h-8"
             >
               <Settings className="h-3 w-3 mr-1" />
               Más filtros
@@ -431,14 +431,14 @@ export function MapSearchClient() {
           </div>
           
           {/* Quick Fuel Type Toggles */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
               <Button
                 key={fuel}
-                variant={filters.fuelTypes.includes(fuel as FuelType) ? "default" : "outline"}
+                variant={selectedFuelType === fuel ? "default" : "outline"}
                 size="sm"
-                onClick={() => toggleFuelType(fuel as FuelType)}
-                className="rounded-full text-xs whitespace-nowrap flex-shrink-0 px-3 py-1"
+                onClick={() => setSelectedFuelType(fuel as FuelType)}
+                className="rounded-full px-3 py-2 text-xs font-medium transition-all duration-200"
               >
                 {label}
               </Button>
@@ -446,10 +446,13 @@ export function MapSearchClient() {
           </div>
         </div>
       </div>
+      
+      {/* Add padding at the bottom to prevent content from being hidden behind the filter bar */}
+      <div className="lg:hidden h-24"></div>
 
       {/* Mobile Filters Modal */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black/60 z-50 lg:hidden">
+        <div className="fixed inset-0 bg-black/60 z-1000 lg:hidden">
           <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-2xl max-h-[85vh] overflow-hidden">
             <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-4">
               <div className="flex items-center justify-between mb-3">
@@ -469,7 +472,7 @@ export function MapSearchClient() {
                     onClick={() => setSelectedFuelType(null)}
                     className="rounded-full text-xs"
                   >
-                    💰 Menor precio
+                    Menor precio
                   </Button>
                   {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
                     <Button
