@@ -238,7 +238,8 @@ export default function SignUp() {
                     }
                   },
                   onSuccess: async () => {
-                    router.push("/");
+                    // Redirect to verify-email page with user's email
+                    router.push(`/verify-email?email=${encodeURIComponent(email)}`);
                   },
                 },
               });
