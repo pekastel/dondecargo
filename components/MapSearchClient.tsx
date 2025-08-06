@@ -276,12 +276,16 @@ export function MapSearchClient() {
           <div className="space-y-6">
             <MapFilters filters={filters} onFiltersChange={setFilters} />
             
-            <div className="flex flex-col gap-2 pt-4 border-t border-border">
+            <div className="flex flex-col gap-2 pt-4 border-t border-border pb-8">
               <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Limpiar filtros
               </Button>
-              <Button size="sm" onClick={fetchStations} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Button 
+                size="sm" 
+                onClick={() => fetchStations()} 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
                 Buscar estaciones
               </Button>
             </div>
@@ -410,7 +414,7 @@ export function MapSearchClient() {
       </div>
 
       {/* Mobile Quick Filter Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-400 safe-area-bottom">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-5000 safe-area-bottom">
         <div className="container px-4 py-3 mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -447,12 +451,12 @@ export function MapSearchClient() {
         </div>
       </div>
       
-      {/* Add padding at the bottom to prevent content from being hidden behind the filter bar */}
-      <div className="lg:hidden h-24"></div>
+      {/* Add padding at the bottom to prevent content from being hidden behind the filter bar and footer */}
+      <div className="lg:hidden h-32"></div>
 
       {/* Mobile Filters Modal */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black/60 z-1000 lg:hidden">
+        <div className="fixed inset-0 bg-black/60 z-6000 lg:hidden">
           <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-2xl max-h-[85vh] overflow-hidden">
             <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-4">
               <div className="flex items-center justify-between mb-3">
@@ -489,11 +493,11 @@ export function MapSearchClient() {
               </div>
             </div>
             
-            <div className="overflow-y-auto p-4 pb-20">
+            <div className="overflow-y-auto p-4 pb-28">
               <MapFilters filters={filters} onFiltersChange={setFilters} />
             </div>
             
-            <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4">
+            <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-10">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={clearFilters} className="flex-1">
                   Limpiar filtros

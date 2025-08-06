@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
@@ -42,10 +43,18 @@ export function Footer() {
     { name: 'Email', href: 'mailto:info@dondecargo.com', icon: Mail }
   ]
 
+  // Detectar si estamos en la página de búsqueda
+  const pathname = usePathname()
+  const isSearchPage = pathname === '/buscar'
+  
   return (
-    <footer className="border-t bg-background">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+    <footer className={`${isSearchPage 
+      ? 'fixed bottom-0 left-0 right-0 z-4000 bg-background/70 backdrop-blur-sm shadow-lg' 
+      : 'border-t bg-background'}`}>
+      <div className={`container mx-auto px-4 ${isSearchPage ? 'py-1' : 'py-12'}`}>
+        {/* Mostrar versión completa solo si no estamos en la página de búsqueda */}
+        {!isSearchPage ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
@@ -55,12 +64,9 @@ export function Footer() {
               <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 DondeCargo
               </span>
-              <Badge variant="secondary" className="text-xs">
-                v2
-              </Badge>
             </div>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-              La plataforma más completa para encontrar y comparar precios de combustibles en Argentina. 
+              La plataforma para encontrar y comparar precios de combustibles en Argentina. 
               Datos oficiales + comunidad validada.
             </p>
             <div className="flex items-center space-x-2">
@@ -150,25 +156,40 @@ export function Footer() {
             </ul>
           </div>
         </div>
+        ) : null}
 
-        <Separator className="my-8" />
+        {!isSearchPage && <Separator className="my-8" />}
 
-        {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+        {/* Bottom Section - Siempre visible */}
+        <div className={`flex flex-col md:flex-row items-center justify-between ${isSearchPage ? 'space-y-2 md:space-y-0' : 'space-y-4 md:space-y-0'}`}>
           <div className="text-sm text-muted-foreground">
             © {currentYear} DondeCargo. Todos los derechos reservados.
           </div>
           
-          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span>Datos oficiales: datos.energia.gob.ar</span>
-            <Separator orientation="vertical" className="h-4" />
-            <span>MCP Compatible</span>
-            <Separator orientation="vertical" className="h-4" />
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span>Sistema operativo</span>
+          {!isSearchPage ? (
+            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+              <span>Datos oficiales: datos.energia.gob.ar</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span>MCP Compatible</span>
+              <Separator orientation="vertical" className="h-4" />
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span>Sistema operativo</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <span>Hecho con <span className="text-red-500 mx-1">❤️</span> por</span>
+              <Link 
+                href="https://www.lumile.com.ar" 
+                className="font-medium underline underline-offset-4" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Lumile Argentina S.A.
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </footer>
