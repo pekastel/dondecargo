@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { MapSearch } from '@/components/map/MapSearch'
 import { MapFilters } from '@/components/map/MapFilters'
-import { Header } from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -305,8 +304,6 @@ export function MapSearchClient() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-6">
         {/* Quick Filters Bar */}
         <div className="mb-6">
