@@ -62,14 +62,6 @@ const FUEL_LABELS: Record<FuelType, string> = {
   gnc: 'GNC'
 }
 
-const FUEL_ICONS: Record<FuelType, string> = {
-  nafta: '⛽',
-  nafta_premium: '⛽',
-  gasoil: '🚛',
-  gasoil_premium: '🚛',
-  gnc: '⚡'
-}
-
 export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()
   const [showReportModal, setShowReportModal] = useState(false)
@@ -141,8 +133,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-6">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-6">
@@ -181,11 +171,11 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                     </Badge>
                   </div>
                   <p className="text-muted-foreground mb-2">
-                    📍 {station.direccion}, {station.localidad}, {station.provincia}
+                    {station.direccion}, {station.localidad}, {station.provincia}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     {station.horarios && (
-                      <span>🕐 {station.horarios}</span>
+                      <span>{station.horarios}</span>
                     )}
                     {station.rating && (
                       <div className="flex items-center gap-1">
@@ -200,7 +190,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                 </div>
                 
                 <Button onClick={() => setShowReportModal(true)} className="mt-4 sm:mt-0">
-                  💰 Reportar Precio
+                  Reportar Precio
                 </Button>
               </div>
 
@@ -221,7 +211,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
 
             {/* Current Prices */}
             <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">💰 Precios de hoy</h2>
+              <h2 className="text-xl font-semibold mb-4">Precios de hoy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentPrices.map((precio) => (
                   <div
@@ -234,9 +224,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {FUEL_ICONS[precio.tipoCombustible]}
-                        </span>
                         <span className="font-medium text-sm">
                           {FUEL_LABELS[precio.tipoCombustible]}
                         </span>
@@ -253,7 +240,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                     </div>
                     
                     <div className="text-xs text-muted-foreground space-y-1">
-                      <div>🕐 {formatTimeAgo(precio.fechaReporte)}</div>
+                      <div>{formatTimeAgo(precio.fechaReporte)}</div>
                       <div className="flex items-center gap-1">
                         {precio.esValidado ? (
                           <>

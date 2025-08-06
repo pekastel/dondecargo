@@ -32,14 +32,6 @@ const FUEL_LABELS: Record<FuelType, string> = {
   gnc: 'GNC'
 }
 
-const FUEL_ICONS: Record<FuelType, string> = {
-  nafta: '⛽',
-  nafta_premium: '⛽',
-  gasoil: '🚛',
-  gasoil_premium: '🚛',
-  gnc: '⚡'
-}
-
 const priceReportSchema = z.object({
   tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
   precio: z.number().min(0.01, 'El precio debe ser mayor a 0').max(9999, 'El precio parece demasiado alto'),
@@ -214,7 +206,6 @@ export function PriceReport({ station, onClose, onSuccess }: PriceReportProps) {
                 {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
                   <SelectItem key={fuel} value={fuel}>
                     <div className="flex items-center gap-2">
-                      <span>{FUEL_ICONS[fuel as FuelType]}</span>
                       <span>{label}</span>
                     </div>
                   </SelectItem>

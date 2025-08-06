@@ -29,14 +29,6 @@ const FUEL_LABELS: Record<FuelType, string> = {
   gnc: 'GNC'
 }
 
-const FUEL_ICONS: Record<FuelType, string> = {
-  nafta: '⛽',
-  nafta_premium: '⛽',
-  gasoil: '🚛',
-  gasoil_premium: '🚛',
-  gnc: '⚡'
-}
-
 const TIME_PERIODS = [
   { value: '7', label: 'Últimos 7 días' },
   { value: '30', label: 'Últimos 30 días' },
@@ -154,7 +146,7 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
             <SelectContent>
               {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
                 <SelectItem key={fuel} value={fuel}>
-                  {FUEL_ICONS[fuel as FuelType]} {label}
+                  {label}
                 </SelectItem>
               ))}
             </SelectContent>
