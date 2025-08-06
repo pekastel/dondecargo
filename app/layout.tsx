@@ -7,6 +7,7 @@ import { Github, Star, Timer, Home, BarChart3, LogIn } from "lucide-react";
 import { FooterLink } from "@/components/footer-link";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
+import { Header } from '@/components/layout/Header'
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				<ThemeProvider>
 					<div className="min-h-screen flex flex-col">
+						<Header />
 						<main className="flex-1">
 							{children}
 						</main>

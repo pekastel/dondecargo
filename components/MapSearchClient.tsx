@@ -45,14 +45,6 @@ const FUEL_LABELS: Record<FuelType, string> = {
   gnc: 'GNC'
 }
 
-const FUEL_ICONS: Record<FuelType, string> = {
-  nafta: '⛽',
-  nafta_premium: '⛽',
-  gasoil: '🚛',
-  gasoil_premium: '🚛', 
-  gnc: '⚡'
-}
-
 export function MapSearchClient() {
   const [filters, setFilters] = useState<SearchFilters>({
     location: null,
@@ -331,14 +323,14 @@ export function MapSearchClient() {
 
           {/* Fuel Type Selector */}
           <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2">💰 Precio preferido en marcadores:</h4>
+            <h4 className="text-sm font-medium mb-2">Precio preferido en marcadores:</h4>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={selectedFuelType === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedFuelType(null)}
               >
-                📊 Menor precio
+                Menor precio
               </Button>
               {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
                 <Button
@@ -347,7 +339,7 @@ export function MapSearchClient() {
                   size="sm"
                   onClick={() => setSelectedFuelType(fuel as FuelType)}
                 >
-                  {FUEL_ICONS[fuel as FuelType]} {label}
+                  {label}
                 </Button>
               ))}
             </div>
@@ -359,7 +351,7 @@ export function MapSearchClient() {
               size="sm"
               onClick={() => setFilters(prev => ({ ...prev, fuelTypes: [] }))}
             >
-              🏪 Todas
+              Todas
             </Button>
             {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
               <Button
@@ -368,7 +360,7 @@ export function MapSearchClient() {
                 size="sm"
                 onClick={() => toggleFuelType(fuel as FuelType)}
               >
-                {FUEL_ICONS[fuel as FuelType]} {label}
+                {label}
               </Button>
             ))}
           </div>
@@ -445,7 +437,7 @@ export function MapSearchClient() {
                   size="sm"
                   onClick={() => setViewMode('map')}
                 >
-                  🗺️ Mapa
+                  Mapa
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -493,7 +485,7 @@ export function MapSearchClient() {
                       <div className="flex flex-wrap gap-2">
                         {station.precios.slice(0, 3).map(precio => (
                           <div key={precio.tipoCombustible} className="flex items-center gap-1 text-sm">
-                            <span>{FUEL_ICONS[precio.tipoCombustible]}</span>
+                            <span>{FUEL_LABELS[precio.tipoCombustible]}</span>
                             <span className="font-medium">${precio.precio}</span>
                           </div>
                         ))}

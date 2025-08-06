@@ -42,55 +42,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      {/* Header */}
-      <header className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-1 shadow-lg">
-                <Image src="/icon0.svg" alt="Logo" width={34} height={34} />
-              </div>
-              <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                DondeCargo
-              </span>
-              <Badge variant="secondary" className="text-xs">
-                v2
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <Button 
-                onClick={() => router.push("/buscar")}
-                size="sm"
-                className="md:size-default"
-              >
-                <Search className="h-4 w-4 mr-1" />
-                Buscar Precios
-              </Button>
-              {session ? (
-                <Button 
-                  onClick={() => router.push("/dashboard")}
-                  size="sm"
-                  variant="outline"
-                  className="md:size-default"
-                >
-                  Dashboard
-                </Button>
-              ) : (
-                <Button 
-                  onClick={() => router.push("/login")}
-                  size="sm"
-                  variant="outline"
-                  className="md:size-default"
-                >
-                  Sign In
-                </Button>
-              )}
-              <ModeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center space-y-8 max-w-4xl mx-auto">

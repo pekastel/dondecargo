@@ -30,12 +30,12 @@ interface NominatimResult {
   boundingbox: [string, string, string, string]
 }
 
-const FUEL_TYPES: { id: FuelType; label: string; icon: string }[] = [
-  { id: 'nafta', label: 'Nafta Super', icon: '⛽' },
-  { id: 'nafta_premium', label: 'Nafta Premium', icon: '⛽' },
-  { id: 'gasoil', label: 'Gasoil Común', icon: '🚛' },
-  { id: 'gasoil_premium', label: 'Gasoil Premium', icon: '🚛' },
-  { id: 'gnc', label: 'GNC', icon: '⚡' }
+const FUEL_TYPES: { id: FuelType; label: string }[] = [
+  { id: 'nafta', label: 'Nafta Super' },
+  { id: 'nafta_premium', label: 'Nafta Premium' },
+  { id: 'gasoil', label: 'Gasoil Común' },
+  { id: 'gasoil_premium', label: 'Gasoil Premium' },
+  { id: 'gnc', label: 'GNC' }
 ]
 
 const COMPANIES = [
@@ -318,7 +318,7 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
       {/* Fuel Types */}
       <div className="space-y-3">
         <Label className="font-medium flex items-center gap-2">
-          ⛽ Tipos de combustible
+          Tipos de combustible
         </Label>
         <div className="space-y-2">
           {FUEL_TYPES.map(fuel => (
@@ -332,7 +332,6 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
                 htmlFor={fuel.id}
                 className="text-sm cursor-pointer flex items-center gap-2"
               >
-                <span>{fuel.icon}</span>
                 {fuel.label}
               </Label>
             </div>

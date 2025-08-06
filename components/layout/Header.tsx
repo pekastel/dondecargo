@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { ModeToggle } from '@/components/mode-toggle'
 import UserMenu from '@/components/navigation/UserMenu'
 import { authClient } from '@/lib/authClient'
-import { MapPin, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
@@ -18,13 +18,13 @@ export function Header() {
   const { data: session } = authClient.useSession()
 
   const navigation = [
-    { name: 'Buscar', href: '/buscar', icon: '🗺️' },
-    { name: 'Precios', href: '/precios', icon: '💰' },
-    { name: 'Ayuda', href: '/mcp-help', icon: '❓' }
+    { name: 'Buscar', href: '/buscar'},
+    { name: 'Precios', href: '/precios'},
+    { name: 'Ayuda', href: '/mcp-help'}
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-900 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
