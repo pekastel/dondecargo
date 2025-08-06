@@ -364,24 +364,23 @@ class OfficialDataLoader {
                   fechaReporte: new Date()
                 })
                 .where(eq(precios.id, existing[0].id))
+                // Always save to historical data for complete audit trail
+                await this.db.insert(preciosHistorico).values({
+                  id: createId(),
+                  estacionId: price.estacionId,
+                  tipoCombustible: price.tipoCombustible,
+                  precio: price.precio.toString(),
+                  horario: price.horario,
+                  fechaVigencia: price.fechaVigencia,
+                  fuente: price.fuente,
+                  esValidado: price.esValidado,
+                  fechaCreacion: new Date()
+                })
               pricesUpdated++
             } else {
               pricesUnchanged++
             }
           }
-          
-          // Always save to historical data for complete audit trail
-          await this.db.insert(preciosHistorico).values({
-            id: createId(),
-            estacionId: price.estacionId,
-            tipoCombustible: price.tipoCombustible,
-            precio: price.precio.toString(),
-            horario: price.horario,
-            fechaVigencia: price.fechaVigencia,
-            fuente: price.fuente,
-            esValidado: price.esValidado,
-            fechaCreacion: new Date()
-          })
           
         } catch (error) {
           console.warn(`⚠️  Error processing price:`, error)
