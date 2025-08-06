@@ -369,6 +369,7 @@ DondeCargo está construido con tecnologías modernas para rendimiento, escalabi
 - **Vercel MCP Adapter** for MCP server creation
 - **Argentine Government Data API** integration
 - **Interactive Maps** with Mapbox/Leaflet for visualization
+- **Nomatim** for geocoding
 - **pnpm** monorepo tooling
 
 ## Why is this free?
