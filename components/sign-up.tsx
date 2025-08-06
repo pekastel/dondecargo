@@ -57,20 +57,20 @@ export default function SignUp() {
     <Card className="max-w-md shadow-lg border-0 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm">
       <CardHeader className="space-y-1 pb-6">
         <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Join DondeCargo
+Únete a DondeCargo
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
-          Create your account to start tracking time
+Crea tu cuenta para colaborar
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first-name" className="text-sm font-medium">First name</Label>
+              <Label htmlFor="first-name" className="text-sm font-medium">Nombre</Label>
               <Input
                 id="first-name"
-                placeholder="John"
+                placeholder="Juan"
                 className="h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
                 required
                 onChange={(e) => {
@@ -80,10 +80,10 @@ export default function SignUp() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last-name" className="text-sm font-medium">Last name</Label>
+              <Label htmlFor="last-name" className="text-sm font-medium">Apellido</Label>
               <Input
                 id="last-name"
-                placeholder="Doe"
+                placeholder="Pérez"
                 className="h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
                 required
                 onChange={(e) => {
@@ -94,11 +94,11 @@ export default function SignUp() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
             <Input
               id="email"
               type="email"
-              placeholder="john@example.com"
+              placeholder="juan@ejemplo.com"
               className="h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
               required
               onChange={(e) => {
@@ -108,37 +108,35 @@ export default function SignUp() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
             <Input
               id="password"
               type="password"
-              value={password}
+              placeholder="Crea una contraseña segura"
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              placeholder="Create a strong password"
               className="h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password_confirmation" className="text-sm font-medium">Confirm Password</Label>
+            <Label htmlFor="password-confirmation" className="text-sm font-medium">Confirmar contraseña</Label>
             <Input
-              id="password_confirmation"
+              id="password-confirmation"
               type="password"
-              value={passwordConfirmation}
+              placeholder="Confirma tu contraseña"
               onChange={(e) => setPasswordConfirmation(e.target.value)}
               autoComplete="new-password"
-              placeholder="Confirm your password"
               className="h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image" className="text-sm font-medium">Profile Image (optional)</Label>
+            <Label htmlFor="image" className="text-sm font-medium">Foto de perfil (opcional)</Label>
             <div className="flex items-end gap-4">
               {imagePreview && (
                 <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-muted-foreground/20">
                   <Image
                     src={imagePreview}
-                    alt="Profile preview"
+                    alt="Vista previa de perfil"
                     layout="fill"
                     objectFit="cover"
                   />
@@ -232,9 +230,9 @@ export default function SignUp() {
                     // Handle specific error when sign-up is disabled
                     if (ctx.error.code === 'EMAIL_AND_PASSWORD_SIGN_UP_IS_NOT_ENABLED' || 
                         ctx.error.message === 'Email and password sign up is not enabled') {
-                      toast.error("New user registration is currently disabled. Please contact an administrator if you need access.");
+                      toast.error("La creación de cuentas nuevas está deshabilitada. Por favor, contacta a un administrador si necesitas acceso.");
                     } else {
-                      toast.error(ctx.error.message || "Failed to create account. Please try again.");
+                      toast.error(ctx.error.message || "Error al crear cuenta. Por favor, inténtalo de nuevo.");
                     }
                   },
                   onSuccess: async () => {
@@ -248,18 +246,18 @@ export default function SignUp() {
             {loading ? (
               <Loader2 size={16} className="animate-spin" />
             ) : (
-              "Create Account"
+              "Crear cuenta"
             )}
           </Button>
 
           <div className="text-center pt-4 border-t border-muted-foreground/10">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
+              ¿Ya tienes una cuenta?{" "}
               <Link 
                 href="/login" 
                 className="text-blue-600 hover:text-blue-500 font-medium transition-colors"
               >
-                Sign in here
+                Inicia sesión aquí
               </Link>
             </p>
           </div>

@@ -14,7 +14,7 @@ export default function LoginPage() {
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    // If the user is authenticated, redirect to dashboard
+    // Si el usuario está autenticado, redirigir al dashboard
     if (session && !isPending) {
       router.push("/dashboard");
     }
@@ -26,7 +26,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center space-y-4">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Cargando...</p>
         </div>
       </div>
     );

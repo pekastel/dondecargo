@@ -25,10 +25,10 @@ export default function SignIn() {
     <Card className="max-w-md shadow-lg border-0 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm">
       <CardHeader className="space-y-1 pb-6">
         <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome Back
+Bienvenido de nuevo
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
-          Sign in to your account to continue
+Inicia sesión en tu cuenta para continuar
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -41,13 +41,13 @@ export default function SignIn() {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">Correo electrónico</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Ingresa tu correo electrónico"
                 className="pl-10 h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
                 required
                 onChange={(e) => {
@@ -61,12 +61,12 @@ export default function SignIn() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Contraseña</Label>
               <Link
                 href="#"
                 className="text-sm text-blue-600 hover:text-blue-500 transition-colors"
               >
-                Forgot password?
+                ¿Olvidaste tu contraseña?
               </Link>
             </div>
             <div className="relative">
@@ -74,7 +74,7 @@ export default function SignIn() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Ingresa tu contraseña"
                 className="pl-10 h-11 bg-muted/50 border-muted-foreground/20 focus:border-blue-500 transition-colors"
                 autoComplete="current-password"
                 value={password}
@@ -94,7 +94,7 @@ export default function SignIn() {
               className="border-muted-foreground/30"
             />
             <Label htmlFor="remember" className="text-sm text-muted-foreground">
-              Remember me for 30 days
+              Recuérdame por 30 días
             </Label>
           </div>
 
@@ -104,7 +104,7 @@ export default function SignIn() {
             disabled={loading || !isFormValid()}
             onClick={async () => {
               if (!isFormValid()) {
-                setError("Please fill in all required fields");
+                setError("Correo electrónico o contraseña inválidos");
                 return;
               }
 
@@ -126,10 +126,10 @@ export default function SignIn() {
                     setLoading(false);
                     // Handle email verification error
                     if (ctx.error.status === 403) {
-                      setError("Please verify your email address. Check your inbox for a verification email.");
+                      setError("Por favor verifica tu dirección de correo electrónico. Revisa tu bandeja de entrada para un correo de verificación.");
                     } else {
                       // Show the original error message for other errors
-                      setError(ctx.error.message || "An error occurred during sign in");
+                      setError("Ocurrió un error. Por favor intenta de nuevo.");
                     }
                   },
                   onSuccess: () => {
@@ -141,20 +141,20 @@ export default function SignIn() {
             }}
           >
             {loading ? (
-              <Loader2 size={16} className="animate-spin" />
+              "Iniciando sesión..."
             ) : (
-              "Sign In"
+              "Iniciar sesión"
             )}
           </Button>
 
           <div className="text-center pt-4 border-t border-muted-foreground/10">
             <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              ¿No tienes una cuenta?{" "}
               <Link 
                 href="/signup" 
                 className="text-blue-600 hover:text-blue-500 font-medium transition-colors"
               >
-                Create one here
+                Regístrate aquí
               </Link>
             </p>
           </div>

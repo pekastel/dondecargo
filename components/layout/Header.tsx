@@ -34,9 +34,6 @@ export function Header() {
             <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               DondeCargo
             </span>
-            <Badge variant="secondary" className="text-xs">
-              v2
-            </Badge>
           </Link>
 
           {/* Desktop Navigation */}
