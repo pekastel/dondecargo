@@ -1,5 +1,5 @@
 {
-  "id": "bcdc1190-c6ce-4de7-b193-faaca891662b",
+  "id": "993acaa8-287f-4c47-8ece-73c3e7fb07b4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1317,6 +1317,24 @@
         "ban_expires": {
           "name": "ban_expires",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_terms": {
+          "name": "accepted_terms",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted_terms_at": {
+          "name": "accepted_terms_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "terms_hash": {
+          "name": "terms_hash",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import Image from "next/image";
 import { Loader2, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { signUp } from "@/lib/authClient";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ export default function SignUp() {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +37,8 @@ export default function SignUp() {
            email.trim() !== '' && 
            password.trim() !== '' && 
            passwordConfirmation.trim() !== '' && 
-           password === passwordConfirmation;
+           password === passwordConfirmation &&
+           acceptedTerms;
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +169,35 @@ export default function SignUp() {
               </div>
             </div>
           </div>
+          <div className="space-y-3">
+            <div className="flex items-start space-x-2">
+              <Checkbox 
+                id="terms" 
+                checked={acceptedTerms}
+                onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-1">
+                <Label 
+                  htmlFor="terms" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Acepto los términos y condiciones
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Al registrarte, aceptas nuestros{" "}
+                  <Link 
+                    href="/terminos-y-condiciones.html" 
+                    target="_blank" 
+                    className="text-blue-600 hover:text-blue-500 underline"
+                  >
+                    términos y condiciones
+                  </Link>
+                  {" "}y reconoces que tus datos podrán ser utilizados para análisis y publicidad.
+                </p>
+              </div>
+            </div>
+          </div>
           <Button
             type="submit"
             className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-200"
@@ -173,9 +205,11 @@ export default function SignUp() {
             onClick={async () => {
               if (!isFormValid()) {
                 if (password !== passwordConfirmation) {
-                  toast.error("Passwords do not match");
+                  toast.error("Las contraseñas no coinciden");
+                } else if (!acceptedTerms) {
+                  toast.error("Debes aceptar los términos y condiciones");
                 } else {
-                  toast.error("Please fill in all required fields");
+                  toast.error("Por favor completa todos los campos requeridos");
                 }
                 return;
               }
@@ -185,6 +219,7 @@ export default function SignUp() {
                 password,
                 name: `${firstName} ${lastName}`,
                 image: image ? await convertImageToBase64(image) : "",
+                acceptedTerms: acceptedTerms,
                 callbackURL: "/",
                 fetchOptions: {
                   onResponse: () => {

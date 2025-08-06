@@ -149,6 +149,9 @@ CREATE TABLE "user" (
 	"banned" boolean,
 	"ban_reason" text,
 	"ban_expires" timestamp,
+	"accepted_terms" boolean NOT NULL,
+	"accepted_terms_at" text,
+	"terms_hash" text,
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

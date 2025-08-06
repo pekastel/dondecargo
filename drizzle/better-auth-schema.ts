@@ -11,7 +11,10 @@ export const user = pgTable("user", {
  role: text('role'),
  banned: boolean('banned'),
  banReason: text('ban_reason'),
- banExpires: timestamp('ban_expires')
+ banExpires: timestamp('ban_expires'),
+ acceptedTerms: boolean('accepted_terms').$defaultFn(() => false).notNull(),
+ acceptedTermsAt: text('accepted_terms_at'),
+ termsHash: text('terms_hash')
 				});
 
 export const session = pgTable("session", {

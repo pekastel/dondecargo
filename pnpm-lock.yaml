@@ -162,6 +162,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/jsdom':
+        specifier: ^21.1.7
+        version: 21.1.7
       '@types/node':
         specifier: ^20.19.1
         version: 20.19.1
@@ -189,6 +192,9 @@ importers:
       jest-environment-jsdom:
         specifier: ^30.0.4
         version: 30.0.4
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       msw:
         specifier: ^2.10.4
         version: 2.10.4(@types/node@20.19.1)(typescript@5.8.3)

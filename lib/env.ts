@@ -44,13 +44,6 @@ export const env = createEnv({
       .optional()
       .describe("Redis connection string for MCP adapter session management"),
     
-    // Development/Testing
-    SEED_USER_ID: z
-      .string()
-      .optional()
-      .default("test-user-123")
-      .describe("User ID for database seeding in development"),
-    
     // Vercel Environment Variables (automatically set by Vercel)
     VERCEL_PROJECT_PRODUCTION_URL: z
       .string()
@@ -108,7 +101,6 @@ export const env = createEnv({
     LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID: process.env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
     REDIS_URL: process.env.REDIS_URL,
-    SEED_USER_ID: process.env.SEED_USER_ID,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
     VERCEL_URL: process.env.VERCEL_URL,

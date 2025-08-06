@@ -13,7 +13,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "node scripts/run-migrations.js && next build",
+    "build": "node scripts/run-migrations.js && node scripts/generate-terms-hash.js && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -34,7 +34,7 @@
     "data:load-test": "tsx scripts/load-official-data.ts --limit 10 --dry-run",
     "test:db-connection": "tsx scripts/test-db-connection.ts",
     "diagnose:db": "tsx scripts/diagnose-db.ts",
-    "build:production": "NODE_ENV=production node scripts/run-migrations.js && next build"
+    "build:production": "NODE_ENV=production node scripts/run-migrations.js && node scripts/generate-terms-hash.js && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -90,6 +90,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^20.19.1",
     "@types/pg": "^8.15.4",
     "@types/react": "^19.1.8",
@@ -99,6 +100,7 @@
     "eslint-config-next": "^15.3.3",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
+    "jsdom": "^26.1.0",
     "msw": "^2.10.4",
     "node-mocks-http": "^1.17.2",
     "tailwindcss": "^4.1.10",

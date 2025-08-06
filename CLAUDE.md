@@ -223,7 +223,6 @@ pnpm dev
 **Notes**: 
 - The seed script uses `test-user-123` as the default user ID. For production testing, you'll need to either:
   1. Create a user with this ID in the auth system, or
-  2. Use `SEED_USER_ID=your-real-user-id` when running the seed script
 - **Environment Variables**: Scripts automatically load from `.env.local` first, then `.env`
 - **Database Connection**: Ensure your `DATABASE_URL` is properly set in your environment file
 

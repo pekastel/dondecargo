@@ -7,6 +7,7 @@ import { getBaseUrl } from "./utils/url";
 import { admin } from "better-auth/plugins";
 import { sendVerificationEmail } from "./email";
 import { env } from "@/lib/env";
+import { getCurrentTermsHash } from "./terms-hash";
 
 const baseURL = getBaseUrl();
 
@@ -19,6 +20,23 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg", // or "mysql", "sqlite"
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // Validate that user has accepted terms and populate metadata
+          return {
+            data: {
+              ...user,
+              // Keep the acceptedTerms value from the frontend
+              acceptedTermsAt: new Date().toISOString(),
+              termsHash: getCurrentTermsHash(),
+            },
+          };
+        },
+      },
+    },
+  },
   // database: new Pool({
   // 	connectionString: process.env.DATABASE_URL,
   // }),
@@ -62,6 +80,25 @@ export const auth = betterAuth({
     // To enable email verification, set ENABLE_EMAIL_VERIFICATION=true
     // To disable email verification, set ENABLE_EMAIL_VERIFICATION=false or leave unset
     requireEmailVerification: enableEmailVerification
+  },
+  user: {
+    additionalFields: {
+      acceptedTerms: {
+        type: "boolean",
+        required: true,
+        defaultValue: false,
+      },
+      acceptedTermsAt: {
+        type: "string",
+        required: false,
+        input: false
+      },
+      termsHash: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+    },
   },
   // Email verification configuration (optional feature)
   // This block is only included if email verification is enabled

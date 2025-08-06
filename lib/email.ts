@@ -40,6 +40,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
       transactionalId: EMAIL_VERIFICATION_TEMPLATE_ID,
       email: user.email,
       dataVariables: {
+        name: user.name,
         homeurl: baseURL,
         url: url
       }
