@@ -7,9 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Separator } from '@/components/ui/separator'
 import { Card } from '@/components/ui/card'
-import { MapPin, Target, DollarSign, Clock, Building, Search, Loader2, X } from 'lucide-react'
+import { MapPin, Target, Search, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface MapFiltersProps {
   filters: SearchFilters
@@ -50,6 +49,23 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
   const [showResults, setShowResults] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
   const resultsRef = useRef<HTMLDivElement>(null)
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    location: true,
+    radius: true,
+    fuelTypes: true,
+    priceRange: false,
+    companies: false,
+    timeOfDay: false
+  })
+  
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
   
   const updateFilters = (updates: Partial<SearchFilters>) => {
     onFiltersChange({ ...filters, ...updates })
@@ -170,14 +186,22 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Location Section */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-primary" />
-          <Label className="font-medium">Ubicación</Label>
-        </div>
+        <button
+          onClick={() => toggleSection('location')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
+        >
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            <Label className="font-semibold text-base cursor-pointer">Ubicación</Label>
+          </div>
+          {expandedSections.location ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
         
+        {expandedSections.location && (
+        <div className="space-y-3 px-2">
         {/* Address Search */}
         <div className="relative" ref={resultsRef}>
           <div className="relative">
@@ -227,7 +251,7 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
           {showResults && searchResults.length === 0 && searchQuery.length >= 3 && !isSearching && (
             <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg">
               <div className="p-3 text-sm text-muted-foreground text-center">
-                No se encontraron resultados para "{searchQuery}"
+                No se encontraron resultados para &ldquo;{searchQuery}&rdquo;
               </div>
             </Card>
           )}
@@ -281,15 +305,24 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
             </Button>
           </div>
         )}
+        </div>
+        )}
       </div>
-
-      <Separator />
 
       {/* Search Radius */}
       <div className="space-y-3">
-        <Label className="font-medium flex items-center gap-2">
-          📏 Radio de búsqueda
-        </Label>
+        <button
+          onClick={() => toggleSection('radius')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
+        >
+          <Label className="font-semibold text-base cursor-pointer flex items-center gap-2">
+            Radio de búsqueda
+          </Label>
+          {expandedSections.radius ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        
+        {expandedSections.radius && (
+        <div className="space-y-3 px-2">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Input
@@ -311,42 +344,60 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
         </div>
+        </div>
+        )}
       </div>
-
-      <Separator />
 
       {/* Fuel Types */}
       <div className="space-y-3">
-        <Label className="font-medium flex items-center gap-2">
-          Tipos de combustible
-        </Label>
-        <div className="space-y-2">
+        <button
+          onClick={() => toggleSection('fuelTypes')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
+        >
+          <Label className="font-semibold text-base cursor-pointer flex items-center gap-2">
+            Tipos de combustible
+          </Label>
+          {expandedSections.fuelTypes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        
+        {expandedSections.fuelTypes && (
+        <div className="px-2">
+        <div className="grid grid-cols-1 gap-2">
           {FUEL_TYPES.map(fuel => (
-            <div key={fuel.id} className="flex items-center space-x-2">
+            <div key={fuel.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
               <Checkbox
                 id={fuel.id}
                 checked={filters.fuelTypes.includes(fuel.id)}
                 onCheckedChange={() => toggleFuelType(fuel.id)}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label 
                 htmlFor={fuel.id}
-                className="text-sm cursor-pointer flex items-center gap-2"
+                className="text-sm cursor-pointer font-medium flex-1"
               >
                 {fuel.label}
               </Label>
             </div>
           ))}
         </div>
+        </div>
+        )}
       </div>
-
-      <Separator />
 
       {/* Price Range */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary" />
-          <Label className="font-medium">Rango de precios</Label>
-        </div>
+        <button
+          onClick={() => toggleSection('priceRange')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
+        >
+          <div className="flex items-center gap-2">
+            <Label className="font-semibold text-base cursor-pointer">Rango de precios</Label>
+          </div>
+          {expandedSections.priceRange ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        
+        {expandedSections.priceRange && (
+        <div className="space-y-3 px-2">
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor="minPrice" className="text-xs text-muted-foreground">Mínimo</Label>
@@ -369,59 +420,84 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
             />
           </div>
         </div>
-        <div className="text-center text-sm text-muted-foreground">
-          ${filters.priceRange.min} - ${filters.priceRange.max}
+        <div className="text-center text-sm text-muted-foreground bg-muted/30 rounded-lg p-2">
+          Rango: ${filters.priceRange.min} - ${filters.priceRange.max}
         </div>
+        </div>
+        )}
       </div>
-
-      <Separator />
 
       {/* Companies */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-primary" />
-          <Label className="font-medium">Empresas</Label>
-        </div>
-        <div className="space-y-2 max-h-32 overflow-y-auto">
+        <button
+          onClick={() => toggleSection('companies')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
+        >
+          <div className="flex items-center gap-2">
+            <Label className="font-semibold text-base cursor-pointer">Empresas</Label>
+            {filters.companies.length > 0 && (
+              <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 ml-2">
+                {filters.companies.length}
+              </span>
+            )}
+          </div>
+          {expandedSections.companies ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        
+        {expandedSections.companies && (
+        <div className="px-2">
+        <div className="max-h-40 overflow-y-auto space-y-1">
           {COMPANIES.map(company => (
-            <div key={company} className="flex items-center space-x-2">
+            <div key={company} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
               <Checkbox
                 id={company}
                 checked={filters.companies.includes(company)}
                 onCheckedChange={() => toggleCompany(company)}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label 
                 htmlFor={company}
-                className="text-sm cursor-pointer"
+                className="text-sm cursor-pointer font-medium flex-1"
               >
                 {company}
               </Label>
             </div>
           ))}
         </div>
+        </div>
+        )}
       </div>
-
-      <Separator />
 
       {/* Time of Day */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-primary" />
-          <Label className="font-medium">Horario</Label>
-        </div>
-        <RadioGroup
-          value={filters.timeOfDay}
-          onValueChange={(value: 'diurno' | 'nocturno') => updateFilters({ timeOfDay: value })}
+        <button
+          onClick={() => toggleSection('timeOfDay')}
+          className="flex items-center justify-between w-full text-left p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="diurno" id="diurno" />
-            <Label htmlFor="diurno" className="text-sm">Actual (Diurno)</Label>
+          <div className="flex items-center gap-2">
+            <Label className="font-semibold text-base cursor-pointer">Horario</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="nocturno" id="nocturno" />
-            <Label htmlFor="nocturno" className="text-sm">Nocturno</Label>
-          </div>
-        </RadioGroup>
+          {expandedSections.timeOfDay ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        
+        {expandedSections.timeOfDay && (
+        <div className="px-2">
+          <RadioGroup
+            value={filters.timeOfDay}
+            onValueChange={(value: 'diurno' | 'nocturno') => updateFilters({ timeOfDay: value })}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+              <RadioGroupItem value="diurno" id="diurno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+              <Label htmlFor="diurno" className="text-sm font-medium cursor-pointer flex-1">☀️ Actual (Diurno)</Label>
+            </div>
+            <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+              <RadioGroupItem value="nocturno" id="nocturno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+              <Label htmlFor="nocturno" className="text-sm font-medium cursor-pointer flex-1">🌙 Nocturno</Label>
+            </div>
+          </RadioGroup>
+        </div>
+        )}
       </div>
     </div>
   )

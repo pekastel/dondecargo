@@ -5,7 +5,6 @@ import { MapSearch } from '@/components/map/MapSearch'
 import { MapFilters } from '@/components/map/MapFilters'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw } from 'lucide-react'
 
@@ -111,6 +110,8 @@ export function MapSearchClient() {
     if (!filters.location) {
       initializeLocation()
     }
+
+    setSelectedFuelType('nafta')
   }, [])
 
   // Set current location for map centering when filters.location changes
@@ -225,7 +226,7 @@ export function MapSearchClient() {
   const clearFilters = () => {
     setFilters(prev => ({
       ...prev,
-      fuelTypes: ['nafta', 'nafta_premium', 'gasoil'],
+      fuelTypes: ['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'],
       priceRange: { min: 800, max: 1000 },
       companies: [],
       radius: 5
@@ -233,29 +234,232 @@ export function MapSearchClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-6">
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block w-80 border-r border-border bg-card/50 backdrop-blur-sm">
+        <div className="h-full overflow-y-auto p-4">
+          <div className="sticky z-20 top-0 bg-card/80 backdrop-blur-sm p-4 -m-4 mb-4 border-b border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">Filtros de búsqueda</h3>
+            </div>
+            
+            {/* Prominent Fuel Type Selector */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Precio destacado en mapa:</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+                  <Button
+                    key={fuel}
+                    variant={selectedFuelType === fuel ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedFuelType(fuel as FuelType)}
+                    className="rounded-full px-3 py-2 text-xs font-medium transition-all duration-200"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <MapFilters filters={filters} onFiltersChange={setFilters} />
+            
+            <div className="flex flex-col gap-2 pt-4 border-t border-border">
+              <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Limpiar filtros
+              </Button>
+              <Button size="sm" onClick={fetchStations} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                Buscar estaciones
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Filters Panel - Desktop */}
-          <div className="hidden lg:block">
-            <Card className="p-4 sticky top-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="h-5 w-5" />
-                <h3 className="font-semibold">Filtros de búsqueda</h3>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header Bar */}
+        <div className="border-b border-border bg-card/50 backdrop-blur-sm px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="text-sm font-medium px-3 py-1">
+                {stations.length} estaciones{hasMore ? '+' : ''}
+              </Badge>
+              {loading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                  Actualizando...
+                </div>
+              )}
+              {hasMore && !loading && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadMoreStations}
+                  disabled={isLoadingMore}
+                  className="text-xs"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
+                      Cargando...
+                    </>
+                  ) : (
+                    'Cargar más'
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              {/* Mobile Filters Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="lg:hidden"
+                onClick={() => setShowFilters(true)}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Filtros
+              </Button>
+              
+              <div className="flex border border-border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'map' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('map')}
+                  className="text-xs"
+                >
+                  🗺️ Mapa
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="text-xs"
+                >
+                  <List className="h-4 w-4 mr-1" />
+                  Lista
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Map/List Content - Full Height */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Map View */}
+          <div className={`absolute inset-0 ${viewMode === 'map' ? 'block' : 'hidden'}`}>
+            <MapSearch 
+              key={`map-${filters.location?.lat}-${filters.location?.lng}`}
+              stations={stations}
+              center={filters.location}
+              radius={filters.radius}
+              loading={loading}
+              visible={viewMode === 'map'}
+              selectedFuelType={selectedFuelType}
+              currentLocation={currentLocation}
+              onStationSelect={(station) => {
+                window.location.href = `/estacion/${station.id}`
+              }}
+            />
+          </div>
+          
+          {/* List View */}
+          {viewMode === 'list' && (
+            <div className="h-full overflow-y-auto p-4 bg-background">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {stations.map(station => (
+                  <Card key={station.id} className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border border-border/50 hover:border-primary/20"
+                        onClick={() => window.location.href = `/estacion/${station.id}`}>
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold text-lg">{station.nombre}</h4>
+                        <p className="text-sm text-muted-foreground">{station.direccion}</p>
+                        <p className="text-xs text-muted-foreground">{station.localidad}, {station.provincia}</p>
+                      </div>
+                      <Badge variant="outline" className="font-medium">{station.empresa}</Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {station.precios.slice(0, 4).map(precio => (
+                        <div key={precio.tipoCombustible} className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 text-sm">
+                          <span className="font-medium">{FUEL_LABELS[precio.tipoCombustible]}</span>
+                          <span className="font-bold text-primary">${precio.precio}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Quick Filter Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium">Filtros rápidos:</h4>
+              <Badge variant="secondary" className="text-xs">
+                {filters.fuelTypes.length} combustibles
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(true)}
+              className="text-xs"
+            >
+              <Settings className="h-3 w-3 mr-1" />
+              Más filtros
+            </Button>
+          </div>
+          
+          {/* Quick Fuel Type Toggles */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+              <Button
+                key={fuel}
+                variant={filters.fuelTypes.includes(fuel as FuelType) ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleFuelType(fuel as FuelType)}
+                className="rounded-full text-xs whitespace-nowrap flex-shrink-0 px-3 py-1"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Filters Modal */}
+      {showFilters && (
+        <div className="fixed inset-0 bg-black/60 z-50 lg:hidden">
+          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-2xl max-h-[85vh] overflow-hidden">
+            <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-lg">Filtros de búsqueda</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
+                  ✕
+                </Button>
               </div>
               
-              {/* Fuel Type Selector - moved to top */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium mb-2">Precio preferido en marcadores:</h4>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Mobile Fuel Type Selector */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">Precio destacado:</h4>
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant={selectedFuelType === null ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedFuelType(null)}
-                    className="col-span-2"
+                    className="rounded-full text-xs"
                   >
-                    Menor precio
+                    💰 Menor precio
                   </Button>
                   {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
                     <Button
@@ -263,166 +467,35 @@ export function MapSearchClient() {
                       variant={selectedFuelType === fuel ? "default" : "outline"}
                       size="sm"
                       onClick={() => setSelectedFuelType(fuel as FuelType)}
+                      className="rounded-full text-xs"
                     >
                       {label}
                     </Button>
                   ))}
                 </div>
               </div>
-
-              <Separator className="my-4" />
-              
-              <MapFilters filters={filters} onFiltersChange={setFilters} />
-              <Separator className="my-4" />
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={clearFilters}>
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Limpiar
-                </Button>
-                <Button size="sm" onClick={fetchStations}>
-                  Aplicar
-                </Button>
-              </div>
-            </Card>
-          </div>
-
-          {/* Map/List Content */}
-          <div className="lg:col-span-3">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {stations.length} estaciones{hasMore ? '+' : ''} encontradas
-                </Badge>
-                {loading && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                    Actualizando...
-                  </div>
-                )}
-                {hasMore && !loading && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadMoreStations}
-                    disabled={isLoadingMore}
-                  >
-                    {isLoadingMore ? (
-                      <>
-                        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
-                        Cargando...
-                      </>
-                    ) : (
-                      'Cargar más'
-                    )}
-                  </Button>
-                )}
-              </div>
-              
-              <div className="flex gap-2">
-                {/* Mobile Filters Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="lg:hidden"
-                  onClick={() => setShowFilters(true)}
-                >
-                  <Settings className="h-4 w-4 mr-1" />
-                  Filtros
-                </Button>
-                
-                <Button
-                  variant={viewMode === 'map' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('map')}
-                >
-                  Mapa
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className="h-4 w-4 mr-1" />
-                  Lista
-                </Button>
-              </div>
             </div>
-
-            {/* Map Component */}
-            <Card className="h-[600px] relative overflow-hidden">
-              {/* Map - Always rendered but hidden when in list mode */}
-              <div className={`absolute inset-0 ${viewMode === 'map' ? 'block' : 'hidden'}`}>
-                <MapSearch 
-                  key={`map-${filters.location?.lat}-${filters.location?.lng}`}
-                  stations={stations}
-                  center={filters.location}
-                  radius={filters.radius}
-                  loading={loading}
-                  visible={viewMode === 'map'}
-                  selectedFuelType={selectedFuelType}
-                  currentLocation={currentLocation}
-                  onStationSelect={(station) => {
-                    // Navigate to station detail
-                    window.location.href = `/estacion/${station.id}`
-                  }}
-                />
-              </div>
-              
-              {/* List View - Only rendered when in list mode */}
-              {viewMode === 'list' && (
-                <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
-                  {stations.map(station => (
-                    <Card key={station.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => window.location.href = `/estacion/${station.id}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-semibold">{station.nombre}</h4>
-                          <p className="text-sm text-muted-foreground">{station.direccion}</p>
-                        </div>
-                        <Badge variant="outline">{station.empresa}</Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {station.precios.slice(0, 3).map(precio => (
-                          <div key={precio.tipoCombustible} className="flex items-center gap-1 text-sm">
-                            <span>{FUEL_LABELS[precio.tipoCombustible]}</span>
-                            <span className="font-medium">${precio.precio}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
-        </div>
-
-        {/* Mobile Filters Modal */}
-        {showFilters && (
-          <div className="fixed inset-0 bg-black/50 z-1000 lg:hidden">
-            <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-lg p-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Filtros</h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
-                  ✕
-                </Button>
-              </div>
+            
+            <div className="overflow-y-auto p-4 pb-20">
               <MapFilters filters={filters} onFiltersChange={setFilters} />
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" onClick={clearFilters}>
-                  Limpiar todo
+            </div>
+            
+            <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={clearFilters} className="flex-1">
+                  Limpiar filtros
                 </Button>
                 <Button onClick={() => {
                   setShowFilters(false)
                   fetchStations()
-                }} className="flex-1">
+                }} className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                   Aplicar ({stations.length})
                 </Button>
               </div>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   )
 }

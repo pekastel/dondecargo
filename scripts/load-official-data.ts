@@ -192,8 +192,9 @@ class OfficialDataLoader {
     
     for (const row of processedRows) {
       try {
-        // Process station using idempresa as unique key
+        // Process station using idempresa as unique key AND as station ID
         const stationKey = row.idempresa
+        const stationId = row.idempresa // Use idempresa as the primary key
         
         if (!stationsMap.has(stationKey)) {
           const lat = parseFloat(row.latitud)
@@ -205,7 +206,7 @@ class OfficialDataLoader {
           }
           
           const station: ProcessedStation = {
-            id: createId(),
+            id: stationId, // Use idempresa as consistent ID
             idempresa: row.idempresa,
             nombre: row.empresabandera || row.empresa || 'Estación sin nombre',
             empresa: row.empresabandera || row.empresa,
@@ -246,7 +247,7 @@ class OfficialDataLoader {
         const horario = row.tipohorario?.toLowerCase().includes('nocturn') ? 'nocturno' : 'diurno'
         
         prices.push({
-          estacionId: station.id,
+          estacionId: stationId, // Use the same consistent ID
           tipoCombustible: fuelType,
           precio: precio,
           horario: horario,
@@ -281,14 +282,15 @@ class OfficialDataLoader {
       // Insert stations
       console.log(`📍 Inserting ${stations.length} stations...`)
       let stationsInserted = 0
+      let stationsUpdated = 0
       
       for (const station of stations) {
         try {
-          // Check if station exists by idempresa
+          // Check if station exists by id (which is now idempresa)
           const existing = await this.db
             .select()
             .from(estaciones)
-            .where(eq(estaciones.idempresa, station.idempresa))
+            .where(eq(estaciones.id, station.id))
             .limit(1)
           
           if (existing.length === 0) {
@@ -299,19 +301,30 @@ class OfficialDataLoader {
             await this.db
               .update(estaciones)
               .set({
-                ...station,
+                nombre: station.nombre,
+                empresa: station.empresa,
+                cuit: station.cuit,
+                direccion: station.direccion,
+                localidad: station.localidad,
+                provincia: station.provincia,
+                region: station.region,
+                latitud: station.latitud,
+                longitud: station.longitud,
                 fechaActualizacion: new Date()
               })
-              .where(eq(estaciones.idempresa, station.idempresa))
+              .where(eq(estaciones.id, station.id))
+            stationsUpdated++
           }
         } catch (error) {
-          console.warn(`⚠️  Error inserting station ${station.nombre}:`, error)
+          console.warn(`⚠️  Error processing station ${station.nombre}:`, error)
         }
       }
       
       // Insert prices
-      console.log(`💰 Inserting ${prices.length} prices...`)
+      console.log(`💰 Processing ${prices.length} prices...`)
       let pricesInserted = 0
+      let pricesUpdated = 0
+      let pricesUnchanged = 0
       
       for (const price of prices) {
         try {
@@ -330,24 +343,34 @@ class OfficialDataLoader {
             .limit(1)
           
           if (existing.length === 0) {
+            // New price - insert
             await this.db.insert(precios).values({
               id: createId(),
               ...price
             })
             pricesInserted++
           } else {
-            // Update existing price
-            await this.db
-              .update(precios)
-              .set({
-                precio: price.precio.toString(),
-                fechaVigencia: price.fechaVigencia,
-                fechaReporte: new Date()
-              })
-              .where(eq(precios.id, existing[0].id))
+            // Check if price actually changed
+            const existingPrice = parseFloat(existing[0].precio)
+            const newPrice = price.precio
+            
+            if (Math.abs(existingPrice - newPrice) > 0.001) { // Price changed
+              // Update existing price
+              await this.db
+                .update(precios)
+                .set({
+                  precio: price.precio.toString(),
+                  fechaVigencia: price.fechaVigencia,
+                  fechaReporte: new Date()
+                })
+                .where(eq(precios.id, existing[0].id))
+              pricesUpdated++
+            } else {
+              pricesUnchanged++
+            }
           }
           
-          // Also save to historical data
+          // Always save to historical data for complete audit trail
           await this.db.insert(preciosHistorico).values({
             id: createId(),
             estacionId: price.estacionId,
@@ -361,11 +384,11 @@ class OfficialDataLoader {
           })
           
         } catch (error) {
-          console.warn(`⚠️  Error inserting price:`, error)
+          console.warn(`⚠️  Error processing price:`, error)
         }
       }
       
-      console.log(`✅ Inserted ${stationsInserted} new stations and ${pricesInserted} new prices`)
+      console.log(`✅ Inserted ${stationsInserted} new stations, ${pricesInserted} new prices, updated ${pricesUpdated} prices, and ${pricesUnchanged} prices were unchanged`)
       
     } catch (error) {
       console.error('❌ Error saving data:', error)
