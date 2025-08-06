@@ -19,7 +19,6 @@ export function Header() {
 
   const navigation = [
     { name: 'Buscar', href: '/buscar'},
-    { name: 'Precios', href: '/precios'},
     { name: 'Ayuda', href: '/mcp-help'}
   ]
 

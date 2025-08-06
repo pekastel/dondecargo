@@ -22,16 +22,60 @@ export function StationInfo({ station }: StationInfoProps) {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitud},${station.longitud}`
     window.open(url, '_blank')
   }
+  /*
+[
+  {
+    "nombre": "AXION"
+  },
+  {
+    "nombre": "DAPSA S.A."
+  },
+  {
+    "nombre": "YPF"
+  },
+  {
+    "nombre": "VOY"
+  },
+  {
+    "nombre": "SIN EMPRESA BANDERA"
+  },
+  {
+    "nombre": "OIL COMBUSTIBLES S.A."
+  },
+  {
+    "nombre": "REFINOR"
+  },
+  {
+    "nombre": "SHELL C.A.P.S.A."
+  },
+  {
+    "nombre": "PUMA"
+  },
+  {
+    "nombre": "GULF"
+  },
+  {
+    "nombre": "BLANCA"
+  }
+]
+  */
 
   const handleCompanyWebsite = (empresa: string) => {
     const websites: Record<string, string> = {
       'YPF': 'https://www.ypf.com',
       'Shell': 'https://www.shell.com.ar',
       'Axion Energy': 'https://www.axionenergy.com',
-      'Puma Energy': 'https://www.pumaenergy.com',
+      'Puma': 'https://www.pumaenergy.com',
       'Trafigura': 'https://www.trafigura.com',
       'Petrobras': 'https://www.petrobras.com.ar',
-      'Esso': 'https://www.esso.com.ar'
+      'DAPSA S.A.': 'https://www.dapsa.com.ar',
+      'VOY': 'https://www.voy.com.ar',
+      'SIN EMPRESA BANDERA': '',
+      'OIL COMBUSTIBLES S.A.': 'https://www.oilcombustibles.com.ar',
+      'REFINOR': 'https://www.refinor.com.ar',
+      'SHELL C.A.P.S.A.': 'https://www.shell.com.ar',
+      'GULF': 'https://www.gulf.com.ar',
+      'BLANCA': ''
     }
     
     const website = websites[empresa]
@@ -54,10 +98,17 @@ export function StationInfo({ station }: StationInfoProps) {
       'YPF': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       'Shell': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       'Axion Energy': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      'Puma Energy': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+      'Puma': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
       'Trafigura': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
       'Petrobras': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      'Esso': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+      'DAPSA S.A.': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'VOY': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'SIN EMPRESA BANDERA': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'OIL COMBUSTIBLES S.A.': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'REFINOR': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'SHELL C.A.P.S.A.': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'GULF': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'BLANCA': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
     }
     return colors[empresa] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }

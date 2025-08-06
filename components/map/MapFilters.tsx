@@ -38,7 +38,7 @@ const FUEL_TYPES: { id: FuelType; label: string }[] = [
 ]
 
 const COMPANIES = [
-  'YPF', 'Shell', 'Axion', 'Puma', 'Trafigura', 'Petrobras', 'Esso'
+  'YPF', 'Shell', 'Axion', 'Puma', 'Trafigura', 'Petrobras', 'VOY', 'Sin Bandera', 'OIL', 'Refinor', 'Gulf', 'Blanca', 'Dapsa'
 ]
 
 export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
@@ -453,11 +453,11 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
           >
             <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
               <RadioGroupItem value="diurno" id="diurno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-              <Label htmlFor="diurno" className="text-sm font-medium cursor-pointer flex-1">☀️ Actual (Diurno)</Label>
+              <Label htmlFor="diurno" className="text-sm font-medium cursor-pointer flex-1">️Actual (Diurno)</Label>
             </div>
             <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
               <RadioGroupItem value="nocturno" id="nocturno" className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-              <Label htmlFor="nocturno" className="text-sm font-medium cursor-pointer flex-1">🌙 Nocturno</Label>
+              <Label htmlFor="nocturno" className="text-sm font-medium cursor-pointer flex-1">Nocturno</Label>
             </div>
           </RadioGroup>
         </div>

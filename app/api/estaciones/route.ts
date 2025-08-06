@@ -87,9 +87,14 @@ export async function GET(request: NextRequest) {
     if (params.empresa) {
       const empresas = params.empresa.split(',')
       if (empresas.length === 1) {
-        conditions.push(eq(estaciones.empresa, empresas[0]))
+        // Case-insensitive LIKE search for single empresa
+        conditions.push(sql`LOWER(${estaciones.empresa}) LIKE LOWER(${`%${empresas[0]}%`})`)
       } else {
-        conditions.push(sql`${estaciones.empresa} = ANY(${empresas})`)
+        // Case-insensitive LIKE search for multiple empresas with OR condition
+        const likeConditions = empresas.map(empresa => 
+          sql`LOWER(${estaciones.empresa}) LIKE LOWER(${`%${empresa}%`})`
+        )
+        conditions.push(sql`(${sql.join(likeConditions, sql` OR `)})`)
       }
     }
 
@@ -129,7 +134,7 @@ export async function GET(request: NextRequest) {
 
     query = query.limit(limit).offset(offset)
 
-    console.log('🔍 Executing stations query...')
+    console.log('🔍 Executing stations query...', query.toSQL())
     const result = await query
     console.log(`📊 Found ${result.length} stations`)
 

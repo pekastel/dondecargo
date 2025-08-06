@@ -180,7 +180,6 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       'petrobras': 'icono-petrobras.png',
       'gulf': 'icono-gulf.png',
       'puma': 'icono-puma.png',
-      'esso': 'icono-esso.png',
       'oil': 'icono-oil.png'
     }
     

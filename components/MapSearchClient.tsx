@@ -150,7 +150,7 @@ export function MapSearchClient() {
       if (filters.companies.length > 0) {
         params.append('empresa', filters.companies.join(','))
       }
-      
+
       // Dynamic limit based on radius - more stations for larger areas
       const limit = Math.min(100, Math.max(50, Math.round(filters.radius * 2)))
       params.append('limit', limit.toString())
