@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { RotateCcw, TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react'
 import { FuelType } from '@/components/MapSearchClient'
 
 interface PriceHistoryProps {
@@ -136,7 +136,10 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
   return (
     <Card className="p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold mb-4 sm:mb-0">📊 Historial de Precios</h3>
+        <h3 className="text-lg font-semibold mb-4 sm:mb-0 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Historial de Precios
+        </h3>
         
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={fuelType} onValueChange={(value: FuelType) => onFuelTypeChange(value)}>
@@ -247,12 +250,14 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
                     />
                     
                     {/* Tooltip */}
-                    <div className="absolute bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                      <div>{formatPrice(item.precio)}</div>
-                      <div>{formatDate(item.fecha)}</div>
-                      <div className="flex items-center gap-1">
-                        {isOfficial ? '🏛️' : isValidated ? '✅' : '⏳'}
-                        {isOfficial ? 'Oficial' : isValidated ? 'Validado' : 'Pendiente'}
+                    <div className="absolute bottom-full mb-3 hidden group-hover:block bg-black/90 backdrop-blur-sm text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-10 shadow-lg border border-white/10">
+                      <div className="font-bold text-sm">{formatPrice(item.precio)}</div>
+                      <div className="text-white/80">{formatDate(item.fecha)}</div>
+                      <div className="flex items-center gap-1 mt-1 pt-1 border-t border-white/20">
+                        <div className={`w-2 h-2 rounded-full ${
+                          isOfficial ? 'bg-blue-400' : isValidated ? 'bg-green-400' : 'bg-orange-400'
+                        }`} />
+                        <span className="text-white/90">{isOfficial ? 'Oficial' : isValidated ? 'Validado' : 'Pendiente'}</span>
                       </div>
                     </div>
                   </div>

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Clock, Phone, Star, ExternalLink } from 'lucide-react'
+import { MapPin, Phone, Star, ExternalLink } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
 
 interface StationDetailProps {
@@ -15,6 +15,7 @@ interface StationDetailProps {
 interface LeafletMap {
   setView: (latlng: [number, number], zoom: number) => void
   remove: () => void
+  removeLayer: (layer: any) => void
 }
 
 interface LeafletMarker {
@@ -30,6 +31,7 @@ interface Leaflet {
   map: (element: HTMLElement) => LeafletMap
   tileLayer: (url: string, options?: any) => LeafletTileLayer
   marker: (latlng: [number, number], options?: any) => LeafletMarker
+  divIcon: (options: any) => any
   icon: (options: any) => any
 }
 
@@ -42,62 +44,137 @@ declare global {
 export function StationDetail({ station }: StationDetailProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
+  const [mapLoaded, setMapLoaded] = useState(false)
 
-  // Load and initialize map
+  // Helper function to get company logo path
+  const getCompanyLogoPath = (empresa: string): string => {
+    const normalizedCompany = empresa.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+    
+    const logoMap: Record<string, string> = {
+      'ypf': 'icono-ypf.png',
+      'shell': 'icono-shell.png',
+      'axion': 'icono-axion.png',
+      'petrobras': 'icono-petrobras.png',
+      'gulf': 'icono-gulf.png',
+      'puma': 'icono-puma.png',
+      'oil': 'icono-oil.png'
+    }
+    
+    // Try to find exact match first
+    const exactMatch = logoMap[normalizedCompany]
+    if (exactMatch) {
+      return `/logos/${exactMatch}`
+    }
+    
+    // Try partial matches
+    for (const [key, logo] of Object.entries(logoMap)) {
+      if (normalizedCompany.includes(key) || key.includes(normalizedCompany)) {
+        return `/logos/${logo}`
+      }
+    }
+    
+    return `/logos/icono-default.svg`
+  }
+
+  // Load Leaflet dynamically
   useEffect(() => {
     const loadLeaflet = async () => {
-      if (typeof window === 'undefined' || window.L || leafletMapRef.current) return
+      if (typeof window === 'undefined') return
 
-      // Load Leaflet CSS
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
-
-      // Load Leaflet JS
-      const script = document.createElement('script')
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-      
-      script.onload = () => {
-        if (mapRef.current) {
-          const map = window.L.map(mapRef.current).setView([station.latitud, station.longitud], 16)
-
-          window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(map)
-
-          // Custom marker icon
-          const customIcon = window.L.icon({
-            iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-              <svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="18" fill="#3b82f6" stroke="white" stroke-width="3"/>
-                <text x="20" y="26" text-anchor="middle" font-size="16" fill="white">E</text>
-              </svg>
-            `),
-            iconSize: [40, 40],
-            iconAnchor: [20, 40],
-            popupAnchor: [0, -40]
-          })
-
-          const marker = window.L.marker([station.latitud, station.longitud], {
-            icon: customIcon
-          }).addTo(map)
-
-          marker.bindPopup(`
-            <div style="text-align: center; padding: 8px;">
-              <strong>${station.nombre}</strong><br>
-              <small>${station.direccion}</small>
-            </div>
-          `)
-
-          leafletMapRef.current = map
-        }
+      // Check if Leaflet is already loaded
+      if (window.L) {
+        setMapLoaded(true)
+        return
       }
-      
-      document.head.appendChild(script)
+
+      // Check if CSS is already loaded
+      const existingCSS = document.querySelector('link[href*="leaflet.css"]')
+      if (!existingCSS) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+        document.head.appendChild(link)
+      }
+
+      // Check if JS is already loaded or loading
+      const existingScript = document.querySelector('script[src*="leaflet.js"]')
+      if (!existingScript) {
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+        script.onload = () => setMapLoaded(true)
+        script.onerror = () => {
+          console.error('Failed to load Leaflet')
+          setMapLoaded(false)
+        }
+        document.head.appendChild(script)
+      } else if (window.L) {
+        setMapLoaded(true)
+      }
     }
 
     loadLeaflet()
+  }, [])
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return
+
+    // Clean up existing map if it exists
+    if (leafletMapRef.current) {
+      leafletMapRef.current.remove()
+      leafletMapRef.current = null
+    }
+
+    // Create new map
+    const map = window.L.map(mapRef.current).setView([station.latitud, station.longitud], 16)
+
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map)
+
+    const logoPath = getCompanyLogoPath(station.empresa)
+
+    // Create marker with same style as MapSearch
+    const markerHtml = `
+      <div class="station-marker-container">
+        <!-- Base Marker Pin -->
+        <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-green-500 to-emerald-600 
+                    flex items-center justify-center text-white text-xs font-bold shadow-lg 
+                    relative z-10">
+          <img src="${logoPath}" alt="${station.empresa}" 
+               class="w-6 h-6 object-contain rounded-full"
+               onerror="this.style.display='none'; this.parentElement.textContent='${station.empresa.charAt(0)}';" />
+        </div>
+      </div>
+    `
+
+    // Create custom icon with HTML content
+    const customIcon = window.L.divIcon({
+      html: markerHtml,
+      className: 'custom-marker',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    })
+
+    const marker = window.L.marker([station.latitud, station.longitud], {
+      icon: customIcon
+    }).addTo(map)
+
+    marker.bindPopup(`
+      <div style="text-align: center; padding: 12px; min-width: 200px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <img src="${logoPath}" alt="${station.empresa}" style="width: 24px; height: 24px; object-fit: contain;" />
+          <strong style="font-size: 14px;">${station.nombre}</strong>
+        </div>
+        <div style="color: #666; font-size: 12px; margin-bottom: 8px;">${station.empresa}</div>
+        <div style="font-size: 12px;">${station.direccion}</div>
+      </div>
+    `)
+
+    leafletMapRef.current = map
 
     return () => {
       if (leafletMapRef.current) {
@@ -105,7 +182,7 @@ export function StationDetail({ station }: StationDetailProps) {
         leafletMapRef.current = null
       }
     }
-  }, [station])
+  }, [mapLoaded, station])
 
   const handleDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitud},${station.longitud}`
@@ -118,19 +195,47 @@ export function StationDetail({ station }: StationDetailProps) {
     }
   }
 
+  if (!mapLoaded) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-3 sm:p-4">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Ubicación
+          </h3>
+          
+          <div className="w-full h-48 rounded-lg bg-muted/20 mb-4 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+              <p className="text-sm text-muted-foreground">Cargando mapa...</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Location Map */}
-      <Card className="p-4">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          🗺️ Ubicación
-        </h3>
-        
-        <div 
-          ref={mapRef} 
-          className="w-full h-48 rounded-lg bg-muted/20 mb-4"
-          style={{ minHeight: '192px' }}
-        />
+    <>
+      <style jsx global>{`
+        .custom-marker {
+          background: none !important;
+          border: none !important;
+        }
+      `}</style>
+      <div className="space-y-6">
+        {/* Location Map */}
+        <Card className="p-3 sm:p-4">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Ubicación
+          </h3>
+          
+          <div 
+            ref={mapRef} 
+            className="w-full h-40 sm:h-48 rounded-lg bg-muted/20 mb-4"
+            style={{ minHeight: '160px' }}
+          />
         
         <div className="space-y-3">
           <div className="flex items-start gap-2 text-sm">
@@ -141,14 +246,14 @@ export function StationDetail({ station }: StationDetailProps) {
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleDirections}>
-              <ExternalLink className="h-4 w-4 mr-1" />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button size="sm" onClick={handleDirections} className="flex-1 sm:flex-initial">
+              <ExternalLink className="h-4 w-4 mr-2" />
               Direcciones
             </Button>
             {station.telefono && (
-              <Button variant="outline" size="sm" onClick={handleCall}>
-                <Phone className="h-4 w-4 mr-1" />
+              <Button variant="outline" size="sm" onClick={handleCall} className="flex-1 sm:flex-initial">
+                <Phone className="h-4 w-4 mr-2" />
                 Llamar
               </Button>
             )}
@@ -158,7 +263,10 @@ export function StationDetail({ station }: StationDetailProps) {
 
       {/* Station Information */}
       <Card className="p-4">
-        <h3 className="font-semibold mb-4">ℹ️ Información</h3>
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <Star className="h-5 w-5" />
+          Información Básica
+        </h3>
         
         <div className="space-y-4">
           {/* Basic Info */}
@@ -242,24 +350,18 @@ export function StationDetail({ station }: StationDetailProps) {
 
       {/* Quick Stats */}
       <Card className="p-4">
-        <h3 className="font-semibold mb-4">📊 Estadísticas</h3>
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <MapPin className="h-5 w-5" />
+          Estadísticas
+        </h3>
         
         <div className="grid grid-cols-2 gap-4 text-center">
           <div className="p-3 rounded-lg bg-muted/20">
             <div className="text-2xl font-bold text-primary">
-              {station.precios.length}
+              {new Set(station.precios.map(p => p.tipoCombustible)).size}
             </div>
             <div className="text-xs text-muted-foreground">
-              Combustibles
-            </div>
-          </div>
-          
-          <div className="p-3 rounded-lg bg-muted/20">
-            <div className="text-2xl font-bold text-green-600">
-              {station.precios.filter(p => p.esValidado).length}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Verificados
+              Tipos de combustible
             </div>
           </div>
           
@@ -268,20 +370,30 @@ export function StationDetail({ station }: StationDetailProps) {
               {station.precios.filter(p => p.fuente === 'oficial').length}
             </div>
             <div className="text-xs text-muted-foreground">
-              Oficiales
+              Precios oficiales
+            </div>
+          </div>
+          
+          <div className="p-3 rounded-lg bg-muted/20">
+            <div className="text-2xl font-bold text-green-600">
+              {station.precios.filter(p => p.fuente === 'usuario' && p.esValidado).length}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Reportados validados
             </div>
           </div>
           
           <div className="p-3 rounded-lg bg-muted/20">
             <div className="text-2xl font-bold text-orange-600">
-              {station.precios.filter(p => p.fuente === 'usuario').length}
+              {station.precios.filter(p => !p.esValidado).length}
             </div>
             <div className="text-xs text-muted-foreground">
-              Reportados
+              Pendientes validación
             </div>
           </div>
         </div>
       </Card>
-    </div>
+      </div>
+    </>
   )
 }

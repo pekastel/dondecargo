@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Header } from '@/components/layout/Header'
 import { StationDetail } from '@/components/station/StationDetail'
 import { PriceHistory } from '@/components/station/PriceHistory'
 import { PriceReport } from '@/components/station/PriceReport'
@@ -10,9 +9,7 @@ import { StationInfo } from '@/components/station/StationInfo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Heart, Share2, Phone, Navigation, Star } from 'lucide-react'
+import { Clock, ArrowLeft, Heart, Share2, Phone, Navigation, Star } from 'lucide-react'
 import { FuelType } from '@/components/MapSearchClient'
 
 export interface StationPrice {
@@ -135,8 +132,8 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-6">
         {/* Header Section */}
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={handleBack} className="mb-4 sm:mb-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <Button variant="ghost" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
           </Button>
@@ -146,36 +143,42 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
               variant={isFavorite ? "default" : "outline"}
               size="sm"
               onClick={toggleFavorite}
+              className="flex-1 sm:flex-initial"
             >
               <Heart className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-current' : ''}`} />
-              {isFavorite ? 'Guardado' : 'Guardar'}
+              <span className="hidden sm:inline">{isFavorite ? 'Guardado' : 'Guardar'}</span>
+              <span className="sm:hidden">{isFavorite ? 'Guardado' : 'Guardar'}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
+            <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:flex-initial">
               <Share2 className="h-4 w-4 mr-1" />
-              Compartir
+              <span className="hidden sm:inline">Compartir</span>
+              <span className="sm:hidden">Compartir</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-6">
             {/* Station Header */}
-            <Card className="p-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+            <Card className="p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4 gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-2xl font-bold">{station.nombre}</h1>
-                    <Badge variant="outline" className="text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                    <h1 className="text-xl sm:text-2xl font-bold">{station.nombre}</h1>
+                    <Badge variant="outline" className="text-xs w-fit">
                       {station.empresa}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mb-2">
+                  <p className="text-muted-foreground mb-3 text-sm sm:text-base">
                     {station.direccion}, {station.localidad}, {station.provincia}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                     {station.horarios && (
-                      <span>{station.horarios}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {station.horarios}
+                      </span>
                     )}
                     {station.rating && (
                       <div className="flex items-center gap-1">
@@ -189,20 +192,20 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                   </div>
                 </div>
                 
-                <Button onClick={() => setShowReportModal(true)} className="mt-4 sm:mt-0">
+                <Button onClick={() => setShowReportModal(true)} className="w-full lg:w-auto">
                   Reportar Precio
                 </Button>
               </div>
 
               {/* Quick Actions */}
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={handleDirections}>
-                  <Navigation className="h-4 w-4 mr-1" />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm" onClick={handleDirections} className="flex-1 sm:flex-initial">
+                  <Navigation className="h-4 w-4 mr-2" />
                   Cómo llegar
                 </Button>
                 {station.telefono && (
-                  <Button variant="outline" size="sm" onClick={handleCall}>
-                    <Phone className="h-4 w-4 mr-1" />
+                  <Button variant="outline" size="sm" onClick={handleCall} className="flex-1 sm:flex-initial">
+                    <Phone className="h-4 w-4 mr-2" />
                     Llamar
                   </Button>
                 )}
@@ -210,16 +213,16 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
             </Card>
 
             {/* Current Prices */}
-            <Card className="p-6">
+            <Card className="p-4 sm:p-6">
               <h2 className="text-xl font-semibold mb-4">Precios de hoy</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                 {currentPrices.map((precio) => (
                   <div
                     key={precio.id}
-                    className={`p-4 rounded-lg border transition-colors ${
+                    className={`p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
                       precio.precio === lowestPrice 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                        : 'border-border bg-muted/20'
+                        ? 'border-green-500 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 shadow-sm' 
+                        : 'border-border bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -235,12 +238,12 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                       )}
                     </div>
                     
-                    <div className="text-2xl font-bold mb-1">
+                    <div className="text-xl sm:text-2xl font-bold mb-1">
                       {formatPrice(precio.precio)}
                     </div>
                     
                     <div className="text-xs text-muted-foreground space-y-1">
-                      <div>{formatTimeAgo(precio.fechaReporte)}</div>
+                      <div>{formatTimeAgo(precio.fechaVigencia)}</div>
                       <div className="flex items-center gap-1">
                         {precio.esValidado ? (
                           <>
@@ -260,30 +263,18 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
               </div>
             </Card>
 
-            {/* Tabs for History and More Info */}
-            <Tabs defaultValue="history" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="history">📊 Historial</TabsTrigger>
-                <TabsTrigger value="info">ℹ️ Información</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="history" className="space-y-4">
-                <PriceHistory 
-                  stationId={station.id}
-                  fuelType={selectedFuelType}
-                  onFuelTypeChange={setSelectedFuelType}
-                />
-              </TabsContent>
-              
-              <TabsContent value="info" className="space-y-4">
-                <StationInfo station={station} />
-              </TabsContent>
-            </Tabs>
+            {/* Price History */}
+            <PriceHistory 
+              stationId={station.id}
+              fuelType={selectedFuelType}
+              onFuelTypeChange={setSelectedFuelType}
+            />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             <StationDetail station={station} />
+            <StationInfo station={station} />
           </div>
         </div>
 

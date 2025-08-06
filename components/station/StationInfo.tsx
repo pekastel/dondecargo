@@ -116,10 +116,10 @@ export function StationInfo({ station }: StationInfoProps) {
   return (
     <div className="space-y-6">
       {/* Basic Information */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Building className="h-5 w-5" />
-          Información básica
+          Información Completa
         </h3>
         
         <div className="space-y-4">
@@ -200,14 +200,15 @@ export function StationInfo({ station }: StationInfoProps) {
 
         <Separator className="my-4" />
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={handleDirections} className="flex-1">
             <MapPin className="h-4 w-4 mr-2" />
             Cómo llegar
           </Button>
           {station.telefono && (
-            <Button variant="outline" onClick={handleCall}>
-              <Phone className="h-4 w-4" />
+            <Button variant="outline" onClick={handleCall} className="flex-1 sm:flex-initial">
+              <Phone className="h-4 w-4 mr-2 sm:mr-0" />
+              <span className="sm:hidden">Llamar</span>
             </Button>
           )}
         </div>
@@ -215,13 +216,13 @@ export function StationInfo({ station }: StationInfoProps) {
 
       {/* Services and Amenities */}
       {(station.servicios && station.servicios.length > 0) && (
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Wrench className="h-5 w-5" />
             Servicios disponibles
           </h3>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {station.servicios.map((servicio) => (
               <div key={servicio} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20">
                 <span className="text-sm">
@@ -234,26 +235,8 @@ export function StationInfo({ station }: StationInfoProps) {
         </Card>
       )}
 
-      {/* Payment Methods */}
-      {(station.formasPago && station.formasPago.length > 0) && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Formas de pago
-          </h3>
-          
-          <div className="flex flex-wrap gap-2">
-            {station.formasPago.map((pago) => (
-              <Badge key={pago} variant="outline" className="text-sm">
-                {getPaymentIcon(pago)} {pago}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
-
       {/* Data Information */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Database className="h-5 w-5" />
           Información de datos
@@ -303,38 +286,6 @@ export function StationInfo({ station }: StationInfoProps) {
           <p>• Los precios oficiales provienen de datos.energia.gob.ar</p>
           <p>• Los reportes de usuarios son validados antes de publicarse</p>
           <p>• Los datos se actualizan diariamente</p>
-        </div>
-      </Card>
-
-      {/* Location Details */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          Detalles de ubicación
-        </h3>
-        
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Región:</span>
-            <span className="font-medium">{station.region}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Provincia:</span>
-            <span className="font-medium">{station.provincia}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Localidad:</span>
-            <span className="font-medium">{station.localidad}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Coordenadas:</span>
-            <span className="font-mono text-xs">
-              {station.latitud.toFixed(6)}, {station.longitud.toFixed(6)}
-            </span>
-          </div>
         </div>
       </Card>
     </div>

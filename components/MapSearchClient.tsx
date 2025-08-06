@@ -188,7 +188,7 @@ export function MapSearchClient() {
           tipoCombustible: precio.tipoCombustible,
           precio: parseFloat(precio.precio),
           horario: precio.horario,
-          fechaActualizacion: new Date(precio.fechaReporte)
+          fechaActualizacion: new Date(precio.fechaVigencia)
         }))
       }))
       
