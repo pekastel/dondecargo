@@ -14,6 +14,7 @@ interface MapSearchProps {
   loading: boolean
   visible?: boolean // to trigger map resize when becoming visible
   selectedFuelType: FuelType | null
+  currentLocation?: { lat: number; lng: number } | null
   onStationSelect: (station: Station) => void
 }
 
@@ -55,13 +56,15 @@ declare global {
   }
 }
 
-export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, onStationSelect }: MapSearchProps) {
+export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect }: MapSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const radiusCircleRef = useRef<LeafletCircle | null>(null)
   const markersRef = useRef<LeafletMarker[]>([])
+  const currentLocationMarkerRef = useRef<LeafletMarker | null>(null)
   const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+
 
   // Load Leaflet dynamically
   useEffect(() => {
@@ -207,6 +210,42 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     markersRef.current = []
   }
 
+  // Add current location marker
+  useEffect(() => {
+    if (!leafletMapRef.current || !mapLoaded || !currentLocation) return
+
+    // Remove existing current location marker
+    if (currentLocationMarkerRef.current) {
+      leafletMapRef.current.removeLayer(currentLocationMarkerRef.current)
+      currentLocationMarkerRef.current = null
+    }
+
+    // Create current location marker HTML
+    const currentLocationHtml = `
+      <div class="current-location-marker">
+        <div class="w-5 h-5 bg-red-500 border-3 border-white rounded-full shadow-lg animate-pulse relative">
+          <div class="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+          <div class="relative w-full h-full bg-red-500 rounded-full border-2 border-white"></div>
+        </div>
+      </div>
+    `
+
+    // Create custom icon for current location
+    const currentLocationIcon = window.L.divIcon({
+      html: currentLocationHtml,
+      className: 'current-location-custom-marker',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    })
+
+    // Create and add current location marker
+    const currentLocationMarker = window.L.marker([currentLocation.lat, currentLocation.lng], {
+      icon: currentLocationIcon
+    }).addTo(leafletMapRef.current)
+
+    currentLocationMarkerRef.current = currentLocationMarker
+  }, [currentLocation, mapLoaded])
+
   // Add station markers
   useEffect(() => {
     if (!leafletMapRef.current || !mapLoaded) return
@@ -327,6 +366,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   useEffect(() => {
     return () => {
       clearMarkers()
+      if (currentLocationMarkerRef.current && leafletMapRef.current) {
+        leafletMapRef.current.removeLayer(currentLocationMarkerRef.current)
+        currentLocationMarkerRef.current = null
+      }
     }
   }, [])
 
@@ -419,6 +462,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     <div className="relative w-full h-full">
       <style jsx global>{`
         .custom-marker {
+          background: none !important;
+          border: none !important;
+        }
+        .current-location-custom-marker {
           background: none !important;
           border: none !important;
         }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Filter, List, RotateCcw, Settings } from 'lucide-react'
+import { Filter, List, Settings, RotateCcw } from 'lucide-react'
 
 export type FuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
 export type PriceRange = { min: number; max: number }
@@ -61,77 +61,62 @@ export function MapSearchClient() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
-  const [locationError, setLocationError] = useState<string | null>(null)
-  const [gettingLocation, setGettingLocation] = useState(true)
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
 
-  // Get user location on mount
+  // Initialize with default location or user geolocation
   useEffect(() => {
-    const getLocation = () => {
-      if (!navigator.geolocation) {
-        setLocationError('La geolocalización no está disponible en este navegador.')
-        setGettingLocation(false)
-        return
-      }
+    const initializeLocation = async () => {
+      // Try to get user's current location first
+      if (navigator.geolocation) {
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes cache
+        }
 
-      setGettingLocation(true)
-      setLocationError(null)
-      
-      const options = {
-        enableHighAccuracy: true,
-        timeout: 10000, // 10 seconds timeout
-        maximumAge: 300000 // 5 minutes cache
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log('📍 Ubicación obtenida:', position.coords.latitude, position.coords.longitude)
-          setFilters(prev => ({
-            ...prev,
-            location: {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
               lat: position.coords.latitude,
               lng: position.coords.longitude
             }
-          }))
-          setGettingLocation(false)
-        },
-        (error) => {
-          console.error('❌ Error de geolocalización:', error)
-          let errorMessage = 'No se pudo obtener tu ubicación.'
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Permisos de ubicación denegados. Habilita la geolocalización para una mejor experiencia.'
-              break
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Información de ubicación no disponible.'
-              break
-            case error.TIMEOUT:
-              errorMessage = 'Tiempo agotado al obtener la ubicación. Intenta de nuevo.'
-              break
-            default:
-              errorMessage = 'Error desconocido al obtener la ubicación.'
-              break
-          }
-          
-          setLocationError(errorMessage)
-          setGettingLocation(false)
-          
-          // Set default location to Buenos Aires if geolocation fails
-          setFilters(prev => ({
-            ...prev,
-            location: {
+            setFilters(prev => ({ ...prev, location }))
+            setCurrentLocation(location)
+          },
+          (error) => {
+            console.error('Geolocation failed:', error)
+            // Fallback to Buenos Aires, Argentina
+            const defaultLocation = {
               lat: -34.6037,
               lng: -58.3816
             }
-          }))
-        },
-        options
-      )
+            setFilters(prev => ({ ...prev, location: defaultLocation }))
+            setCurrentLocation(defaultLocation)
+          },
+          options
+        )
+      } else {
+        // Fallback to Buenos Aires, Argentina if geolocation not supported
+        const defaultLocation = {
+          lat: -34.6037,
+          lng: -58.3816
+        }
+        setFilters(prev => ({ ...prev, location: defaultLocation }))
+        setCurrentLocation(defaultLocation)
+      }
     }
 
-    getLocation()
+    // Only initialize if location is not already set
+    if (!filters.location) {
+      initializeLocation()
+    }
   }, [])
+
+  // Set current location for map centering when filters.location changes
+  useEffect(() => {
+    setCurrentLocation(filters.location)
+  }, [filters.location])
 
   // Fetch stations when filters change
   useEffect(() => {
@@ -227,53 +212,6 @@ export function MapSearchClient() {
     }
   }
 
-  const handleRetryLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('La geolocalización no está disponible en este navegador.')
-      return
-    }
-
-    setGettingLocation(true)
-    setLocationError(null)
-    
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0 // Force fresh location on retry
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFilters(prev => ({
-          ...prev,
-          location: {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          }
-        }))
-        setGettingLocation(false)
-      },
-      (error) => {
-        let errorMessage = 'No se pudo obtener tu ubicación.'
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Permisos de ubicación denegados. Habilita la geolocalización para una mejor experiencia.'
-            break
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Información de ubicación no disponible.'
-            break
-          case error.TIMEOUT:
-            errorMessage = 'Tiempo agotado al obtener la ubicación. Intenta de nuevo.'
-            break
-        }
-        
-        setLocationError(errorMessage)
-        setGettingLocation(false)
-      },
-      options
-    )
-  }
 
   const toggleFuelType = (fuelType: FuelType) => {
     setFilters(prev => ({
@@ -297,74 +235,6 @@ export function MapSearchClient() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-6">
-        {/* Quick Filters Bar */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="h-5 w-5 text-primary" />
-            <span className="text-sm text-muted-foreground">
-              {gettingLocation ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full" />
-                  Obteniendo ubicación...
-                </span>
-              ) : filters.location ? (
-                `📍 ${filters.location.lat.toFixed(4)}, ${filters.location.lng.toFixed(4)}`
-              ) : (
-                locationError || 'Ubicación no disponible'
-              )}
-            </span>
-            {locationError && !gettingLocation && (
-              <Button variant="outline" size="sm" onClick={handleRetryLocation}>
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reintentar
-              </Button>
-            )}
-          </div>
-
-          {/* Fuel Type Selector */}
-          <div className="mb-4">
-            <h4 className="text-sm font-medium mb-2">Precio preferido en marcadores:</h4>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedFuelType === null ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedFuelType(null)}
-              >
-                Menor precio
-              </Button>
-              {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
-                <Button
-                  key={fuel}
-                  variant={selectedFuelType === fuel ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedFuelType(fuel as FuelType)}
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button
-              variant={filters.fuelTypes.length === 0 ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilters(prev => ({ ...prev, fuelTypes: [] }))}
-            >
-              Todas
-            </Button>
-            {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
-              <Button
-                key={fuel}
-                variant={filters.fuelTypes.includes(fuel as FuelType) ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleFuelType(fuel as FuelType)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Panel - Desktop */}
@@ -374,6 +244,34 @@ export function MapSearchClient() {
                 <Filter className="h-5 w-5" />
                 <h3 className="font-semibold">Filtros de búsqueda</h3>
               </div>
+              
+              {/* Fuel Type Selector - moved to top */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-2">Precio preferido en marcadores:</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={selectedFuelType === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedFuelType(null)}
+                    className="col-span-2"
+                  >
+                    Menor precio
+                  </Button>
+                  {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+                    <Button
+                      key={fuel}
+                      variant={selectedFuelType === fuel ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedFuelType(fuel as FuelType)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+              
               <MapFilters filters={filters} onFiltersChange={setFilters} />
               <Separator className="my-4" />
               <div className="flex gap-2">
@@ -462,6 +360,7 @@ export function MapSearchClient() {
                   loading={loading}
                   visible={viewMode === 'map'}
                   selectedFuelType={selectedFuelType}
+                  currentLocation={currentLocation}
                   onStationSelect={(station) => {
                     // Navigate to station detail
                     window.location.href = `/estacion/${station.id}`
@@ -500,8 +399,8 @@ export function MapSearchClient() {
 
         {/* Mobile Filters Modal */}
         {showFilters && (
-          <div className="fixed inset-0 bg-black/50 z-50 lg:hidden">
-            <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-lg p-4 max-h-[80vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 z-1000 lg:hidden">
+            <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-lg p-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">Filtros</h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
