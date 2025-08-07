@@ -1,13 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Station } from '@/components/MapSearchClient'
 import { FuelType, FUEL_LABELS } from '@/lib/types'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Users, TrendingUp } from 'lucide-react'
 
 interface UserPriceReport {
   tipoCombustible: string
@@ -25,14 +21,14 @@ interface MapSearchProps {
   visible?: boolean // to trigger map resize when becoming visible
   selectedFuelType: FuelType | null
   currentLocation?: { lat: number; lng: number } | null
-  onStationSelect: (station: Station) => void
+  onStationSelect?: (station: Station) => void
 }
 
 interface LeafletMap {
   setView: (latlng: [number, number], zoom: number) => void
   invalidateSize: () => void
   remove: () => void
-  removeLayer: (layer: any) => void
+  removeLayer: (layer: unknown) => void
 }
 
 interface LeafletMarker {
@@ -54,10 +50,10 @@ interface LeafletCircle {
 
 interface Leaflet {
   map: (element: HTMLElement) => LeafletMap
-  tileLayer: (url: string, options?: any) => LeafletTileLayer
-  marker: (latlng: [number, number], options?: any) => LeafletMarker
-  circle: (latlng: [number, number], options?: any) => LeafletCircle
-  icon: (options: any) => any
+  tileLayer: (url: string, options?: Record<string, unknown>) => LeafletTileLayer
+  marker: (latlng: [number, number], options?: Record<string, unknown>) => LeafletMarker
+  circle: (latlng: [number, number], options?: Record<string, unknown>) => LeafletCircle
+  icon: (options: Record<string, unknown>) => unknown
 }
 
 declare global {
@@ -74,6 +70,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   const currentLocationMarkerRef = useRef<LeafletMarker | null>(null)
   const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+  // User reports are now managed directly in DOM, keeping minimal state for cache management
   const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
   const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
 
@@ -151,19 +148,58 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     }
   }, [center])
 
-  // Fetch user reports for a station
+  // Simple in-memory cache for user reports (client-side only)
+  const reportCache = useRef<Map<string, { data: UserPriceReport[], expires: number }>>(new Map())
+
+  // Function to get user report for specific fuel type from current data
+  const getUserReport = (stationId: string, fuelType: string): UserPriceReport | null => {
+    const reports = userReports[stationId] || []
+    return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
+  }
+
+  // Function to check if we have user reports for a station
+  const hasUserReports = (stationId: string, fuelType: string): boolean => {
+    return getUserReport(stationId, fuelType) !== null
+  }
+
+  // Function to check if station is currently loading
+  const isStationLoading = (stationId: string): boolean => {
+    return loadingReports.has(stationId)
+  }
+
+  // Fetch user reports for a station with simple cache
   const fetchUserReports = async (stationId: string) => {
     if (loadingReports.has(stationId)) return
     
+    // Check cache first
+    const cacheKey = `user_reports:${stationId}:5:diurno`
+    const cachedItem = reportCache.current.get(cacheKey)
+    if (cachedItem && cachedItem.expires > Date.now()) {
+      setUserReports(prev => ({
+        ...prev,
+        [stationId]: cachedItem.data
+      }))
+      return
+    }
+
     setLoadingReports(prev => new Set(prev).add(stationId))
+    
     try {
       const response = await fetch(`/api/estaciones/${stationId}/reportes-precios?dias=5&horario=diurno`)
       if (response.ok) {
         const data = await response.json()
+        const reportData = data.resumen || []
+        
+        // Cache the data for 5 minutes
+        const expires = Date.now() + (5 * 60 * 1000) // 5 minutes
+        reportCache.current.set(cacheKey, { data: reportData, expires })
+        
         setUserReports(prev => ({
           ...prev,
-          [stationId]: data.resumen
+          [stationId]: reportData
         }))
+        
+        // Markers will be re-generated automatically via useEffect
       }
     } catch (error) {
       console.error('Error fetching user reports:', error)
@@ -176,11 +212,11 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     }
   }
 
-  // Get user report for specific fuel type
-  const getUserReport = (stationId: string, fuelType: FuelType): UserPriceReport | null => {
-    const reports = userReports[stationId] || []
-    return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
-  }
+  // This function is kept for potential future use
+  // const getUserReport = (stationId: string, fuelType: FuelType): UserPriceReport | null => {
+  //   const reports = userReports[stationId] || []
+  //   return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
+  // }
 
   // Helper function to get display price based on selected fuel type
   const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
@@ -288,25 +324,16 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     currentLocationMarkerRef.current = currentLocationMarker
   }, [currentLocation, mapLoaded])
 
-  // Fetch user reports for visible stations
-  useEffect(() => {
-    if (stations.length > 0) {
-      // Fetch reports for first few stations to avoid too many API calls
-      const stationsToFetch = stations.slice(0, 10)
-      stationsToFetch.forEach(station => {
-        fetchUserReports(station.id)
-      })
-    }
-  }, [stations])
+  // Remove automatic fetching of user reports - now only fetched on click
 
-  // Add station markers
-  useEffect(() => {
+  // Function to generate markers
+  const generateMarkers = useCallback(() => {
     if (!leafletMapRef.current || !mapLoaded) return
 
     // Clear existing markers first
     clearMarkers()
     
-    stations.forEach((station, index) => {
+    stations.forEach((station) => {
       const displayPrice = getDisplayPrice(station)
       const logoPath = getCompanyLogoPath(station.empresa)
       const isSelected = selectedStations.some(s => s.id === station.id)
@@ -349,26 +376,21 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
             <!-- Fuel Prices Grid -->
             <div class="grid grid-cols-2 gap-1.5 mb-2.5">
               ${station.precios.length > 0 ? station.precios.map(precio => {
-                // Check if this fuel type has user reports
-                const hasUserReports = userReports[station.id]?.some(r => 
-                  r.tipoCombustible === precio.tipoCombustible && r.horario === 'diurno'
-                )
-                const userReport = hasUserReports ? userReports[station.id]?.find(r => 
-                  r.tipoCombustible === precio.tipoCombustible && r.horario === 'diurno'
-                ) : null
-                
                 return `
                 <div class="relative flex flex-col px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-blue-100 ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'}"
                      onclick="window.location.href='/estacion/${station.id}'"
-                     ${userReport ? `title="Click para ver detalles • Promedio reportado: $${Math.round(userReport.precioPromedio)} (${userReport.cantidadReportes} reportes)"` : `title="Click para ver detalles de la estación"`}>
+                     title="Click para ver detalles de la estación">
                   
                   <!-- Header with fuel type and community indicator -->
                   <div class="flex items-center justify-between mb-1">
                     <div class="flex items-center gap-1">
                       <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                      ${hasUserReports ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                      ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
                     </div>
-                    ${hasUserReports && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''}
+                    ${(() => {
+                      const userReport = getUserReport(station.id, precio.tipoCombustible)
+                      return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
+                    })()}
                   </div>
                   
                   <!-- Official Price -->
@@ -378,12 +400,15 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                   </div>
                   
                   <!-- User Average Price (if available and sufficient reports) -->
-                  ${hasUserReports && userReport.cantidadReportes >= 2 ? `
-                    <div class="flex items-center justify-between mt-0.5">
-                      <span class="text-xs text-orange-600">Promedio</span>
-                      <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
-                    </div>
-                  ` : ''}
+                  ${(() => {
+                    const userReport = getUserReport(station.id, precio.tipoCombustible)
+                    return userReport && userReport.cantidadReportes >= 2 ? `
+                      <div class="flex items-center justify-between mt-0.5">
+                        <span class="text-xs text-orange-600">Promedio</span>
+                        <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
+                      </div>
+                    ` : ''
+                  })()}
                 </div>
                 `
               }).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'}
@@ -432,13 +457,15 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         icon: customIcon
       }).addTo(leafletMapRef.current!)
 
-      // Add click handler
+      // Add click handler with user reports fetching
       marker.on('click', () => {
         setSelectedStations(prev => {
           const isAlreadySelected = prev.some(s => s.id === station.id)
           if (isAlreadySelected) {
             return prev.filter(s => s.id !== station.id)
           } else {
+            // Fetch user reports when station is selected
+            fetchUserReports(station.id)
             return [...prev, station]
           }
         })
@@ -447,7 +474,12 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, mapLoaded, selectedStations, selectedFuelType])
+  }, [stations, selectedStations, selectedFuelType, userReports, loadingReports, mapLoaded, fetchUserReports])
+
+  // Add station markers - now includes userReports and loadingReports in dependencies
+  useEffect(() => {
+    generateMarkers()
+  }, [mapLoaded, generateMarkers])
 
   // Cleanup markers on unmount
   useEffect(() => {
@@ -506,16 +538,17 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     }
   }, [])
 
-  const getFuelIcon = (fuelType: string) => {
-    const icons: Record<string, string> = {
-      nafta: 'N',
-      nafta_premium: 'P',
-      gasoil: 'G',
-      gasoil_premium: 'G+',
-      gnc: 'GNC'
-    }
-    return icons[fuelType] || 'N'
-  }
+  // This function is kept for potential future use
+  // const getFuelIcon = (fuelType: string) => {
+  //   const icons: Record<string, string> = {
+  //     nafta: 'N',
+  //     nafta_premium: 'P',
+  //     gasoil: 'G',
+  //     gasoil_premium: 'G+',
+  //     gnc: 'GNC'
+  //   }
+  //   return icons[fuelType] || 'N'
+  // }
 
   const getFuelLabel = (fuelType: string) => {
     return FUEL_LABELS[fuelType as FuelType] || fuelType
