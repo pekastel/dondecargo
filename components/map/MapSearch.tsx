@@ -395,7 +395,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                   
                   <!-- Official Price -->
                   <div class="flex items-center justify-between">
-                    <span class="text-xs text-gray-600">Oficial</span>
+                    <span class="text-xs text-gray-800 font-medium">Oficial</span>
                     <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
                   </div>
                   

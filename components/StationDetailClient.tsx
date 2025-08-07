@@ -400,7 +400,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                           {precio.esValidado ? (
                             <>
                               <CheckCircle2 className="h-4 w-4" />
-                              <span>Oficial</span>
+                              <span className="font-medium text-gray-800">Oficial</span>
                             </>
                           ) : (
                             <>

@@ -1,12 +1,14 @@
 // Tipos de combustibles basados en el schema de la base de datos
 export type FuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
 
+export const FUEL_TYPES = ['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']
+
 // Etiquetas de combustibles para mostrar en la UI
 export const FUEL_LABELS: Record<FuelType, string> = {
   nafta: 'Nafta',
   nafta_premium: 'Nafta Premium',
-  gasoil: 'Gasoil Grado 2', 
-  gasoil_premium: 'Gasoil Grado 3',
+  gasoil: 'Gasoil', 
+  gasoil_premium: 'Gasoil Premium',
   gnc: 'GNC'
 }
 

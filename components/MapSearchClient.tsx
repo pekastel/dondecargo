@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw } from 'lucide-react'
+import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
 
-export type FuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
 export type PriceRange = { min: number; max: number }
 export type SearchFilters = {
   location: { lat: number; lng: number } | null
@@ -36,19 +36,11 @@ export interface Station {
   }[]
 }
 
-const FUEL_LABELS: Record<FuelType, string> = {
-  nafta: 'Nafta',
-  nafta_premium: 'Premium', 
-  gasoil: 'Gasoil',
-  gasoil_premium: 'G.Premium',
-  gnc: 'GNC'
-}
-
 export function MapSearchClient() {
   const [filters, setFilters] = useState<SearchFilters>({
     location: null,
     radius: 5,
-    fuelTypes: ['nafta', 'nafta_premium', 'gasoil'],
+    fuelTypes: FUEL_TYPES as FuelType[],
     priceRange: { min: 800, max: 1000 },
     companies: [],
     timeOfDay: 'diurno'
