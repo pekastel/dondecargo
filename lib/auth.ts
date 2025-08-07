@@ -31,6 +31,7 @@ export const auth = betterAuth({
               // Keep the acceptedTerms value from the frontend
               acceptedTermsAt: new Date().toISOString(),
               termsHash: getCurrentTermsHash(),
+              role: "user",
             },
           };
         },
@@ -83,6 +84,12 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user",
+        input: false, 
+      },
       acceptedTerms: {
         type: "boolean",
         required: true,
