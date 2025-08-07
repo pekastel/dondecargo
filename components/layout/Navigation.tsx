@@ -26,18 +26,12 @@ interface NavigationItem {
   description?: string
 }
 
-const mainNavigation: NavigationItem[] = [
+export const mainNavigation: NavigationItem[] = [
   {
     name: 'Buscar Precios',
     href: '/buscar',
     icon: <MapPin className="h-4 w-4" />,
     description: 'Encuentra estaciones cerca de ti'
-  },
-  {
-    name: 'Precios Trending',
-    href: '/precios',
-    icon: <TrendingUp className="h-4 w-4" />,
-    description: 'Variaciones y tendencias'
   },
   {
     name: 'Favoritos',
@@ -47,7 +41,7 @@ const mainNavigation: NavigationItem[] = [
   }
 ]
 
-const toolsNavigation: NavigationItem[] = [
+export const toolsNavigation: NavigationItem[] = [
   {
     name: 'Reportar Precios',
     href: '/reportar',

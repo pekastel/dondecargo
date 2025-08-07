@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StationDetail } from '@/components/station/StationDetail'
 import { PriceHistory } from '@/components/station/PriceHistory'
-import { PriceReport } from '@/components/station/PriceReport'
 import { StationInfo } from '@/components/station/StationInfo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -54,7 +53,6 @@ interface StationDetailClientProps {
 
 export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()
-  const [showReportModal, setShowReportModal] = useState(false)
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType>('nafta')
   const [isFavorite, setIsFavorite] = useState(false)
 
@@ -185,7 +183,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                   </div>
                 </div>
                 
-                <Button onClick={() => setShowReportModal(true)} className="w-full lg:w-auto">
+                <Button onClick={() => router.push(`/reportar-precio/${station.id}`)} className="w-full lg:w-auto">
                   Reportar Precio
                 </Button>
               </div>
@@ -270,18 +268,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
             <StationInfo station={station} />
           </div>
         </div>
-
-        {/* Price Report Modal */}
-        {showReportModal && (
-          <PriceReport
-            station={station}
-            onClose={() => setShowReportModal(false)}
-            onSuccess={() => {
-              setShowReportModal(false)
-              // TODO: Refresh prices
-            }}
-          />
-        )}
       </main>
     </div>
   )

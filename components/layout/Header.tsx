@@ -7,20 +7,16 @@ import { Badge } from '@/components/ui/badge'
 import { ModeToggle } from '@/components/mode-toggle'
 import UserMenu from '@/components/navigation/UserMenu'
 import { authClient } from '@/lib/authClient'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, MapPin, TrendingUp, Star } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
+import { mainNavigation } from '@/components/layout/Navigation'
 
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
-
-  const navigation = [
-    { name: 'Buscar', href: '/buscar'},
-    { name: 'Ayuda', href: '/mcp-help'}
-  ]
 
   return (
     <header className="sticky top-0 z-1200 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -38,13 +34,13 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {navigation.map((item) => (
+            {mainNavigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 className="flex items-center space-x-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                <span>{item.icon}</span>
+                {item.icon}
                 <span>{item.name}</span>
               </Link>
             ))}
@@ -95,7 +91,12 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span>{item.name}</span>
+                  <div>
+                    <span>{item.name}</span>
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    )}
+                  </div>
                 </Link>
               ))}
               

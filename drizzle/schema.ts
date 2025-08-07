@@ -85,18 +85,24 @@ export const reportesPrecios = pgTable('reportes_precios', {
   precio: decimal('precio', { precision: 10, scale: 2 }).notNull(),
   horario: text('horario', { enum: ['diurno', 'nocturno'] }).notNull(),
   notas: text('notas'),
-  evidenciaUrl: text('evidencia_url'),
-  estado: text('estado', { enum: ['pendiente', 'aprobado', 'rechazado'] }).default('pendiente').notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
-  fechaRevision: timestamp('fecha_revision'),
-  revisadoPor: text('revisado_por').references(() => betterAuthSchema.user.id, { onDelete: 'set null' }),
-  motivoRechazo: text('motivo_rechazo'),
 }, (table) => ({
   usuarioIdx: index('reportes_precios_usuario_idx').on(table.usuarioId),
-  estadoIdx: index('reportes_precios_estado_idx').on(table.estado),
   estacionIdx: index('reportes_precios_estacion_idx').on(table.estacionId),
   fechaCreacionIdx: index('reportes_precios_fecha_creacion_idx').on(table.fechaCreacion),
 }));
+
+// Confirmaciones de precios reportados por usuarios (sistema de likes/social validation)
+export const confirmacionesPrecios = pgTable('confirmaciones_precios', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  precioId: text('precio_id').references(() => precios.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+}, (table) => ({
+  precioUsuarioIdx: index('confirmaciones_precios_precio_usuario_idx').on(table.precioId, table.usuarioId),
+  usuarioIdx: index('confirmaciones_precios_usuario_idx').on(table.usuarioId),
+  precioIdx: index('confirmaciones_precios_precio_idx').on(table.precioId),
+}))
 
 // Favoritos de usuarios (estaciones guardadas)
 export const favoritos = pgTable('favoritos', {
@@ -116,7 +122,7 @@ export const estacionesRelations = relations(estaciones, ({ many }) => ({
   favoritos: many(favoritos),
 }));
 
-export const preciosRelations = relations(precios, ({ one }) => ({
+export const preciosRelations = relations(precios, ({ one, many }) => ({
   estacion: one(estaciones, {
     fields: [precios.estacionId],
     references: [estaciones.id],
@@ -125,6 +131,7 @@ export const preciosRelations = relations(precios, ({ one }) => ({
     fields: [precios.usuarioId],
     references: [betterAuthSchema.user.id],
   }),
+  confirmaciones: many(confirmacionesPrecios),
 }));
 
 export const preciosHistoricoRelations = relations(preciosHistorico, ({ one }) => ({
@@ -147,11 +154,18 @@ export const reportesPreciosRelations = relations(reportesPrecios, ({ one }) => 
     fields: [reportesPrecios.usuarioId],
     references: [betterAuthSchema.user.id],
   }),
-  revisor: one(betterAuthSchema.user, {
-    fields: [reportesPrecios.revisadoPor],
+}));
+
+export const confirmacionesPreciosRelations = relations(confirmacionesPrecios, ({ one }) => ({
+  precio: one(precios, {
+    fields: [confirmacionesPrecios.precioId],
+    references: [precios.id],
+  }),
+  usuario: one(betterAuthSchema.user, {
+    fields: [confirmacionesPrecios.usuarioId],
     references: [betterAuthSchema.user.id],
   }),
-}));
+}))
 
 export const favoritosRelations = relations(favoritos, ({ one }) => ({
   usuario: one(betterAuthSchema.user, {
@@ -173,5 +187,7 @@ export type PrecioHistorico = typeof preciosHistorico.$inferSelect;
 export type NuevoPrecioHistorico = typeof preciosHistorico.$inferInsert;
 export type ReportePrecio = typeof reportesPrecios.$inferSelect;
 export type NuevoReportePrecio = typeof reportesPrecios.$inferInsert;
+export type ConfirmacionPrecio = typeof confirmacionesPrecios.$inferSelect;
+export type NuevaConfirmacionPrecio = typeof confirmacionesPrecios.$inferInsert;
 export type Favorito = typeof favoritos.$inferSelect;
 export type NuevoFavorito = typeof favoritos.$inferInsert;

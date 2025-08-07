@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { reportesPrecios, estaciones } from '@/drizzle/schema'
+import { reportesPrecios, estaciones, precios } from '@/drizzle/schema'
 import { eq, and, desc, asc } from 'drizzle-orm'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { sendReportPriceThankYouEmail } from '@/lib/email'
 
 const connection = postgres(process.env.DATABASE_URL!)
 const db = drizzle(connection)
@@ -15,11 +16,9 @@ const createReporteSchema = z.object({
   precio: z.number().positive(),
   horario: z.enum(['diurno', 'nocturno']),
   notas: z.string().optional(),
-  evidenciaUrl: z.string().optional(),
 })
 
 const searchParamsSchema = z.object({
-  estado: z.enum(['pendiente', 'aprobado', 'rechazado']).optional(),
   usuarioId: z.string().optional(),
   estacionId: z.string().optional(),
   limit: z.string().optional(),
@@ -53,11 +52,7 @@ export async function GET(request: NextRequest) {
         precio: reportesPrecios.precio,
         horario: reportesPrecios.horario,
         notas: reportesPrecios.notas,
-        evidenciaUrl: reportesPrecios.evidenciaUrl,
-        estado: reportesPrecios.estado,
         fechaCreacion: reportesPrecios.fechaCreacion,
-        fechaRevision: reportesPrecios.fechaRevision,
-        motivoRechazo: reportesPrecios.motivoRechazo,
         // Include station details
         estacionNombre: estaciones.nombre,
         estacionEmpresa: estaciones.empresa,
@@ -72,10 +67,6 @@ export async function GET(request: NextRequest) {
     // Users can only see their own reports unless they're admin
     if (session.user.role !== 'admin') {
       conditions.push(eq(reportesPrecios.usuarioId, session.user.id))
-    }
-
-    if (params.estado) {
-      conditions.push(eq(reportesPrecios.estado, params.estado))
     }
 
     if (params.usuarioId && session.user.role === 'admin') {
@@ -152,10 +143,61 @@ export async function POST(request: NextRequest) {
       .values({
         ...validatedData,
         usuarioId: session.user.id,
-        estado: 'pendiente',
         fechaCreacion: new Date(),
       })
       .returning()
+
+    // Also create/update the price in the main prices table
+    // This ensures user-reported prices are immediately visible
+    try {
+      await db
+        .insert(precios)
+        .values({
+          estacionId: validatedData.estacionId,
+          tipoCombustible: validatedData.tipoCombustible,
+          precio: validatedData.precio.toString(),
+          horario: validatedData.horario,
+          fechaVigencia: new Date(),
+          fuente: 'usuario',
+          usuarioId: session.user.id,
+          esValidado: false, // Will be validated by confirmations from other users
+          fechaReporte: new Date(),
+          notas: validatedData.notas || null,
+        })
+        .onConflictDoUpdate({
+          target: [precios.estacionId, precios.tipoCombustible, precios.horario],
+          set: {
+            precio: validatedData.precio.toString(),
+            fechaVigencia: new Date(),
+            fuente: 'usuario',
+            usuarioId: session.user.id,
+            esValidado: false,
+            fechaReporte: new Date(),
+            notas: validatedData.notas || null,
+          }
+        })
+    } catch (priceError) {
+      console.error('Error updating price table:', priceError)
+      // Continue with the flow even if price update fails
+    }
+
+    // Send thank you email (don't let this fail the request)
+    try {
+      if (session.user.email && session.user.name) {
+        await sendReportPriceThankYouEmail({
+          user: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+          },
+          url: '', // Not needed for thank you email
+          token: '', // Not needed for thank you email
+        })
+      }
+    } catch (emailError) {
+      console.error('Error sending thank you email:', emailError)
+      // Continue with the flow even if email fails
+    }
 
     return NextResponse.json(newReport[0], { status: 201 })
 

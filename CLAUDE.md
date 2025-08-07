@@ -57,7 +57,6 @@ components/
 ├── station/
 │   ├── StationDetail.tsx     # Vista detalle de estación
 │   ├── PriceHistory.tsx      # Gráfico histórico de precios
-│   ├── PriceReport.tsx       # Formulario de reporte de precios
 │   └── StationInfo.tsx       # Información básica de estación
 └── layout/
     ├── Header.tsx            # Header global
@@ -362,7 +361,7 @@ Key files and setup:
 - **MapFilters**: Panel de filtros avanzado (combustibles, precios, empresas)
 - **StationDetail**: Vista completa de detalle de estación
 - **PriceHistory**: Gráficos temporales de variaciones de precio
-- **PriceReport**: Formulario para reportar precios por usuarios
+- **PriceReportPage**: Formulario para reportar precios por usuarios
 
 ### Responsive Design
 - **Breakpoints**: Mobile (375px), Tablet (768px), Desktop (1024px), Wide (1440px)

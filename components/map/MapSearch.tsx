@@ -309,7 +309,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       onclick="window.location.href='/estacion/${station.id}'">
                 Detalles
               </button>
-              <button class="flex-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-center transition-colors">
+              <button class="flex-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-center transition-colors"
+                      onclick="window.location.href='/reportar-precio/${station.id}'">
                 Reportar
               </button>
             </div>
@@ -421,13 +422,13 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
   const getFuelIcon = (fuelType: string) => {
     const icons: Record<string, string> = {
-      nafta: '⛽',
-      nafta_premium: '⛽',
-      gasoil: '🚛',
-      gasoil_premium: '🚛',
-      gnc: '⚡'
+      nafta: 'N',
+      nafta_premium: 'P',
+      gasoil: 'G',
+      gasoil_premium: 'G+',
+      gnc: 'GNC'
     }
-    return icons[fuelType] || '⛽'
+    return icons[fuelType] || 'N'
   }
 
   const getFuelLabel = (fuelType: string) => {

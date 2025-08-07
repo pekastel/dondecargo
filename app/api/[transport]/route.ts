@@ -3,7 +3,10 @@ import { createMcpHandler } from "@vercel/mcp-adapter";
 import { withMcpAuth } from "better-auth/plugins";
 import { env } from "@/lib/env";
 
-// Import MCP tools
+// TODO: Implement fuel price MCP tools
+// These are placeholder imports that need to be replaced with actual fuel price tools
+// For now, commenting out to fix build
+/*
 import {
 	createClientTool,
 	listClientsTool,
@@ -28,6 +31,7 @@ import {
 	getTimeSummaryTool,
 	calculateEarningsTool,
 } from "@/lib/mcp-tools/report-tools";
+*/
 
 const handler = withMcpAuth(auth, (req, session) => {
 	const userId = session.userId;
@@ -38,148 +42,19 @@ const handler = withMcpAuth(auth, (req, session) => {
 	
 	return createMcpHandler(
 		(server) => {
-			// Client management tools
-			server.tool(
-				createClientTool.name,
-				createClientTool.description,
-				createClientTool.schema,
-				async (params) => createClientTool.handler(params, userId)
-			);
-			
-			server.tool(
-				listClientsTool.name,
-				listClientsTool.description,
-				listClientsTool.schema,
-				async (params) => listClientsTool.handler(params, userId)
-			);
-			
-			server.tool(
-				updateClientTool.name,
-				updateClientTool.description,
-				updateClientTool.schema,
-				async (params) => updateClientTool.handler(params, userId)
-			);
-			
-			server.tool(
-				deactivateClientTool.name,
-				deactivateClientTool.description,
-				deactivateClientTool.schema,
-				async (params) => deactivateClientTool.handler(params, userId)
-			);
-			
-			// Project management tools
-			server.tool(
-				createProjectTool.name,
-				createProjectTool.description,
-				createProjectTool.schema,
-				async (params) => createProjectTool.handler(params, userId)
-			);
-			
-			server.tool(
-				listProjectsTool.name,
-				listProjectsTool.description,
-				listProjectsTool.schema,
-				async (params) => listProjectsTool.handler(params, userId)
-			);
-			
-			server.tool(
-				updateProjectTool.name,
-				updateProjectTool.description,
-				updateProjectTool.schema,
-				async (params) => updateProjectTool.handler(params, userId)
-			);
-			
-			server.tool(
-				deactivateProjectTool.name,
-				deactivateProjectTool.description,
-				deactivateProjectTool.schema,
-				async (params) => deactivateProjectTool.handler(params, userId)
-			);
-			
-			// Time tracking tools
-			server.tool(
-				startTimeTrackingTool.name,
-				startTimeTrackingTool.description,
-				startTimeTrackingTool.schema,
-				async (params) => startTimeTrackingTool.handler(params, userId)
-			);
-			
-			server.tool(
-				stopTimeTrackingTool.name,
-				stopTimeTrackingTool.description,
-				stopTimeTrackingTool.schema,
-				async (params) => stopTimeTrackingTool.handler(params, userId)
-			);
-			
-			server.tool(
-				getActiveTimeEntryTool.name,
-				getActiveTimeEntryTool.description,
-				getActiveTimeEntryTool.schema,
-				async (params) => getActiveTimeEntryTool.handler(params, userId)
-			);
-			
-			server.tool(
-				addManualTimeEntryTool.name,
-				addManualTimeEntryTool.description,
-				addManualTimeEntryTool.schema,
-				async (params) => addManualTimeEntryTool.handler(params, userId)
-			);
-			
-			server.tool(
-				updateTimeEntryTool.name,
-				updateTimeEntryTool.description,
-				updateTimeEntryTool.schema,
-				async (params) => updateTimeEntryTool.handler(params, userId)
-			);
-			
-			// Reporting tools
-			server.tool(
-				listTimeEntresTool.name,
-				listTimeEntresTool.description,
-				listTimeEntresTool.schema,
-				async (params) => listTimeEntresTool.handler(params, userId)
-			);
-			
-			server.tool(
-				getTimeSummaryTool.name,
-				getTimeSummaryTool.description,
-				getTimeSummaryTool.schema,
-				async (params) => getTimeSummaryTool.handler(params, userId)
-			);
-			
-			server.tool(
-				calculateEarningsTool.name,
-				calculateEarningsTool.description,
-				calculateEarningsTool.schema,
-				async (params) => calculateEarningsTool.handler(params, userId)
-			);
+			// TODO: Add fuel price MCP tools here
+			// For now, creating a basic MCP server without tools
+			// Future fuel price tools will be:
+			// - list_stations: Get gas stations near location
+			// - get_station_prices: Get current prices for a station  
+			// - report_price: Report a new fuel price
+			// - confirm_price: Confirm a user-reported price
+			// - get_price_history: Get historical prices for a fuel type
 		},
 		{
 			capabilities: {
 				tools: {
-					// Client management
-					[createClientTool.name]: { description: createClientTool.description },
-					[listClientsTool.name]: { description: listClientsTool.description },
-					[updateClientTool.name]: { description: updateClientTool.description },
-					[deactivateClientTool.name]: { description: deactivateClientTool.description },
-					
-					// Project management
-					[createProjectTool.name]: { description: createProjectTool.description },
-					[listProjectsTool.name]: { description: listProjectsTool.description },
-					[updateProjectTool.name]: { description: updateProjectTool.description },
-					[deactivateProjectTool.name]: { description: deactivateProjectTool.description },
-					
-					// Time tracking
-					[startTimeTrackingTool.name]: { description: startTimeTrackingTool.description },
-					[stopTimeTrackingTool.name]: { description: stopTimeTrackingTool.description },
-					[getActiveTimeEntryTool.name]: { description: getActiveTimeEntryTool.description },
-					[addManualTimeEntryTool.name]: { description: addManualTimeEntryTool.description },
-					[updateTimeEntryTool.name]: { description: updateTimeEntryTool.description },
-					
-					// Reporting
-					[listTimeEntresTool.name]: { description: listTimeEntresTool.description },
-					[getTimeSummaryTool.name]: { description: getTimeSummaryTool.description },
-					[calculateEarningsTool.name]: { description: calculateEarningsTool.description },
+					// TODO: Add fuel price tools capabilities here
 				},
 			},
 		},

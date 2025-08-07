@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
         const stationIds = result.map(s => s.id)
         console.log(`🔍 Fetching prices for ${stationIds.length} stations`)
         
-        let priceConditions = [
+        const priceConditions = [
           inArray(precios.estacionId, stationIds),
           eq(precios.horario, params.horario || 'diurno')
         ]

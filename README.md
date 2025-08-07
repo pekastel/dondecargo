@@ -343,7 +343,6 @@ components/
 ├── station/
 │   ├── StationDetail.tsx     # Vista detalle de estación
 │   ├── PriceHistory.tsx      # Gráfico histórico de precios
-│   ├── PriceReport.tsx       # Formulario de reporte de precios
 │   └── StationInfo.tsx       # Información básica de estación
 └── layout/
     ├── Header.tsx            # Header global
