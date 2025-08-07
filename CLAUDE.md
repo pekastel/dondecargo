@@ -97,6 +97,11 @@ DondeCargo expone funcionalidad completa a través de MCP tools:
 - `app/.well-known/`: OAuth discovery endpoints for server metadata
 - `lib/utils/url.ts`: Base URL resolution prioritizing custom domains over Vercel URLs
 
+### API Endpoints (Read-Only)
+- `app/api/estaciones/`: **READ-ONLY** endpoints for station data queries - no data modifications allowed
+- `app/api/precios/`: **READ-ONLY** endpoints for price data queries - no data modifications allowed
+- For data modifications, use MCP tools which provide proper authentication and validation
+
 ## Development Commands
 
 ```bash

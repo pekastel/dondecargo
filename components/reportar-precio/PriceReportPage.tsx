@@ -26,7 +26,7 @@ interface PriceReportPageProps {
 const priceReportSchema = z.object({
   tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
   precio: z.number().min(0.01, 'El precio debe ser mayor a 0').max(9999, 'El precio parece demasiado alto'),
-  horario: z.enum(['diurno', 'nocturno']),
+  horario: z.enum(['diurno', 'nocturno', 'ambos']),
   notas: z.string().max(500, 'Las notas no pueden exceder 500 caracteres').optional(),
 })
 
@@ -49,7 +49,7 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
     resolver: zodResolver(priceReportSchema),
     defaultValues: {
       tipoCombustible: 'nafta',
-      horario: 'diurno',
+      horario: 'ambos',
     }
   })
 
@@ -220,6 +220,10 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
               onValueChange={(value: HorarioType) => setValue('horario', value)}
               className="flex gap-6"
             >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="ambos" id="ambos" />
+                <Label htmlFor="ambos">Ambos</Label>
+              </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="diurno" id="diurno" />
                 <Label htmlFor="diurno">Diurno</Label>

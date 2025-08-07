@@ -11,7 +11,7 @@ export const FUEL_LABELS: Record<FuelType, string> = {
 }
 
 // Tipos de horarios
-export type HorarioType = 'diurno' | 'nocturno'
+export type HorarioType = 'diurno' | 'nocturno' | 'ambos'
 
 // Tipos de fuentes
 export type FuenteType = 'oficial' | 'usuario'

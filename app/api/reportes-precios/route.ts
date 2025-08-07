@@ -15,7 +15,7 @@ const createReporteSchema = z.object({
   estacionId: z.string(),
   tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
   precio: z.number().positive(),
-  horario: z.enum(['diurno', 'nocturno']),
+  horario: z.enum(['diurno', 'nocturno', 'ambos']),
   notas: z.string().optional(),
 })
 
@@ -138,15 +138,53 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new report
-    const newReport = await db
-      .insert(reportesPrecios)
-      .values({
-        ...validatedData,
+    // Create new report(s)
+    let newReports;
+    
+    if (validatedData.horario === 'ambos') {
+      // If 'ambos' is selected, create two reports: one for 'diurno' and one for 'nocturno'
+      const baseReportData = {
+        estacionId: validatedData.estacionId,
+        tipoCombustible: validatedData.tipoCombustible,
+        precio: validatedData.precio.toString(), // Convert to string to match DB schema
+        notas: validatedData.notas,
         usuarioId: session.user.id,
         fechaCreacion: new Date(),
-      })
-      .returning()
+      };
+      
+      // Create two separate reports
+      const diurnoReport = await db
+        .insert(reportesPrecios)
+        .values({
+          ...baseReportData,
+          horario: 'diurno',
+        })
+        .returning();
+        
+      const nocturnoReport = await db
+        .insert(reportesPrecios)
+        .values({
+          ...baseReportData,
+          horario: 'nocturno',
+        })
+        .returning();
+        
+      newReports = [...diurnoReport, ...nocturnoReport];
+    } else {
+      // For 'diurno' or 'nocturno', create a single report
+      newReports = await db
+        .insert(reportesPrecios)
+        .values({
+          estacionId: validatedData.estacionId,
+          tipoCombustible: validatedData.tipoCombustible,
+          precio: validatedData.precio.toString(), // Convert to string to match DB schema
+          horario: validatedData.horario,
+          notas: validatedData.notas,
+          usuarioId: session.user.id,
+          fechaCreacion: new Date(),
+        })
+        .returning();
+    }
 
     // Note: User reports are stored only in reportesPrecios table
     // They will be displayed separately from official prices
@@ -172,7 +210,7 @@ export async function POST(request: NextRequest) {
       // Continue with the flow even if email fails
     }
 
-    return NextResponse.json(newReport[0], { status: 201 })
+    return NextResponse.json(newReports[0], { status: 201 })
 
   } catch (error) {
     if (error instanceof z.ZodError) {
