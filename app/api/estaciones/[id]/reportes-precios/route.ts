@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { reportesPrecios } from '@/drizzle/schema'
-import { eq, and, sql, gte } from 'drizzle-orm'
+import { reportesPrecios, user } from '@/drizzle/schema'
+import { eq, and, sql, gte, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 // Create connection with error handling
@@ -62,33 +62,67 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Add date filter
     conditions.push(gte(reportesPrecios.fechaCreacion, fechaLimite))
 
-    // Fetch user reports with aggregation
-    const userReports = await db
+    // First get user reports with proper aggregation
+    const userReportsRaw = await db
       .select({
         tipoCombustible: reportesPrecios.tipoCombustible,
         horario: reportesPrecios.horario,
-        precioPromedio: sql<number>`AVG(${reportesPrecios.precio})`,
+        // Convert decimal to number explicitly
+        precioPromedio: sql<number>`ROUND(AVG(CAST(${reportesPrecios.precio} AS NUMERIC)), 2)`,
         cantidadReportes: sql<number>`COUNT(*)`,
-        precioMinimo: sql<number>`MIN(${reportesPrecios.precio})`,
-        precioMaximo: sql<number>`MAX(${reportesPrecios.precio})`,
+        precioMinimo: sql<number>`ROUND(MIN(CAST(${reportesPrecios.precio} AS NUMERIC)), 2)`,
+        precioMaximo: sql<number>`ROUND(MAX(CAST(${reportesPrecios.precio} AS NUMERIC)), 2)`,
         ultimoReporte: sql<Date>`MAX(${reportesPrecios.fechaCreacion})`,
+        // Get user info from the most recent report using window functions
+        ultimoUsuarioId: sql<string>`
+          (ARRAY_AGG(${reportesPrecios.usuarioId} ORDER BY ${reportesPrecios.fechaCreacion} DESC))[1]
+        `,
       })
       .from(reportesPrecios)
       .where(and(...conditions))
       .groupBy(reportesPrecios.tipoCombustible, reportesPrecios.horario)
 
-    // Also fetch individual reports for detailed view
+    // Now get user info for the latest user IDs
+    const userIds = userReportsRaw.map(r => r.ultimoUsuarioId).filter(Boolean)
+    const usuarios = userIds.length > 0 ? await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      })
+      .from(user)
+      .where(inArray(user.id, userIds)) : []
+
+    // Combine user info with reports
+    const userReports = userReportsRaw.map(report => {
+      const usuario = usuarios.find(u => u.id === report.ultimoUsuarioId)
+      return {
+        ...report,
+        ultimoUsuarioNombre: usuario?.name || null,
+        ultimoUsuarioEmail: usuario?.email || null,
+        ultimoUsuarioImagen: usuario?.image || null,
+      }
+    })
+
+    // Also fetch individual reports for detailed view with user information
     const individualReports = await db
       .select({
         id: reportesPrecios.id,
         tipoCombustible: reportesPrecios.tipoCombustible,
-        precio: reportesPrecios.precio,
+        // Convert decimal to number explicitly
+        precio: sql<number>`ROUND(CAST(${reportesPrecios.precio} AS NUMERIC), 2)`,
         horario: reportesPrecios.horario,
         notas: reportesPrecios.notas,
         fechaCreacion: reportesPrecios.fechaCreacion,
         usuarioId: reportesPrecios.usuarioId,
+        // Include user info for avatar
+        usuarioNombre: user.name,
+        usuarioEmail: user.email,
+        usuarioImagen: user.image,
       })
       .from(reportesPrecios)
+      .leftJoin(user, eq(reportesPrecios.usuarioId, user.id))
       .where(and(...conditions))
       .orderBy(sql`${reportesPrecios.fechaCreacion} DESC`)
       .limit(50) // Limit to avoid too much data

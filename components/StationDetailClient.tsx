@@ -8,8 +8,9 @@ import { StationInfo } from '@/components/station/StationInfo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, ArrowLeft, Heart, Share2, Phone, Navigation, Star, Users, TrendingUp, CheckCircle2, Check } from 'lucide-react'
+import { Clock, ArrowLeft, Heart, Share2, Star, Users, CheckCircle2, Sun, Moon } from 'lucide-react'
 import { FuelType, FUEL_LABELS, HorarioType, FuenteType } from '@/lib/types'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 export interface StationPrice {
   id: string
@@ -50,10 +51,14 @@ interface UserPriceReport {
   tipoCombustible: FuelType
   horario: HorarioType
   precioPromedio: number
-  cantidadReportes: number
+  cantidadReportes: string
   precioMinimo: number
   precioMaximo: number
-  ultimoReporte: Date
+  ultimoReporte: Date | string
+  ultimoUsuarioId?: string
+  ultimoUsuarioNombre?: string | null
+  ultimoUsuarioEmail?: string | null
+  ultimoUsuarioImagen?: string | null
 }
 
 interface IndividualReport {
@@ -62,14 +67,37 @@ interface IndividualReport {
   precio: number
   horario: HorarioType
   notas?: string
-  fechaCreacion: Date
+  fechaCreacion: Date | string
   usuarioId: string
+  usuarioNombre?: string | null
+  usuarioEmail?: string | null
+  usuarioImagen?: string | null
 }
 
 interface StationDetailClientProps {
   station: StationFull
 }
 
+
+// Interface for consolidated price data
+interface ConsolidatedPriceReport {
+  tipoCombustible: FuelType
+  hasSamePrice: boolean
+  diurno?: UserPriceReport
+  nocturno?: UserPriceReport
+  consolidatedData?: {
+    precioPromedio: number
+    cantidadReportes: string
+    precioMinimo: number
+    precioMaximo: number
+    ultimoReporte: Date | string
+    ultimoUsuarioId?: string
+    ultimoUsuarioNombre?: string | null
+    ultimoUsuarioEmail?: string | null
+    ultimoUsuarioImagen?: string | null
+    horarios: HorarioType[]
+  }
+}
 
 export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()
@@ -79,6 +107,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
   const [individualReports, setIndividualReports] = useState<IndividualReport[]>([])
   const [loadingReports, setLoadingReports] = useState(true)
   const [showAllReports, setShowAllReports] = useState(false)
+  const [horarioToggles, setHorarioToggles] = useState<Record<string, HorarioType>>({})
 
   // Fetch user reports for this station
   useEffect(() => {
@@ -119,23 +148,17 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     }
   }
 
-  const handleCall = () => {
-    if (station.telefono) {
-      window.location.href = `tel:${station.telefono}`
-    }
-  }
-
-  const handleDirections = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitud},${station.longitud}`
-    window.open(url, '_blank')
-  }
+  // Removed unused handlers - handleCall and handleDirections
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite)
     // TODO: Persist to backend/localStorage
   }
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | null | undefined) => {
+    if (price === null || price === undefined || isNaN(price) || !isFinite(price)) {
+      return 'N/A'
+    }
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
@@ -157,15 +180,133 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     return dateObj.toLocaleDateString('es-AR')
   }
 
-  // Get user reports for a specific fuel type
-  const getUserReportsForFuel = (fuelType: FuelType) => {
-    return userReports.filter(report => report.tipoCombustible === fuelType)
+
+  // These functions are now replaced by consolidated versions
+
+  // Consolidate user reports by fuel type and same price
+  const getConsolidatedReports = (): ConsolidatedPriceReport[] => {
+    const reportsByFuel = userReports.reduce((acc, report) => {
+      const key = report.tipoCombustible
+      if (!acc[key]) acc[key] = []
+      acc[key].push(report)
+      return acc
+    }, {} as Record<FuelType, UserPriceReport[]>)
+
+    return Object.entries(reportsByFuel).map(([fuelType, reports]) => {
+      const fuel = fuelType as FuelType
+      const diurno = reports.find(r => r.horario === 'diurno')
+      const nocturno = reports.find(r => r.horario === 'nocturno')
+
+      // Check if both exist and have the same price (within tolerance)
+      const hasSamePrice = diurno && nocturno && 
+        Math.abs(diurno.precioPromedio - nocturno.precioPromedio) < 0.01
+
+      if (hasSamePrice && diurno && nocturno) {
+        // Consolidate data - weighted average, not simple average
+        const totalReportes = parseInt(diurno.cantidadReportes) + parseInt(nocturno.cantidadReportes)
+        const diurnoDate = diurno.ultimoReporte instanceof Date ? diurno.ultimoReporte : new Date(diurno.ultimoReporte)
+        const nocturnoDate = nocturno.ultimoReporte instanceof Date ? nocturno.ultimoReporte : new Date(nocturno.ultimoReporte)
+        const ultimoReporte = diurnoDate > nocturnoDate ? diurnoDate : nocturnoDate
+        const ultimoReporteTipo = diurnoDate > nocturnoDate ? diurno : nocturno
+        
+        const consolidatedData = {
+          precioPromedio: totalReportes > 0 ? 
+            ((diurno.precioPromedio * parseInt(diurno.cantidadReportes)) + (nocturno.precioPromedio * parseInt(nocturno.cantidadReportes))) / totalReportes :
+            (diurno.precioPromedio + nocturno.precioPromedio) / 2,
+          cantidadReportes: totalReportes,
+          precioMinimo: Math.min(diurno.precioMinimo, nocturno.precioMinimo),
+          precioMaximo: Math.max(diurno.precioMaximo, nocturno.precioMaximo),
+          ultimoReporte,
+          ultimoUsuarioId: ultimoReporteTipo.ultimoUsuarioId,
+          ultimoUsuarioNombre: ultimoReporteTipo.ultimoUsuarioNombre,
+          ultimoUsuarioEmail: ultimoReporteTipo.ultimoUsuarioEmail,
+          ultimoUsuarioImagen: ultimoReporteTipo.ultimoUsuarioImagen,
+          horarios: ['diurno', 'nocturno'] as HorarioType[]
+        }
+        
+        return {
+          tipoCombustible: fuel,
+          hasSamePrice: true,
+          consolidatedData
+        }
+      }
+
+      // Return separate entries for different prices
+      return {
+        tipoCombustible: fuel,
+        hasSamePrice: false,
+        diurno,
+        nocturno
+      }
+    })
   }
 
-  // Get individual reports for a specific fuel type
-  const getIndividualReportsForFuel = (fuelType: FuelType) => {
-    return individualReports.filter(report => report.tipoCombustible === fuelType)
-      .slice(0, showAllReports ? undefined : 3)
+  // Get consolidated individual reports (merge same price + fuel + time)
+  const getConsolidatedIndividualReports = () => {
+    const reports = individualReports.slice(0, showAllReports ? undefined : 6)
+    const consolidated: Array<{
+      id: string
+      tipoCombustible: FuelType
+      precio: number
+      horarios: HorarioType[]
+      fechaCreacion: Date | string
+      usuarioId: string
+      usuarioNombre: string
+      usuarioEmail: string
+      usuarioImagen: string
+      notas?: string
+    }> = []
+
+    reports.forEach(report => {
+      // Look for existing report with same fuel, price, and recent time (within 2 hours)
+      const existing = consolidated.find(c => {
+        const existingDate = c.fechaCreacion instanceof Date ? c.fechaCreacion : new Date(c.fechaCreacion)
+        const reportDate = report.fechaCreacion instanceof Date ? report.fechaCreacion : new Date(report.fechaCreacion)
+        
+        return c.tipoCombustible === report.tipoCombustible &&
+          Math.abs(c.precio - report.precio) < 0.01 &&
+          Math.abs(existingDate.getTime() - reportDate.getTime()) < 2 * 60 * 60 * 1000
+      })
+
+      if (existing && !existing.horarios.includes(report.horario)) {
+        existing.horarios.push(report.horario)
+        existing.horarios.sort((a) => a === 'diurno' ? -1 : 1) // diurno first
+      } else {
+        consolidated.push({
+          id: report.id,
+          tipoCombustible: report.tipoCombustible,
+          precio: report.precio,
+          horarios: [report.horario],
+          fechaCreacion: report.fechaCreacion,
+          usuarioId: report.usuarioId,
+          usuarioNombre: report.usuarioNombre || '',
+          usuarioEmail: report.usuarioEmail || '',
+          usuarioImagen: report.usuarioImagen || '',
+          notas: report.notas
+        })
+      }
+    })
+
+    return consolidated
+  }
+
+  // Toggle horario for differentiated prices
+  const toggleHorario = (fuelType: FuelType) => {
+    const current = horarioToggles[fuelType] || 'diurno'
+    setHorarioToggles(prev => ({
+      ...prev,
+      [fuelType]: current === 'diurno' ? 'nocturno' : 'diurno'
+    }))
+  }
+
+  // Get current report data for toggle
+  const getCurrentReportData = (consolidatedReport: ConsolidatedPriceReport): UserPriceReport | null => {
+    if (consolidatedReport.hasSamePrice) {
+      return null // Use consolidated data instead
+    }
+
+    const selectedHorario = horarioToggles[consolidatedReport.tipoCombustible] || 'diurno'
+    return selectedHorario === 'diurno' ? consolidatedReport.diurno : consolidatedReport.nocturno
   }
 
   const currentPrices = station.precios.filter(p => p.horario === 'diurno')
@@ -296,35 +437,130 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                   <div className="space-y-4">
                     {/* Summary Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {userReports.map((report) => (
-                        <div
-                          key={`${report.tipoCombustible}-${report.horario}`}
-                          className="p-3 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-sm">
-                              {FUEL_LABELS[report.tipoCombustible]}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {report.cantidadReportes} reporte{report.cantidadReportes > 1 ? 's' : ''}
-                            </Badge>
-                          </div>
+                      {getConsolidatedReports().map((consolidatedReport) => {
+                        if (consolidatedReport.hasSamePrice && consolidatedReport.consolidatedData) {
+                          // Consolidated card for same prices
+                          return (
+                            <div
+                              key={consolidatedReport.tipoCombustible}
+                              className="p-3 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">
+                                    {FUEL_LABELS[consolidatedReport.tipoCombustible]}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <Sun className="h-3 w-3 text-amber-500" />
+                                    <Moon className="h-3 w-3 text-blue-500" />
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  {consolidatedReport.consolidatedData.ultimoUsuarioId && (
+                                    <UserAvatar
+                                      userId={consolidatedReport.consolidatedData.ultimoUsuarioId}
+                                      name={consolidatedReport.consolidatedData.ultimoUsuarioNombre || undefined}
+                                      email={consolidatedReport.consolidatedData.ultimoUsuarioEmail || undefined}
+                                      image={consolidatedReport.consolidatedData.ultimoUsuarioImagen || undefined}
+                                      size="md"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="text-lg font-bold">
+                                  {formatPrice(consolidatedReport.consolidatedData.precioPromedio)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Promedio • {formatTimeAgo(consolidatedReport.consolidatedData.ultimoReporte)}
+                                </div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                  <span>Min: {formatPrice(consolidatedReport.consolidatedData.precioMinimo)}</span>
+                                  <span>•</span>
+                                  <span>Max: {formatPrice(consolidatedReport.consolidatedData.precioMaximo)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        } else {
+                          // Different prices - show toggle interface
+                          const currentData = getCurrentReportData(consolidatedReport)
+                          const selectedHorario = horarioToggles[consolidatedReport.tipoCombustible] || 'diurno'
+                          const hasMultipleHorarios = consolidatedReport.diurno && consolidatedReport.nocturno
                           
-                          <div className="space-y-1">
-                            <div className="text-lg font-bold">
-                              {formatPrice(report.precioPromedio)}
+                          if (!currentData) return null
+                          
+                          return (
+                            <div
+                              key={`${consolidatedReport.tipoCombustible}-${selectedHorario}`}
+                              className="p-3 rounded-lg border bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 relative"
+                            >
+                              {hasMultipleHorarios && (
+                                <div className="absolute top-2 right-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleHorario(consolidatedReport.tipoCombustible)}
+                                    className="h-6 w-6 p-0 hover:bg-orange-200 dark:hover:bg-orange-800"
+                                    title={`Cambiar a horario ${selectedHorario === 'diurno' ? 'nocturno' : 'diurno'}`}
+                                  >
+                                    {selectedHorario === 'diurno' ? 
+                                      <Moon className="h-3 w-3" /> : 
+                                      <Sun className="h-3 w-3" />
+                                    }
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center justify-between mb-2 pr-8">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">
+                                    {FUEL_LABELS[consolidatedReport.tipoCombustible]}
+                                  </span>
+                                  {selectedHorario === 'diurno' ? 
+                                    <Sun className="h-3 w-3 text-amber-500" title="Horario diurno" /> : 
+                                    <Moon className="h-3 w-3 text-blue-500" title="Horario nocturno" />
+                                  }
+                                  {hasMultipleHorarios && (
+                                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                      Variable
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  {currentData.ultimoUsuarioId && (
+                                    <UserAvatar
+                                      userId={currentData.ultimoUsuarioId}
+                                      name={currentData.ultimoUsuarioNombre || undefined}
+                                      email={currentData.ultimoUsuarioEmail || undefined}
+                                      image={currentData.ultimoUsuarioImagen || undefined}
+                                      size="md"
+                                    />
+                                  )}
+                                  <Badge variant="outline" className="text-xs">
+                                    {parseInt(currentData.cantidadReportes)} reporte{parseInt(currentData.cantidadReportes) > 1 ? 's' : ''}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="text-lg font-bold">
+                                  {formatPrice(currentData.precioPromedio)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Promedio • {formatTimeAgo(currentData.ultimoReporte)}
+                                </div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                  <span>Min: {formatPrice(currentData.precioMinimo)}</span>
+                                  <span>•</span>
+                                  <span>Max: {formatPrice(currentData.precioMaximo)}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Promedio • {formatTimeAgo(report.ultimoReporte)}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                              <span>Min: {formatPrice(report.precioMinimo)}</span>
-                              <span>•</span>
-                              <span>Max: {formatPrice(report.precioMaximo)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        }
+                      })}
                     </div>
 
                     {/* Individual Reports Section */}
@@ -340,30 +576,45 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                               size="sm" 
                               onClick={() => setShowAllReports(!showAllReports)}
                             >
-                              {showAllReports ? 'Ver menos' : `Ver todos (${individualReports.length})`}
+                              {showAllReports ? 'Ver menos' : 'Ver todos'}
                             </Button>
                           )}
                         </div>
                         
                         <div className="space-y-2">
-                          {getIndividualReportsForFuel(selectedFuelType).map((report) => (
+                          {getConsolidatedIndividualReports().map((report) => (
                             <div 
                               key={report.id} 
                               className="flex items-center justify-between p-2 rounded bg-muted/30 text-sm"
                             >
                               <div className="flex items-center gap-3">
+                                <UserAvatar
+                                  userId={report.usuarioId}
+                                  name={report.usuarioNombre || undefined}
+                                  email={report.usuarioEmail || undefined}
+                                  image={report.usuarioImagen || undefined}
+                                  size="md"
+                                />
                                 <div className="flex items-center gap-1">
                                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                                   <span className="font-medium">
                                     {FUEL_LABELS[report.tipoCombustible]}
                                   </span>
+                                  <div className="flex items-center gap-1 ml-1">
+                                    {report.horarios.includes('diurno') && (
+                                      <Sun className="h-3 w-3 text-amber-500" title="Horario diurno" />
+                                    )}
+                                    {report.horarios.includes('nocturno') && (
+                                      <Moon className="h-3 w-3 text-blue-500" title="Horario nocturno" />
+                                    )}
+                                  </div>
                                 </div>
                                 <span className="font-semibold">
                                   {formatPrice(report.precio)}
                                 </span>
                                 {report.notas && (
                                   <span className="text-muted-foreground text-xs">
-                                    "{report.notas}"
+                                    &ldquo;{report.notas}&rdquo;
                                   </span>
                                 )}
                               </div>
@@ -374,9 +625,9 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                           ))}
                         </div>
                         
-                        {getIndividualReportsForFuel(selectedFuelType).length === 0 && (
+                        {getConsolidatedIndividualReports().length === 0 && (
                           <div className="text-center py-4 text-muted-foreground text-sm">
-                            No hay reportes para {FUEL_LABELS[selectedFuelType]} en los últimos 7 días
+                            No hay reportes individuales en los últimos 7 días
                           </div>
                         )}
                       </div>
