@@ -26,8 +26,8 @@ async function getStation(id: string) {
     return {
       ...station,
       servicios: station.servicios || [],
-      formasPago: station.formasPago || ['Efectivo', 'Tarjetas'],
-      horarios: station.horarios || 'Consultar horarios',
+      formasPago: station.formasPago || null,
+      horarios: station.horarios || null,
       telefono: station.telefono || null,
       rating: station.rating || null,
       reviewCount: station.reviewCount || 0,

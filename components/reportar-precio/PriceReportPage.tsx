@@ -66,7 +66,7 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
     setSubmitError(null)
 
     try {
-      const response = await fetch('/api/precios', {
+      const response = await fetch(`/api/reportes-precios`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -306,7 +306,6 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
           <li>• Los precios reportados son visibles inmediatamente</li>
           <li>• Otros usuarios pueden confirmar tu precio para validarlo</li>
           <li>• Los precios más confirmados tienen mayor peso en el sistema</li>
-          <li>• Solo se pueden reportar precios oficiales y del sitio de la estación</li>
         </ul>
       </Card>
     </div>

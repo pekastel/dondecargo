@@ -27,6 +27,18 @@ export interface VerificationEmailData {
   token: string;
 }
 
+export interface ReportPriceEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  stationName: string;
+  fuelType: string;
+  price: string;
+  address: string;
+}
+
 export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
   const baseURL = getBaseUrl();
   const { user, url } = data;
@@ -55,8 +67,8 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
   }
 }
 
-export async function sendReportPriceThankYouEmail(data: VerificationEmailData): Promise<void> {
-  const { user, url } = data;
+export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): Promise<void> {
+  const { user, stationName, fuelType, price, address } = data;
   
   // Check if Loops.js is configured
   if (!loops) {
@@ -69,7 +81,11 @@ export async function sendReportPriceThankYouEmail(data: VerificationEmailData):
       transactionalId: REPORT_PRICE_TEMPLATE_ID,
       email: user.email,
       dataVariables: {
-        name: user.name
+        name: user.name,
+        stationName: stationName,
+        fuelType: fuelType,
+        price: price,
+        address: address
       }
     });
     

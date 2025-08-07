@@ -6,6 +6,7 @@ import { eq, and, desc, asc } from 'drizzle-orm'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { sendReportPriceThankYouEmail } from '@/lib/email'
+import { FUEL_LABELS } from '@/lib/types'
 
 const connection = postgres(process.env.DATABASE_URL!)
 const db = drizzle(connection)
@@ -147,39 +148,9 @@ export async function POST(request: NextRequest) {
       })
       .returning()
 
-    // Also create/update the price in the main prices table
-    // This ensures user-reported prices are immediately visible
-    try {
-      await db
-        .insert(precios)
-        .values({
-          estacionId: validatedData.estacionId,
-          tipoCombustible: validatedData.tipoCombustible,
-          precio: validatedData.precio.toString(),
-          horario: validatedData.horario,
-          fechaVigencia: new Date(),
-          fuente: 'usuario',
-          usuarioId: session.user.id,
-          esValidado: false, // Will be validated by confirmations from other users
-          fechaReporte: new Date(),
-          notas: validatedData.notas || null,
-        })
-        .onConflictDoUpdate({
-          target: [precios.estacionId, precios.tipoCombustible, precios.horario],
-          set: {
-            precio: validatedData.precio.toString(),
-            fechaVigencia: new Date(),
-            fuente: 'usuario',
-            usuarioId: session.user.id,
-            esValidado: false,
-            fechaReporte: new Date(),
-            notas: validatedData.notas || null,
-          }
-        })
-    } catch (priceError) {
-      console.error('Error updating price table:', priceError)
-      // Continue with the flow even if price update fails
-    }
+    // Note: User reports are stored only in reportesPrecios table
+    // They will be displayed separately from official prices
+    // and can be used for social validation and averaging
 
     // Send thank you email (don't let this fail the request)
     try {
@@ -190,8 +161,10 @@ export async function POST(request: NextRequest) {
             email: session.user.email,
             name: session.user.name,
           },
-          url: '', // Not needed for thank you email
-          token: '', // Not needed for thank you email
+          stationName: station[0].nombre,
+          fuelType: FUEL_LABELS[validatedData.tipoCombustible],
+          price: `$${validatedData.precio.toString()}`,
+          address: `${station[0].direccion}, ${station[0].localidad}, ${station[0].provincia}`,
         })
       }
     } catch (emailError) {

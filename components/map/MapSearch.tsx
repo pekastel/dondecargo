@@ -7,6 +7,15 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Users, TrendingUp } from 'lucide-react'
+
+interface UserPriceReport {
+  tipoCombustible: string
+  horario: string
+  precioPromedio: number
+  cantidadReportes: number
+  ultimoReporte: Date
+}
 
 interface MapSearchProps {
   stations: Station[]
@@ -65,6 +74,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   const currentLocationMarkerRef = useRef<LeafletMarker | null>(null)
   const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
+  const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
 
 
   // Load Leaflet dynamically
@@ -139,6 +150,37 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       leafletMapRef.current.setView([center.lat, center.lng], 13)
     }
   }, [center])
+
+  // Fetch user reports for a station
+  const fetchUserReports = async (stationId: string) => {
+    if (loadingReports.has(stationId)) return
+    
+    setLoadingReports(prev => new Set(prev).add(stationId))
+    try {
+      const response = await fetch(`/api/estaciones/${stationId}/reportes-precios?dias=5&horario=diurno`)
+      if (response.ok) {
+        const data = await response.json()
+        setUserReports(prev => ({
+          ...prev,
+          [stationId]: data.resumen
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching user reports:', error)
+    } finally {
+      setLoadingReports(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(stationId)
+        return newSet
+      })
+    }
+  }
+
+  // Get user report for specific fuel type
+  const getUserReport = (stationId: string, fuelType: FuelType): UserPriceReport | null => {
+    const reports = userReports[stationId] || []
+    return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
+  }
 
   // Helper function to get display price based on selected fuel type
   const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
@@ -246,6 +288,17 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     currentLocationMarkerRef.current = currentLocationMarker
   }, [currentLocation, mapLoaded])
 
+  // Fetch user reports for visible stations
+  useEffect(() => {
+    if (stations.length > 0) {
+      // Fetch reports for first few stations to avoid too many API calls
+      const stationsToFetch = stations.slice(0, 10)
+      stationsToFetch.forEach(station => {
+        fetchUserReports(station.id)
+      })
+    }
+  }, [stations])
+
   // Add station markers
   useEffect(() => {
     if (!leafletMapRef.current || !mapLoaded) return
@@ -295,12 +348,45 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
             
             <!-- Fuel Prices Grid -->
             <div class="grid grid-cols-2 gap-1.5 mb-2.5">
-              ${station.precios.length > 0 ? station.precios.map(precio => `
-                <div class="flex justify-between items-center px-2 py-1.5 rounded ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'}">
-                  <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                  <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+              ${station.precios.length > 0 ? station.precios.map(precio => {
+                // Check if this fuel type has user reports
+                const hasUserReports = userReports[station.id]?.some(r => 
+                  r.tipoCombustible === precio.tipoCombustible && r.horario === 'diurno'
+                )
+                const userReport = hasUserReports ? userReports[station.id]?.find(r => 
+                  r.tipoCombustible === precio.tipoCombustible && r.horario === 'diurno'
+                ) : null
+                
+                return `
+                <div class="relative flex flex-col px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-blue-100 ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'}"
+                     onclick="window.location.href='/estacion/${station.id}'"
+                     ${userReport ? `title="Click para ver detalles • Promedio reportado: $${Math.round(userReport.precioPromedio)} (${userReport.cantidadReportes} reportes)"` : `title="Click para ver detalles de la estación"`}>
+                  
+                  <!-- Header with fuel type and community indicator -->
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1">
+                      <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
+                      ${hasUserReports ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                    </div>
+                    ${hasUserReports && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''}
+                  </div>
+                  
+                  <!-- Official Price -->
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-600">Oficial</span>
+                    <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+                  </div>
+                  
+                  <!-- User Average Price (if available and sufficient reports) -->
+                  ${hasUserReports && userReport.cantidadReportes >= 2 ? `
+                    <div class="flex items-center justify-between mt-0.5">
+                      <span class="text-xs text-orange-600">Promedio</span>
+                      <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
+                    </div>
+                  ` : ''}
                 </div>
-              `).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'}
+                `
+              }).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'}
             </div>
             
             <!-- Action Buttons -->

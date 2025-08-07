@@ -22,43 +22,6 @@ export function StationInfo({ station }: StationInfoProps) {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitud},${station.longitud}`
     window.open(url, '_blank')
   }
-  /*
-[
-  {
-    "nombre": "AXION"
-  },
-  {
-    "nombre": "DAPSA S.A."
-  },
-  {
-    "nombre": "YPF"
-  },
-  {
-    "nombre": "VOY"
-  },
-  {
-    "nombre": "SIN EMPRESA BANDERA"
-  },
-  {
-    "nombre": "OIL COMBUSTIBLES S.A."
-  },
-  {
-    "nombre": "REFINOR"
-  },
-  {
-    "nombre": "SHELL C.A.P.S.A."
-  },
-  {
-    "nombre": "PUMA"
-  },
-  {
-    "nombre": "GULF"
-  },
-  {
-    "nombre": "BLANCA"
-  }
-]
-  */
 
   const handleCompanyWebsite = (empresa: string) => {
     const websites: Record<string, string> = {
@@ -119,7 +82,7 @@ export function StationInfo({ station }: StationInfoProps) {
       <Card className="p-4 sm:p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Building className="h-5 w-5" />
-          Información Completa
+          Información
         </h3>
         
         <div className="space-y-4">
@@ -136,16 +99,6 @@ export function StationInfo({ station }: StationInfoProps) {
               >
                 <ExternalLink className="h-3 w-3" />
               </Button>
-            </div>
-          </div>
-
-          <div className="flex items-start justify-between">
-            <span className="text-muted-foreground">Dirección:</span>
-            <div className="text-right flex-1 max-w-xs">
-              <div className="font-medium">{station.direccion}</div>
-              <div className="text-sm text-muted-foreground">
-                {station.localidad}, {station.provincia}
-              </div>
             </div>
           </div>
 
@@ -271,20 +224,12 @@ export function StationInfo({ station }: StationInfoProps) {
               {station.precios.filter(p => p.fuente === 'usuario' && p.esValidado).length}
             </span>
           </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Pendientes validación:</span>
-            <span className="font-medium text-orange-600">
-              {station.precios.filter(p => !p.esValidado).length}
-            </span>
-          </div>
         </div>
 
         <Separator className="my-4" />
 
         <div className="text-xs text-muted-foreground space-y-1">
           <p>• Los precios oficiales provienen de datos.energia.gob.ar</p>
-          <p>• Los reportes de usuarios son validados antes de publicarse</p>
           <p>• Los datos se actualizan diariamente</p>
         </div>
       </Card>

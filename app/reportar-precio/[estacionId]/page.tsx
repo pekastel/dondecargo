@@ -77,7 +77,7 @@ function LoadingSkeleton() {
 }
 
 export default async function ReportarPrecioPage({ params }: PageProps) {
-  const { estacionId } = params
+  const { estacionId } = await params
   const station = await getStationWithPrices(estacionId)
 
   if (!station) {
@@ -94,7 +94,7 @@ export default async function ReportarPrecioPage({ params }: PageProps) {
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { estacionId } = params
+  const { estacionId } = await params
   const station = await getStationWithPrices(estacionId)
   
   if (!station) {
