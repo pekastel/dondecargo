@@ -17,12 +17,10 @@ import {
   Mail, 
   Calendar,
   Save,
-  ArrowLeft,
   CheckCircle,
   AlertCircle,
   Camera,
 } from 'lucide-react';
-import AdminHeader from '@/components/navigation/AdminHeader';
 
 export default function Profile() {
   const router = useRouter();

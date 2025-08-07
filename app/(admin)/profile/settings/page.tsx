@@ -17,7 +17,6 @@ import {
   AlertCircle,
   Lock
 } from 'lucide-react';
-import AdminHeader from '@/components/navigation/AdminHeader';
 
 export default function ProfileSettings() {
   const router = useRouter();
