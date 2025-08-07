@@ -151,8 +151,6 @@ export function StationInfo({ station }: StationInfoProps) {
           </div>
         </div>
 
-        <Separator className="my-4" />
-
         <div className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={handleDirections} className="flex-1">
             <MapPin className="h-4 w-4 mr-2" />

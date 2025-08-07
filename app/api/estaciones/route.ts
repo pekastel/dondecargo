@@ -148,7 +148,6 @@ export async function GET(request: NextRequest) {
 
     query = query.limit(limit).offset(offset)
 
-    console.log('🔍 Executing stations query...', query.toSQL())
     const result = await query
     console.log(`📊 Found ${result.length} stations`)
 
