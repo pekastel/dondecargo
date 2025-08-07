@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock, ArrowLeft, Heart, Share2, Phone, Navigation, Star } from 'lucide-react'
-import { FuelType } from '@/components/MapSearchClient'
+import { FuelType, FUEL_LABELS, HorarioType, FuenteType } from '@/lib/types'
 
 export interface StationPrice {
   id: string
   tipoCombustible: FuelType
   precio: number
-  horario: 'diurno' | 'nocturno'
+  horario: HorarioType
   fechaVigencia: Date
-  fuente: 'oficial' | 'usuario'
+  fuente: FuenteType
   usuarioId?: string
   esValidado: boolean
   fechaReporte: Date
@@ -51,13 +51,6 @@ interface StationDetailClientProps {
   station: StationFull
 }
 
-const FUEL_LABELS: Record<FuelType, string> = {
-  nafta: 'Nafta Super',
-  nafta_premium: 'Nafta Premium',
-  gasoil: 'Gasoil Común',
-  gasoil_premium: 'Gasoil Premium',
-  gnc: 'GNC'
-}
 
 export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()

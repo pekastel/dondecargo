@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { RotateCcw, TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react'
-import { FuelType } from '@/components/MapSearchClient'
+import { FuelType, FUEL_LABELS, FuenteType } from '@/lib/types'
 
 interface PriceHistoryProps {
   stationId: string
@@ -17,16 +17,8 @@ interface PriceHistoryProps {
 interface PriceHistoryItem {
   fecha: Date
   precio: number
-  fuente: 'oficial' | 'usuario'
+  fuente: FuenteType
   esValidado: boolean
-}
-
-const FUEL_LABELS: Record<FuelType, string> = {
-  nafta: 'Nafta Super',
-  nafta_premium: 'Nafta Premium',
-  gasoil: 'Gasoil Común',
-  gasoil_premium: 'Gasoil Premium',
-  gnc: 'GNC'
 }
 
 const TIME_PERIODS = [

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { SearchFilters, FuelType } from '@/components/MapSearchClient'
+import { SearchFilters } from '@/components/MapSearchClient'
+import { FuelType, FUEL_LABELS } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,11 +31,11 @@ interface NominatimResult {
 }
 
 const FUEL_TYPES: { id: FuelType; label: string }[] = [
-  { id: 'nafta', label: 'Nafta Super' },
-  { id: 'nafta_premium', label: 'Nafta Premium' },
-  { id: 'gasoil', label: 'Gasoil Común' },
-  { id: 'gasoil_premium', label: 'Gasoil Premium' },
-  { id: 'gnc', label: 'GNC' }
+  { id: 'nafta', label: FUEL_LABELS.nafta },
+  { id: 'nafta_premium', label: FUEL_LABELS.nafta_premium },
+  { id: 'gasoil', label: FUEL_LABELS.gasoil },
+  { id: 'gasoil_premium', label: FUEL_LABELS.gasoil_premium },
+  { id: 'gnc', label: FUEL_LABELS.gnc }
 ]
 
 const COMPANIES = [

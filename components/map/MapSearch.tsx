@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Station, FuelType } from '@/components/MapSearchClient'
+import { Station } from '@/components/MapSearchClient'
+import { FuelType, FUEL_LABELS } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -430,14 +431,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   }
 
   const getFuelLabel = (fuelType: string) => {
-    const labels: Record<string, string> = {
-      nafta: 'Nafta',
-      nafta_premium: 'Premium',
-      gasoil: 'Gasoil',
-      gasoil_premium: 'G. Premium',
-      gnc: 'GNC'
-    }
-    return labels[fuelType] || fuelType
+    return FUEL_LABELS[fuelType as FuelType] || fuelType
   }
 
   if (!mapLoaded || !center) {

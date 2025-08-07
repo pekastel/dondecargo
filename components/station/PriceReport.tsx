@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { X, Upload, Camera, AlertCircle, CheckCircle2, Info } from 'lucide-react'
-import { FuelType } from '@/components/MapSearchClient'
+import { FuelType, FUEL_LABELS, HorarioType } from '@/lib/types'
 import { StationFull } from '@/components/StationDetailClient'
 import { authClient } from '@/lib/authClient'
 
@@ -22,14 +22,6 @@ interface PriceReportProps {
   station: StationFull
   onClose: () => void
   onSuccess: () => void
-}
-
-const FUEL_LABELS: Record<FuelType, string> = {
-  nafta: 'Nafta Super',
-  nafta_premium: 'Nafta Premium',
-  gasoil: 'Gasoil Común',
-  gasoil_premium: 'Gasoil Premium',
-  gnc: 'GNC'
 }
 
 const priceReportSchema = z.object({
@@ -264,7 +256,7 @@ export function PriceReport({ station, onClose, onSuccess }: PriceReportProps) {
             <Label>🕐 Horario observado</Label>
             <RadioGroup
               value={watch('horario')}
-              onValueChange={(value: 'diurno' | 'nocturno') => setValue('horario', value)}
+              onValueChange={(value: HorarioType) => setValue('horario', value)}
               className="flex gap-6"
             >
               <div className="flex items-center space-x-2">

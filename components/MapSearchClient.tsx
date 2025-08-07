@@ -7,45 +7,33 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw } from 'lucide-react'
+import { FuelType, FUEL_LABELS, Station, SearchFilters, HorarioType } from '@/lib/types'
 
-export type FuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
 export type PriceRange = { min: number; max: number }
-export type SearchFilters = {
+
+// Updated SearchFilters to include local specifics while using centralized types
+export interface LocalSearchFilters extends Omit<SearchFilters, 'priceRange'> {
   location: { lat: number; lng: number } | null
   radius: number
-  fuelTypes: FuelType[]
   priceRange: PriceRange
-  companies: string[]
-  timeOfDay: 'diurno' | 'nocturno'
+  timeOfDay: HorarioType
 }
 
-export interface Station {
-  id: string
-  nombre: string
-  empresa: string
-  direccion: string
-  localidad: string
-  provincia: string
-  latitud: number
-  longitud: number
+// Updated Station interface to include local specifics
+export interface LocalStation extends Omit<Station, 'precios'> {
   precios: {
     tipoCombustible: FuelType
     precio: number
-    horario: 'diurno' | 'nocturno'
+    horario: HorarioType
     fechaActualizacion: Date
   }[]
 }
 
-const FUEL_LABELS: Record<FuelType, string> = {
-  nafta: 'Nafta',
-  nafta_premium: 'Premium', 
-  gasoil: 'Gasoil',
-  gasoil_premium: 'G.Premium',
-  gnc: 'GNC'
-}
+// Re-export for backward compatibility
+export { FuelType, Station }
 
 export function MapSearchClient() {
-  const [filters, setFilters] = useState<SearchFilters>({
+  const [filters, setFilters] = useState<LocalSearchFilters>({
     location: null,
     radius: 5,
     fuelTypes: ['nafta', 'nafta_premium', 'gasoil'],
@@ -54,7 +42,7 @@ export function MapSearchClient() {
     timeOfDay: 'diurno'
   })
   
-  const [stations, setStations] = useState<Station[]>([])
+  const [stations, setStations] = useState<LocalStation[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -174,8 +162,8 @@ export function MapSearchClient() {
       
       const data = await response.json()
       
-      // Transform API response to match our Station interface
-      const transformedStations: Station[] = data.data.map((station: any) => ({
+      // Transform API response to match our LocalStation interface
+      const transformedStations: LocalStation[] = data.data.map((station: any) => ({
         id: station.id,
         nombre: station.nombre,
         empresa: station.empresa,
