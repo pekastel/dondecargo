@@ -28,6 +28,12 @@ export const env = createEnv({
       .optional()
       .default("cmd7ideu22tzlzg0jlw2hb99b")
       .describe("Custom email verification template ID for Loops.js"),
+
+    LOOPS_REPORT_PRICE_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .default("cmd7ideu22tzlzg0jlw2hb99b")
+      .describe("Custom report price template ID for Loops.js"),
     
     // Email Verification Feature Toggle
     ENABLE_EMAIL_VERIFICATION: z
@@ -99,6 +105,7 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     LOOPS_API_KEY: process.env.LOOPS_API_KEY,
     LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID: process.env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,
+    LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
     REDIS_URL: process.env.REDIS_URL,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,

@@ -15,6 +15,8 @@ const loops = env.LOOPS_API_KEY ? new LoopsClient(env.LOOPS_API_KEY) : null;
 // To use a custom template, set LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID in your environment
 const EMAIL_VERIFICATION_TEMPLATE_ID = env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID;
 
+const REPORT_PRICE_TEMPLATE_ID = env.LOOPS_REPORT_PRICE_TEMPLATE_ID;
+
 export interface VerificationEmailData {
   user: {
     id: string;
@@ -50,6 +52,31 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
   } catch (error) {
     console.error('Failed to send verification email:', error);
     throw new Error('Failed to send verification email');
+  }
+}
+
+export async function sendReportPriceThankYouEmail(data: VerificationEmailData): Promise<void> {
+  const { user, url } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    console.error('Loops.js is not configured. Please set LOOPS_API_KEY in your environment variables.');
+    throw new Error('Email service not configured');
+  }
+  
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: REPORT_PRICE_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name
+      }
+    });
+    
+    console.log(`Report price thank you email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send report price thank you email:', error);
+    throw new Error('Failed to send report price thank you email');
   }
 }
 

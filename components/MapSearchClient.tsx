@@ -7,33 +7,45 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw } from 'lucide-react'
-import { FuelType, FUEL_LABELS, Station, SearchFilters, HorarioType } from '@/lib/types'
 
+export type FuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
 export type PriceRange = { min: number; max: number }
-
-// Updated SearchFilters to include local specifics while using centralized types
-export interface LocalSearchFilters extends Omit<SearchFilters, 'priceRange'> {
+export type SearchFilters = {
   location: { lat: number; lng: number } | null
   radius: number
+  fuelTypes: FuelType[]
   priceRange: PriceRange
-  timeOfDay: HorarioType
+  companies: string[]
+  timeOfDay: 'diurno' | 'nocturno'
 }
 
-// Updated Station interface to include local specifics
-export interface LocalStation extends Omit<Station, 'precios'> {
+export interface Station {
+  id: string
+  nombre: string
+  empresa: string
+  direccion: string
+  localidad: string
+  provincia: string
+  latitud: number
+  longitud: number
   precios: {
     tipoCombustible: FuelType
     precio: number
-    horario: HorarioType
+    horario: 'diurno' | 'nocturno'
     fechaActualizacion: Date
   }[]
 }
 
-// Re-export for backward compatibility
-export { FuelType, Station }
+const FUEL_LABELS: Record<FuelType, string> = {
+  nafta: 'Nafta',
+  nafta_premium: 'Premium', 
+  gasoil: 'Gasoil',
+  gasoil_premium: 'G.Premium',
+  gnc: 'GNC'
+}
 
 export function MapSearchClient() {
-  const [filters, setFilters] = useState<LocalSearchFilters>({
+  const [filters, setFilters] = useState<SearchFilters>({
     location: null,
     radius: 5,
     fuelTypes: ['nafta', 'nafta_premium', 'gasoil'],
@@ -42,7 +54,7 @@ export function MapSearchClient() {
     timeOfDay: 'diurno'
   })
   
-  const [stations, setStations] = useState<LocalStation[]>([])
+  const [stations, setStations] = useState<Station[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -162,8 +174,8 @@ export function MapSearchClient() {
       
       const data = await response.json()
       
-      // Transform API response to match our LocalStation interface
-      const transformedStations: LocalStation[] = data.data.map((station: any) => ({
+      // Transform API response to match our Station interface
+      const transformedStations: Station[] = data.data.map((station: any) => ({
         id: station.id,
         nombre: station.nombre,
         empresa: station.empresa,
@@ -264,16 +276,12 @@ export function MapSearchClient() {
           <div className="space-y-6">
             <MapFilters filters={filters} onFiltersChange={setFilters} />
             
-            <div className="flex flex-col gap-2 pt-4 border-t border-border pb-8">
+            <div className="flex flex-col gap-2 pt-4 border-t border-border">
               <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Limpiar filtros
               </Button>
-              <Button 
-                size="sm" 
-                onClick={() => fetchStations()} 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
+              <Button size="sm" onClick={fetchStations} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                 Buscar estaciones
               </Button>
             </div>
@@ -402,7 +410,7 @@ export function MapSearchClient() {
       </div>
 
       {/* Mobile Quick Filter Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-5000 safe-area-bottom">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-400 safe-area-bottom">
         <div className="container px-4 py-3 mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -439,12 +447,12 @@ export function MapSearchClient() {
         </div>
       </div>
       
-      {/* Add padding at the bottom to prevent content from being hidden behind the filter bar and footer */}
-      <div className="lg:hidden h-32"></div>
+      {/* Add padding at the bottom to prevent content from being hidden behind the filter bar */}
+      <div className="lg:hidden h-24"></div>
 
       {/* Mobile Filters Modal */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black/60 z-6000 lg:hidden">
+        <div className="fixed inset-0 bg-black/60 z-1000 lg:hidden">
           <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl shadow-2xl max-h-[85vh] overflow-hidden">
             <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-4">
               <div className="flex items-center justify-between mb-3">
@@ -481,11 +489,11 @@ export function MapSearchClient() {
               </div>
             </div>
             
-            <div className="overflow-y-auto p-4 pb-28">
+            <div className="overflow-y-auto p-4 pb-20">
               <MapFilters filters={filters} onFiltersChange={setFilters} />
             </div>
             
-            <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-10">
+            <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={clearFilters} className="flex-1">
                   Limpiar filtros
