@@ -56,10 +56,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType>('nafta')
   const [isFavorite, setIsFavorite] = useState(false)
 
-  const handleBack = () => {
-    router.back()
-  }
-
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -124,7 +120,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
       <main className="container mx-auto px-4 py-6">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <Button variant="ghost" onClick={handleBack}>
+          <Button variant="ghost" onClick={router.back}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
           </Button>

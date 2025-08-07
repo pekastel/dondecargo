@@ -48,18 +48,13 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
   } = useForm<PriceReportForm>({
     resolver: zodResolver(priceReportSchema),
     defaultValues: {
+      tipoCombustible: 'nafta',
       horario: 'diurno',
-      tipoCombustible: 'nafta'
     }
   })
 
-  const selectedFuel = watch('tipoCombustible')
-  const selectedPrice = watch('precio')
-  
-  // Get current price for comparison
-  const currentPrice = station.precios.find(p => 
-    p.tipoCombustible === selectedFuel && p.horario === watch('horario')
-  )
+  const selectedFuelType = watch('tipoCombustible')
+  const currentPrice = station.precios.find(p => p.tipoCombustible === selectedFuelType)
 
   const onSubmit = async (data: PriceReportForm) => {
     if (!session?.user) {
@@ -71,298 +66,249 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
     setSubmitError(null)
 
     try {
-      const response = await fetch('/api/reportes-precios', {
+      const response = await fetch('/api/precios', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          ...data,
           estacionId: station.id,
-          tipoCombustible: data.tipoCombustible,
-          precio: data.precio,
-          horario: data.horario,
-          notas: data.notas || null,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Error al procesar el reporte')
+        throw new Error('Error al enviar el reporte')
       }
 
       setSubmitSuccess(true)
       setTimeout(() => {
-        router.push(`/estacion/${station.id}?reported=true`)
+        router.push(`/estacion/${station.id}`)
       }, 2000)
-
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Error desconocido')
+      setSubmitError('Error al enviar el reporte. Por favor, intenta nuevamente.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const getPriceDifference = () => {
-    if (!currentPrice || !selectedPrice) return null
-    
-    const currentPriceValue = Number(currentPrice.precio)
-    const difference = selectedPrice - currentPriceValue
-    const percentage = (difference / currentPriceValue) * 100
-    
-    return { difference, percentage }
-  }
-
-  const priceDiff = getPriceDifference()
-
-  const goBack = () => {
-    router.back()
-  }
-
-  // Show loading state while checking authentication
-  if (isSessionLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-sm text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Success state
   if (submitSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-6 text-center">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold mb-2">Reporte enviado!</h1>
-          <p className="text-muted-foreground mb-4">
-            Tu reporte de precio ha sido enviado exitosamente. Será validado por otros usuarios de la comunidad.
-          </p>
-          <Button onClick={() => router.push(`/estacion/${station.id}`)} className="w-full">
-            Ver Estación
-          </Button>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Card className="p-6">
+          <div className="text-center space-y-4">
+            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-bold">¡Gracias por tu reporte!</h2>
+            <p className="text-gray-600">Redirigiendo a la estación...</p>
+          </div>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={goBack}
-              className="shrink-0"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="-ml-2"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
             <div>
-              <h1 className="text-xl font-semibold">Reportar Precio</h1>
-              <p className="text-sm text-muted-foreground">{station.nombre}</p>
+              <h1 className="text-2xl font-bold">Reportar Precio</h1>
+              <p className="text-sm text-gray-600">Ayuda a mantener actualizados los precios</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto p-4">
-        <Card className="mt-6">
-          {/* Station Info */}
-          <div className="p-6 border-b bg-muted/20">
-            <div className="font-medium text-lg">{station.nombre}</div>
-            <div className="text-sm text-muted-foreground">{station.empresa}</div>
-            <div className="text-sm text-muted-foreground mt-1">{station.direccion}</div>
+      {/* Información de la estación */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+        <h2 className="font-semibold text-lg mb-1">{station.nombre}</h2>
+        <p className="text-sm text-gray-600">{station.direccion}</p>
+        <p className="text-sm text-gray-600">
+          {station.localidad}, {station.provincia}
+        </p>
+      </div>
+
+      {/* Formulario de reporte */}
+      <Card className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Authentication Check */}
+          {!session?.user && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Debes <Button 
+                  variant="link" 
+                  className="p-0 h-auto" 
+                  onClick={() => router.push('/login')}
+                >
+                  iniciar sesión
+                </Button> para reportar precios.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Fuel Type Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="tipoCombustible">Tipo de combustible</Label>
+            <Select 
+              value={selectedFuelType} 
+              onValueChange={(value: FuelType) => setValue('tipoCombustible', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+                  <SelectItem key={fuel} value={fuel}>
+                    <div className="flex items-center gap-2">
+                      <span>{label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.tipoCombustible && (
+              <p className="text-sm text-red-600">{errors.tipoCombustible.message}</p>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-            {/* Authentication Check */}
-            {!session?.user && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Debes <Button 
-                    variant="link" 
-                    className="p-0 h-auto" 
-                    onClick={() => router.push('/login')}
-                  >
-                    iniciar sesión
-                  </Button> para reportar precios.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Fuel Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="tipoCombustible">Tipo de combustible</Label>
-              <Select 
-                value={selectedFuel} 
-                onValueChange={(value: FuelType) => setValue('tipoCombustible', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
-                    <SelectItem key={fuel} value={fuel}>
-                      <div className="flex items-center gap-2">
-                        <span>{label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.tipoCombustible && (
-                <p className="text-sm text-red-600">{errors.tipoCombustible.message}</p>
-              )}
-            </div>
-
-            {/* Price Input */}
-            <div className="space-y-2">
-              <Label htmlFor="precio">Precio actual (por litro)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  id="precio"
-                  type="number"
-                  step="0.01"
-                  placeholder="890.50"
-                  className="pl-8"
-                  {...register('precio', { valueAsNumber: true })}
-                />
-              </div>
-              {errors.precio && (
-                <p className="text-sm text-red-600">{errors.precio.message}</p>
-              )}
-              
-              {/* Price Comparison */}
-              {currentPrice && selectedPrice && priceDiff && (
-                <div className={`text-sm p-3 rounded-md ${
-                  Math.abs(priceDiff.difference) < 1 
-                    ? 'bg-green-50 text-green-700' 
-                    : Math.abs(priceDiff.difference) < 10
-                      ? 'bg-yellow-50 text-yellow-700'
-                      : 'bg-red-50 text-red-700'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    <span>
-                      Precio actual en sistema: ${Number(currentPrice.precio).toFixed(2)}
-                      {priceDiff.difference !== 0 && (
-                        <span className="ml-2 font-semibold">
-                          ({priceDiff.difference > 0 ? '+' : ''}${priceDiff.difference.toFixed(2)}, {priceDiff.percentage > 0 ? '+' : ''}{priceDiff.percentage.toFixed(1)}%)
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Time of Day */}
-            <div className="space-y-3">
-              <Label>Horario observado</Label>
-              <RadioGroup
-                value={watch('horario')}
-                onValueChange={(value: HorarioType) => setValue('horario', value)}
-                className="flex gap-6"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="diurno" id="diurno" />
-                  <Label htmlFor="diurno">Diurno</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="nocturno" id="nocturno" />
-                  <Label htmlFor="nocturno">Nocturno</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notas">Notas adicionales (opcional)</Label>
-              <Textarea
-                id="notas"
-                placeholder="Ej: Precio visto en el cartel principal a las 14:30"
-                maxLength={500}
-                {...register('notas')}
-                rows={3}
+          {/* Price Input */}
+          <div className="space-y-2">
+            <Label htmlFor="precio">Precio actual (por litro)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                id="precio"
+                type="number"
+                step="0.01"
+                placeholder="890.50"
+                className="pl-8"
+                {...register('precio', { valueAsNumber: true })}
               />
-              {errors.notas && (
-                <p className="text-sm text-red-600">{errors.notas.message}</p>
-              )}
             </div>
-
-            {/* User Info */}
-            {session?.user && (
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950 text-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary">
-                    {session.user.name || 'Usuario registrado'}
-                  </Badge>
+            {errors.precio && (
+              <p className="text-sm text-red-600">{errors.precio.message}</p>
+            )}
+            
+            {/* Price Comparison */}
+            {currentPrice && (
+              <div className="text-sm p-3 rounded-md bg-green-50 text-green-700">
+                <div className="flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  <span>
+                    Precio actual en sistema: ${Number(currentPrice.precio).toFixed(2)}
+                  </span>
                 </div>
-                <p className="text-muted-foreground">
-                  Este precio será visible inmediatamente y otros usuarios podrán confirmarlo para validarlo.
-                </p>
               </div>
             )}
+          </div>
 
-            {/* Error Display */}
-            {submitError && (
-              <Alert className="border-red-200 bg-red-50 dark:bg-red-950">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-700 dark:text-red-300">
-                  {submitError}
-                </AlertDescription>
-              </Alert>
+          {/* Time of Day */}
+          <div className="space-y-3">
+            <Label>Horario observado</Label>
+            <RadioGroup
+              value={watch('horario')}
+              onValueChange={(value: HorarioType) => setValue('horario', value)}
+              className="flex gap-6"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="diurno" id="diurno" />
+                <Label htmlFor="diurno">Diurno</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="nocturno" id="nocturno" />
+                <Label htmlFor="nocturno">Nocturno</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notas">Notas adicionales (opcional)</Label>
+            <Textarea
+              id="notas"
+              placeholder="Ej: Precio visto en el cartel principal a las 14:30"
+              maxLength={500}
+              {...register('notas')}
+              rows={3}
+            />
+            {errors.notas && (
+              <p className="text-sm text-red-600">{errors.notas.message}</p>
             )}
+          </div>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={goBack}
-                disabled={isSubmitting}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !session?.user}
-                className="flex-1"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                    Enviando...
-                  </>
-                ) : (
-                  'Reportar Precio'
-                )}
-              </Button>
+          {/* User Info */}
+          {session?.user && (
+            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950 text-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary">
+                  {session.user.name || 'Usuario registrado'}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground">
+                Este precio será visible inmediatamente y otros usuarios podrán confirmarlo para validarlo.
+              </p>
             </div>
-          </form>
-        </Card>
+          )}
 
-        {/* Additional Info */}
-        <Card className="mt-4 p-4">
-          <h3 className="font-medium mb-2">Como funciona el sistema de reportes</h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Los precios reportados son visibles inmediatamente</li>
-            <li>• Otros usuarios pueden confirmar tu precio para validarlo</li>
-            <li>• Los precios más confirmados tienen mayor peso en el sistema</li>
-            <li>• Solo se pueden reportar precios oficiales y del sitio de la estación</li>
-          </ul>
-        </Card>
-      </div>
+          {/* Error Display */}
+          {submitError && (
+            <Alert className="border-red-200 bg-red-50 dark:bg-red-950">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-700 dark:text-red-300">
+                {submitError}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !session?.user}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  Enviando...
+                </>
+              ) : (
+                'Reportar Precio'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {/* Additional Info */}
+      <Card className="mt-4 p-4">
+        <h3 className="font-medium mb-2">Como funciona el sistema de reportes</h3>
+        <ul className="text-sm text-muted-foreground space-y-1">
+          <li>• Los precios reportados son visibles inmediatamente</li>
+          <li>• Otros usuarios pueden confirmar tu precio para validarlo</li>
+          <li>• Los precios más confirmados tienen mayor peso en el sistema</li>
+          <li>• Solo se pueden reportar precios oficiales y del sitio de la estación</li>
+        </ul>
+      </Card>
     </div>
   )
 }
