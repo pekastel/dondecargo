@@ -3,10 +3,6 @@
 import SignUp from "@/components/sign-up";
 import { authClient } from "@/lib/authClient";
 import { useRouter } from "next/navigation";
-import { ModeToggle } from "@/components/mode-toggle";
-import { Timer, Github } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useEffect } from "react";
 
 export default function SignUpPage() {
