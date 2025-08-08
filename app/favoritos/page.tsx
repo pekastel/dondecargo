@@ -10,7 +10,7 @@ import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { MapSearch } from '@/components/map/MapSearch'
 import type { Station } from '@/components/MapSearchClient'
 import { FUEL_LABELS, type FuelType } from '@/lib/types'
- 
+ import { useFuelPreference } from '@/lib/stores/useFuelPreference'
 
 interface FavoritoItem {
   id: string
@@ -31,30 +31,11 @@ export default function FavoritosPage() {
   const [items, setItems] = useState<FavoritoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [stations, setStations] = useState<Station[]>([])
-  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>('nafta')
+  const selectedFuelType = useFuelPreference((s) => s.selectedFuelType)
+  const setSelectedFuelType = useFuelPreference((s) => s.setSelectedFuelType)
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<'diurno' | 'nocturno'>('diurno')
 
-  // Initialize selected fuel type from localStorage (shared with MapSearchClient) and persist on change
-  useEffect(() => {
-    try {
-      const stored = typeof window !== 'undefined' ? (window.localStorage.getItem('selectedFuelType') as FuelType | null) : null
-      if (stored) {
-        setSelectedFuelType(stored as FuelType)
-      } else {
-        setSelectedFuelType('nafta' as FuelType)
-      }
-    } catch {
-      setSelectedFuelType('nafta' as FuelType)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (selectedFuelType) {
-      try {
-        window.localStorage.setItem('selectedFuelType', selectedFuelType)
-      } catch {}
-    }
-  }, [selectedFuelType])
+  
 
   useEffect(() => {
     if (!session?.user) return

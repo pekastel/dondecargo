@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw, Map as MapIcon } from 'lucide-react'
 import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
+import { useFuelPreference } from '@/lib/stores/useFuelPreference'
 
 export type PriceRange = { min: number; max: number }
 export type SearchFilters = {
@@ -63,7 +64,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
-  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>('nafta')
+  const selectedFuelType = useFuelPreference((s) => s.selectedFuelType)
+  const setSelectedFuelType = useFuelPreference((s) => s.setSelectedFuelType)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const listEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -159,27 +161,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       initializeLocation()
     }
 
-    try {
-      const stored = typeof window !== 'undefined' ? (window.localStorage.getItem('selectedFuelType') as FuelType | null) : null
-      if (stored && (FUEL_TYPES as string[]).includes(stored)) {
-        setSelectedFuelType(stored as FuelType)
-      } else {
-        setSelectedFuelType('nafta')
-      }
-    } catch {
-      setSelectedFuelType('nafta')
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCoords])
-
-  // Persist selected fuel type
-  useEffect(() => {
-    if (selectedFuelType) {
-      try {
-        window.localStorage.setItem('selectedFuelType', selectedFuelType)
-      } catch {}
-    }
-  }, [selectedFuelType])
 
   // Set current location for map centering when filters.location changes
   useEffect(() => {
