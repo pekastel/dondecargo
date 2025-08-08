@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { MapSearch } from '@/components/map/MapSearch'
 import { MapFilters } from '@/components/map/MapFilters'
 import { Button } from '@/components/ui/button'
@@ -37,9 +37,15 @@ export interface Station {
   }[]
 }
 
-export function MapSearchClient() {
+interface MapSearchClientProps {
+  initialCoords?: {
+    location: { lat: number; lng: number }
+    radius: number
+  } | null
+}
+
+export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [filters, setFilters] = useState<SearchFilters>({
     location: null,
@@ -74,44 +80,18 @@ export function MapSearchClient() {
     router.replace(`/buscar?${params.toString()}`, { scroll: false })
   }, [router])
 
-  // Function to read initial coordinates from URL
-  const getInitialLocationFromURL = useCallback(() => {
-    const lat = searchParams.get('lat')
-    const lng = searchParams.get('lng')
-    const radius = searchParams.get('radius')
-
-    if (lat && lng) {
-      const parsedLat = parseFloat(lat)
-      const parsedLng = parseFloat(lng)
-      const parsedRadius = radius ? parseInt(radius) : 5
-
-      // Validate coordinates
-      if (!isNaN(parsedLat) && !isNaN(parsedLng) && 
-          parsedLat >= -90 && parsedLat <= 90 && 
-          parsedLng >= -180 && parsedLng <= 180) {
-        return {
-          location: { lat: parsedLat, lng: parsedLng },
-          radius: Math.max(1, Math.min(50, parsedRadius))
-        }
-      }
-    }
-    return null
-  }, [searchParams])
-
-  // Initialize with URL parameters or fallback to geolocation
+  // Initialize with props coordinates or fallback to geolocation
   useEffect(() => {
     const initializeLocation = async () => {
-      // First, try to get coordinates from URL
-      const urlData = getInitialLocationFromURL()
-      
-      if (urlData) {
-        // Use coordinates from URL - no geolocation needed
+      // First, try to use coordinates from props
+      if (initialCoords) {
+        // Use coordinates from URL props - no geolocation needed
         setFilters(prev => ({ 
           ...prev, 
-          location: urlData.location,
-          radius: urlData.radius 
+          location: initialCoords.location,
+          radius: initialCoords.radius 
         }))
-        setCurrentLocation(urlData.location)
+        setCurrentLocation(initialCoords.location)
         return
       }
 
@@ -166,7 +146,7 @@ export function MapSearchClient() {
 
     setSelectedFuelType('nafta')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [initialCoords])
 
   // Set current location for map centering when filters.location changes
   useEffect(() => {

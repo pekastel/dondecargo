@@ -78,10 +78,14 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // Load Leaflet dynamically
   useEffect(() => {
     const loadLeaflet = async () => {
-      if (typeof window === 'undefined') return
+      if (typeof window === 'undefined') {
+        console.log('MapSearch: Window is undefined, skipping Leaflet load')
+        return
+      }
 
       // Check if Leaflet is already loaded
       if (window.L) {
+        console.log('MapSearch: Leaflet already loaded, setting mapLoaded to true')
         setMapLoaded(true)
         return
       }
@@ -89,6 +93,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Check if CSS is already loaded
       const existingCSS = document.querySelector('link[href*="leaflet.css"]')
       if (!existingCSS) {
+        console.log('MapSearch: Loading Leaflet CSS')
         const link = document.createElement('link')
         link.rel = 'stylesheet'
         link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
@@ -98,16 +103,37 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Check if JS is already loaded or loading
       const existingScript = document.querySelector('script[src*="leaflet.js"]')
       if (!existingScript) {
+        console.log('MapSearch: Loading Leaflet JS')
         const script = document.createElement('script')
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-        script.onload = () => setMapLoaded(true)
+        script.onload = () => {
+          console.log('MapSearch: Leaflet JS loaded successfully')
+          setMapLoaded(true)
+        }
         script.onerror = () => {
-          console.error('Failed to load Leaflet')
+          console.error('MapSearch: Failed to load Leaflet JS')
           setMapLoaded(false)
         }
         document.head.appendChild(script)
       } else if (window.L) {
+        console.log('MapSearch: Leaflet script exists and window.L is available')
         setMapLoaded(true)
+      } else {
+        console.log('MapSearch: Script exists but window.L is not available yet, waiting...')
+        // Wait for the existing script to load
+        let attempts = 0
+        const checkInterval = setInterval(() => {
+          attempts++
+          if (window.L) {
+            console.log('MapSearch: Leaflet loaded after waiting')
+            setMapLoaded(true)
+            clearInterval(checkInterval)
+          } else if (attempts > 50) { // 5 seconds total
+            console.error('MapSearch: Timeout waiting for Leaflet to load')
+            setMapLoaded(false)
+            clearInterval(checkInterval)
+          }
+        }, 100)
       }
     }
 
@@ -564,7 +590,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
             <div className="h-4 w-36 bg-muted rounded mx-auto animate-pulse" />
           </div>
           <p className="text-sm text-muted-foreground">
-            {!center ? 'Obteniendo ubicación...' : 'Cargando mapa...'}
+            {!center ? 'Obteniendo ubicación...' : !mapLoaded ? 'Cargando mapa...' : 'Inicializando mapa...'}
           </p>
         </div>
       </div>

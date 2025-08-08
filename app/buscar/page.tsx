@@ -1,8 +1,37 @@
+'use client'
+
 import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { MapSearchClient } from '@/components/MapSearchClient'
 
 function BuscarPageContent() {
-  return <MapSearchClient />
+  const searchParams = useSearchParams()
+  
+  // Extract initial coordinates from URL
+  const initialCoords = (() => {
+    const lat = searchParams.get('lat')
+    const lng = searchParams.get('lng')
+    const radius = searchParams.get('radius')
+
+    if (lat && lng) {
+      const parsedLat = parseFloat(lat)
+      const parsedLng = parseFloat(lng)
+      const parsedRadius = radius ? parseInt(radius) : 5
+
+      // Validate coordinates
+      if (!isNaN(parsedLat) && !isNaN(parsedLng) && 
+          parsedLat >= -90 && parsedLat <= 90 && 
+          parsedLng >= -180 && parsedLng <= 180) {
+        return {
+          location: { lat: parsedLat, lng: parsedLng },
+          radius: Math.max(1, Math.min(50, parsedRadius))
+        }
+      }
+    }
+    return null
+  })()
+
+  return <MapSearchClient initialCoords={initialCoords} />
 }
 
 export default function BuscarPage() {
@@ -18,7 +47,3 @@ export default function BuscarPage() {
   )
 }
 
-export const metadata = {
-  title: 'Buscar Precios - DondeCargo',
-  description: 'Encuentra los mejores precios de combustibles cerca de ti con nuestro mapa interactivo',
-}
