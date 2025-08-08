@@ -119,20 +119,15 @@ export default function UserMenu() {
             <span>Buscar</span>
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => router.push('/reportar')}>
-            <TrendingUp className="mr-2 h-4 w-4" />
-            <span>Reportar</span>
-          </DropdownMenuItem>
-          
           <DropdownMenuItem onClick={() => router.push('/favoritos')}>
             <Star className="mr-2 h-4 w-4" />
             <span>Favoritos</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={() => router.push('/mcp-help')}>
+          {/* <DropdownMenuItem onClick={() => router.push('/mcp-help')}>
             <BookOpen className="mr-2 h-4 w-4" />
             <span>Manual MCP</span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
 
           <DropdownMenuSeparator />
           
@@ -141,11 +136,6 @@ export default function UserMenu() {
             <span>Perfil</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={() => router.push('/profile/settings')}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configuración</span>
-          </DropdownMenuItem>
-
           <DropdownMenuItem asChild>
             <a href="/terminos-y-condiciones.html" target="_blank" rel="noopener noreferrer" className="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
               <FileText className="mr-2 h-4 w-4" />

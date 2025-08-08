@@ -191,18 +191,12 @@ export default function Profile() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
-                      <Shield className="h-3 w-3 mr-1" />
-                      {'usuario'}
+                      <User className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline text-xs">Usuario</span>
                     </Badge>
-                    {user.emailVerified && (
-                      <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Verificado
-                      </Badge>
-                    )}
                     <Badge variant="outline" className="text-xs">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Registrado el {new Date(user.createdAt || '').toLocaleDateString()}
+                      <span className="text-xs">Registrado el {new Date(user.createdAt || '').toLocaleDateString()}</span>
                     </Badge>
                   </div>
                 </div>

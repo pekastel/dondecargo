@@ -126,11 +126,6 @@ export function Header() {
                       </div>
                     </div>
                     <Button variant="ghost" className="w-full justify-start" asChild>
-                      <Link href="/favoritos" onClick={() => setMobileMenuOpen(false)}>
-                        <Star className="h-4 w-4 mr-2" /> Favoritos
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start" asChild>
                       <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                         Mi perfil
                       </Link>

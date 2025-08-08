@@ -439,7 +439,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       <div class="flex items-center justify-between mb-1">
                         <div class="flex items-center gap-1">
                           <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                          ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                          ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">.</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg></span>' : ''}
                         </div>
                         ${(() => {
                           const userReport = getUserReport(station.id, precio.tipoCombustible)
@@ -456,9 +456,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       <!-- User Average Price (if available and sufficient reports) -->
                       ${(() => {
                         const userReport = getUserReport(station.id, precio.tipoCombustible)
-                        return userReport && userReport.cantidadReportes >= 2 ? `
+                        return userReport && userReport.cantidadReportes >= 1 ? `
                           <div class="flex items-center justify-between mt-0.5">
-                            <span class="text-xs text-orange-600">Promedio</span>
+                            <span class="text-xs text-orange-600">Prom.</span>
                             <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
                           </div>
                         ` : ''
