@@ -14,6 +14,7 @@ export const getCompanyLogoPath = (empresa: string): string => {
     oil: 'icono-oil.png',
     blanca: 'icono-blanca.png',
     puma: 'icono-puma.png',
+    dapsa: 'icono-dapsa.png',
   }
 
   // Try exact match
