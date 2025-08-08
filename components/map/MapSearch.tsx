@@ -422,44 +422,52 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               
             <!-- Fuel Prices Grid -->
             <div class="grid grid-cols-2 gap-2 mb-3">
-              ${preciosToShow.length > 0 ? preciosToShow.map(precio => {
-                return `
-                <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
-                     onclick="window.location.href='/estacion/${station.id}'"
-                     title="Click para ver detalles de la estación">
-                    
-                    <!-- Header with fuel type and community indicator -->
-                    <div class="flex items-center justify-between mb-1">
-                      <div class="flex items-center gap-1">
-                        <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                        ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+              ${loading ? `
+                <div class="col-span-2 flex items-center justify-center py-2">
+                  <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="ml-2 text-xs text-gray-500">Cargando precios...</span>
+                </div>
+              ` : (
+                preciosToShow.length > 0
+                  ? preciosToShow.map(precio => {
+                    return `
+                    <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
+                         onclick="window.location.href='/estacion/${station.id}'"
+                         title="Click para ver detalles de la estación">
+                      
+                      <!-- Header with fuel type and community indicator -->
+                      <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-1">
+                          <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
+                          ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                        </div>
+                        ${(() => {
+                          const userReport = getUserReport(station.id, precio.tipoCombustible)
+                          return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
+                        })()}
                       </div>
+                      
+                      <!-- Official Price -->
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-800 font-medium">Oficial</span>
+                        <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+                      </div>
+                      
+                      <!-- User Average Price (if available and sufficient reports) -->
                       ${(() => {
                         const userReport = getUserReport(station.id, precio.tipoCombustible)
-                        return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
+                        return userReport && userReport.cantidadReportes >= 2 ? `
+                          <div class="flex items-center justify-between mt-0.5">
+                            <span class="text-xs text-orange-600">Promedio</span>
+                            <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
+                          </div>
+                        ` : ''
                       })()}
-                    </div>
-                    
-                    <!-- Official Price -->
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs text-gray-800 font-medium">Oficial</span>
-                      <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
-                    </div>
-                    
-                    <!-- User Average Price (if available and sufficient reports) -->
-                    ${(() => {
-                      const userReport = getUserReport(station.id, precio.tipoCombustible)
-                      return userReport && userReport.cantidadReportes >= 2 ? `
-                        <div class="flex items-center justify-between mt-0.5">
-                          <span class="text-xs text-orange-600">Promedio</span>
-                          <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
-                        </div>
-                      ` : ''
-                    })()}
-                  </div>
-                  `
-                }).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'
-              }
+                     </div>
+                    `
+                  }).join('')
+                  : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'
+              )}
             </div>
             
             <!-- Action Buttons -->
@@ -497,7 +505,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
           <!-- Price Badge -->
           <div class="absolute -bottom-1 -right-1 z-20 ${isSelected ? 'bg-green-500 text-white' : 'bg-white border border-gray-200 text-blue-600'} rounded-full 
                       px-2 py-0.5 text-xs font-semibold shadow-md min-w-[40px] text-center">
-            ${displayPrice.price !== null ? `$${Math.round(displayPrice.price)}` : 'N/A'}
+            ${loading 
+              ? '<div class="mx-auto w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>' 
+              : (displayPrice.price !== null ? `$${Math.round(displayPrice.price)}` : '-')}
           </div>
         </div>
       `
@@ -550,7 +560,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports])
+  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports, loading])
 
   const handleFavoriteToggle = async (stationId: string) => {
     if (!session?.user) {

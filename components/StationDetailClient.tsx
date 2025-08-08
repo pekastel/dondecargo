@@ -217,7 +217,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
 
   const formatPrice = (price: number | null | undefined) => {
     if (price === null || price === undefined || isNaN(price) || !isFinite(price)) {
-      return 'N/A'
+      return '-'
     }
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',

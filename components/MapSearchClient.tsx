@@ -7,7 +7,7 @@ import { MapFilters } from '@/components/map/MapFilters'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Filter, List, Settings, RotateCcw, Map as MapIcon } from 'lucide-react'
+import { Filter, List, Settings, RotateCcw, Info, Map as MapIcon } from 'lucide-react'
 import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { useFuelPreference } from '@/lib/stores/useFuelPreference'
@@ -199,6 +199,11 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         params.append('lat', filters.location.lat.toString())
         params.append('lng', filters.location.lng.toString())
         params.append('radius', filters.radius.toString())
+      }
+      
+      // Send selected horario so API returns matching prices (defaults to diurno otherwise)
+      if (filters.timeOfDay) {
+        params.append('horario', filters.timeOfDay)
       }
       
       if (filters.fuelTypes.length > 0) {
@@ -451,7 +456,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                   {stations.length} estaciones{hasMore ? '+' : ''}
                 </Badge>
                 {loading && (
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-sm text-muted-foreground">
+                  <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-sm text-muted-foreground">
                     <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-primary border-t-transparent rounded-full" />
                     Actualizando...
                   </div>
@@ -475,8 +480,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                   </Button>
                 )}
               </div>
-              
-              <div className="flex gap-2">
+                
+              <div className="flex gap-2 items-center">
                 {/* Mobile Filters Button */}
                 <Button
                   variant="outline"
@@ -487,22 +492,55 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                   <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Filtros
                 </Button>
-                
-                <div className="flex border border-border rounded-lg">
+                  
+                {/* Horario Toggle (Día/Noche) - compact on xs */}
+                <div
+                  className="inline-flex items-center rounded-full border bg-muted/30 p-0.5"
+                  aria-label="Seleccionar horario"
+                  role="tablist"
+                >
                   <Button
-                    variant={viewMode === 'map' ? 'default' : 'ghost'}
+                    variant={filters.timeOfDay === 'diurno' ? 'default' : 'outline'}
                     size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, timeOfDay: 'diurno' }))}
+                    title="Precios diurnos"
+                    aria-pressed={filters.timeOfDay === 'diurno'}
+                    role="tab"
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
+                  >
+                    Día
+                  </Button>
+                  <Button
+                    variant={filters.timeOfDay === 'nocturno' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, timeOfDay: 'nocturno' }))}
+                    title="Precios nocturnos"
+                    aria-pressed={filters.timeOfDay === 'nocturno'}
+                    role="tab"
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
+                  >
+                    Noche
+                  </Button>
+                </div>
+                <div className="inline-flex items-center rounded-full border bg-muted/30 p-0.5">
+                  <Button
+                    variant={viewMode === 'map' ? 'default' : 'outline'}
+                    size="sm"
+                    role="tab"
+                    aria-selected={viewMode === 'map'}
                     onClick={() => setViewMode('map')}
-                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
                   >
                     <MapIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Mapa
                   </Button>
                   <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    variant={viewMode === 'list' ? 'default' : 'outline'}
                     size="sm"
+                    role="tab"
+                    aria-selected={viewMode === 'list'}
                     onClick={() => setViewMode('list')}
-                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
                   >
                     <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Lista
@@ -521,6 +559,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
               loading={loading}
               visible={viewMode === 'map'}
               selectedFuelType={selectedFuelType}
+              selectedTimeOfDay={filters.timeOfDay}
               currentLocation={currentLocation}
               onStationSelect={(station) => {
                 window.location.href = `/estacion/${station.id}`
