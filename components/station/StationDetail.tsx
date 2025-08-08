@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Phone, Star, ExternalLink } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
+import { getCompanyLogoPath } from '@/lib/companyLogos'
 
 interface StationDetailProps {
   station: StationFull
@@ -46,37 +47,7 @@ export function StationDetail({ station }: StationDetailProps) {
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
 
-  // Helper function to get company logo path
-  const getCompanyLogoPath = (empresa: string): string => {
-    const normalizedCompany = empresa.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-    
-    const logoMap: Record<string, string> = {
-      'ypf': 'icono-ypf.png',
-      'shell': 'icono-shell.png',
-      'axion': 'icono-axion.png',
-      'petrobras': 'icono-petrobras.png',
-      'gulf': 'icono-gulf.png',
-      'puma': 'icono-puma.png',
-      'oil': 'icono-oil.png'
-    }
-    
-    // Try to find exact match first
-    const exactMatch = logoMap[normalizedCompany]
-    if (exactMatch) {
-      return `/logos/${exactMatch}`
-    }
-    
-    // Try partial matches
-    for (const [key, logo] of Object.entries(logoMap)) {
-      if (normalizedCompany.includes(key) || key.includes(normalizedCompany)) {
-        return `/logos/${logo}`
-      }
-    }
-    
-    return `/logos/icono-default.svg`
-  }
+  // getCompanyLogoPath now imported from '@/lib/companyLogos'
 
   // Load Leaflet dynamically
   useEffect(() => {

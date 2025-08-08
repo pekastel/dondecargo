@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Filter, List, Settings, RotateCcw, Map as MapIcon } from 'lucide-react'
 import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
+import { getCompanyLogoPath } from '@/lib/companyLogos'
 
 export type PriceRange = { min: number; max: number }
 export type SearchFilters = {
@@ -285,20 +286,40 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
   const companyAverages = useMemo(() => {
     const totals = new Map<string, { sum: number; count: number }>()
     for (const s of stations) {
-      for (const p of s.precios) {
-        if (filters.timeOfDay && p.horario !== filters.timeOfDay) continue
-        if (filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(p.tipoCombustible)) continue
+      const precios = s.precios || []
+      let priceToUse: number | null = null
+
+      if (selectedFuelType) {
+        // Use selected fuel type for averaging
+        const candidates = precios.filter(
+          (p) => p.tipoCombustible === selectedFuelType && (!filters.timeOfDay || p.horario === filters.timeOfDay)
+        )
+        if (candidates.length) {
+          priceToUse = Math.min(...candidates.map((c) => c.precio))
+        }
+      } else {
+        // 'Menor precio' case: use the lowest price across allowed fuel types
+        const candidates = precios.filter(
+          (p) => (filters.fuelTypes.length === 0 || filters.fuelTypes.includes(p.tipoCombustible)) && (!filters.timeOfDay || p.horario === filters.timeOfDay)
+        )
+        if (candidates.length) {
+          priceToUse = Math.min(...candidates.map((c) => c.precio))
+        }
+      }
+
+      if (priceToUse != null && isFinite(priceToUse)) {
         const key = s.empresa || '—'
         const entry = totals.get(key) || { sum: 0, count: 0 }
-        entry.sum += p.precio
+        entry.sum += priceToUse
         entry.count += 1
         totals.set(key, entry)
       }
     }
+
     return Array.from(totals.entries())
       .map(([empresa, { sum, count }]) => ({ empresa, promedio: count ? sum / count : 0, count }))
       .sort((a, b) => a.promedio - b.promedio)
-  }, [stations, filters.fuelTypes, filters.timeOfDay]) as Array<{ empresa: string; promedio: number; count: number }>
+  }, [stations, selectedFuelType, filters.fuelTypes, filters.timeOfDay]) as Array<{ empresa: string; promedio: number; count: number }>
 
   const fuelAverages = useMemo(() => {
     const totals = new Map<FuelType, { sum: number; count: number }>()
@@ -562,6 +583,19 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                           companyAverages.slice(0, 20).map(item => (
                             <div key={item.empresa} className="flex items-center justify-between">
                               <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow relative flex-shrink-0">
+                                  <img
+                                    src={getCompanyLogoPath(item.empresa)}
+                                    alt={item.empresa.charAt(0)}
+                                    className="w-6 h-6 object-contain rounded-full"
+                                    onError={(e) => {
+                                      const img = e.currentTarget
+                                      img.style.display = 'none'
+                                      const p = img.parentElement
+                                      if (p) p.textContent = item.empresa?.charAt(0) || '—'
+                                    }}
+                                  />
+                                </div>
                                 <Badge variant="outline" className="truncate max-w-[160px]">{item.empresa}</Badge>
                                 <span className="text-[11px] text-muted-foreground">{item.count}</span>
                               </div>
