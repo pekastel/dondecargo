@@ -218,7 +218,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         }
       }
 
-      // Smaller fixed page size to minimize per-request payload and favor progressive loading
+      // Fixed page size and classic offset for progressive loading
       const limit = 24
       params.append('limit', limit.toString())
       params.append('offset', offset.toString())
@@ -360,6 +360,26 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, hasMore, isLoadingMore, stations.length])
 
+  const getDisplayPrice = useCallback((s: Station): { price: number | null; label: string } => {
+    const precios = s.precios || []
+    if (selectedFuelType) {
+      const candidates = precios.filter(
+        (p) => p.tipoCombustible === selectedFuelType && (!filters.timeOfDay || p.horario === filters.timeOfDay)
+      )
+      if (candidates.length) {
+        const min = candidates.reduce((acc, cur) => (cur.precio < acc ? cur.precio : acc), candidates[0].precio)
+        return { price: min, label: FUEL_LABELS[selectedFuelType] }
+      }
+      return { price: null, label: FUEL_LABELS[selectedFuelType] }
+    }
+    const candidates = precios.filter(
+      (p) => (filters.fuelTypes.length === 0 || filters.fuelTypes.includes(p.tipoCombustible)) && (!filters.timeOfDay || p.horario === filters.timeOfDay)
+    )
+    if (!candidates.length) return { price: null, label: 'Menor' }
+    const minCandidate = candidates.reduce((min, cur) => (cur.precio < min.precio ? cur : min), candidates[0])
+    return { price: minCandidate.precio, label: FUEL_LABELS[minCandidate.tipoCombustible] }
+  }, [selectedFuelType, filters.timeOfDay, filters.fuelTypes])
+
 
 
   const clearFilters = () => {
@@ -410,7 +430,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Limpiar filtros
               </Button>
-              <Button size="sm" onClick={fetchStations} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Button size="sm" onClick={() => fetchStations()} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                 Buscar estaciones
               </Button>
             </div>
@@ -510,38 +530,63 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
           
           {/* List View */}
           {viewMode === 'list' && (
-            <div className="h-full overflow-y-auto p-4 bg-background">
+            <div className="h-full overflow-y-auto p-4 pb-28 lg:pb-8 bg-background">
               <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-4">
                 {/* Results grid */}
                 <div className="xl:col-span-8 2xl:col-span-9">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
-                    {stations.map(station => (
-                      <Card
-                        key={station.id}
-                        className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border border-border/50 hover:border-primary/20"
-                        onClick={() => (window.location.href = `/estacion/${station.id}`)}
-                      >
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-semibold text-base sm:text-lg">{station.nombre}</h4>
-                            <p className="text-xs sm:text-sm text-muted-foreground">{station.direccion}</p>
-                            <p className="text-[11px] sm:text-xs text-muted-foreground">{station.localidad}, {station.provincia}</p>
-                          </div>
-                          <Badge variant="outline" className="font-medium">{station.empresa}</Badge>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {station.precios.slice(0, 4).map(precio => (
-                            <div
-                              key={precio.tipoCombustible}
-                              className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 text-xs sm:text-sm"
-                            >
-                              <span className="font-medium">{FUEL_LABELS[precio.tipoCombustible]}</span>
-                              <span className="font-bold text-primary">{formatCurrency(precio.precio)}</span>
+                  <div className="rounded-md border divide-y">
+                    {stations.length === 0 ? (
+                      <div className="p-6 text-sm text-muted-foreground">No hay estaciones para mostrar.</div>
+                    ) : (
+                      stations.map(station => {
+                        const display = getDisplayPrice(station)
+                        return (
+                          <div
+                            key={station.id}
+                            className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => (window.location.href = `/estacion/${station.id}`)}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow relative flex-shrink-0">
+                                <img
+                                  src={getCompanyLogoPath(station.empresa)}
+                                  alt={station.empresa?.charAt(0)}
+                                  className="w-6 h-6 object-contain rounded-full"
+                                  onError={(e) => {
+                                    const img = e.currentTarget
+                                    img.style.display = 'none'
+                                    const p = img.parentElement
+                                    if (p) p.textContent = station.empresa?.charAt(0) || '—'
+                                  }}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium text-sm sm:text-base truncate max-w-[240px] sm:max-w-[360px]">{station.nombre}</h4>
+                                  <Badge variant="outline" className="hidden sm:inline font-normal">{station.empresa}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate max-w-[420px]">{station.direccion}</p>
+                                <p className="text-[11px] text-muted-foreground truncate max-w-[420px]">{station.localidad}, {station.provincia}</p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </Card>
-                    ))}
+                            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                              <div className="text-right">
+                                <div className="text-xs text-muted-foreground">{display.label}</div>
+                                <div className="text-sm font-bold text-primary">{display.price !== null ? formatCurrency(display.price) : '—'}</div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                                onClick={(e) => { e.stopPropagation(); window.location.href = `/estacion/${station.id}` }}
+                              >
+                                Ver
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
 
                   {/* Infinite scroll sentinel */}
