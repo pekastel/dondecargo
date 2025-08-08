@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { MapSearch } from '@/components/map/MapSearch'
 import { MapFilters } from '@/components/map/MapFilters'
 import { Button } from '@/components/ui/button'
@@ -37,6 +38,9 @@ export interface Station {
 }
 
 export function MapSearchClient() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [filters, setFilters] = useState<SearchFilters>({
     location: null,
     radius: 5,
@@ -55,10 +59,63 @@ export function MapSearchClient() {
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
 
-  // Initialize with default location or user geolocation
+  // Function to update URL parameters when coordinates change
+  const updateURL = useCallback((location: { lat: number; lng: number } | null, radius?: number) => {
+    if (!location) return
+
+    const params = new URLSearchParams()
+    params.set('lat', location.lat.toFixed(6))
+    params.set('lng', location.lng.toFixed(6))
+    if (radius) {
+      params.set('radius', radius.toString())
+    }
+
+    // Use replace to avoid cluttering browser history with every small change
+    router.replace(`/buscar?${params.toString()}`, { scroll: false })
+  }, [router])
+
+  // Function to read initial coordinates from URL
+  const getInitialLocationFromURL = useCallback(() => {
+    const lat = searchParams.get('lat')
+    const lng = searchParams.get('lng')
+    const radius = searchParams.get('radius')
+
+    if (lat && lng) {
+      const parsedLat = parseFloat(lat)
+      const parsedLng = parseFloat(lng)
+      const parsedRadius = radius ? parseInt(radius) : 5
+
+      // Validate coordinates
+      if (!isNaN(parsedLat) && !isNaN(parsedLng) && 
+          parsedLat >= -90 && parsedLat <= 90 && 
+          parsedLng >= -180 && parsedLng <= 180) {
+        return {
+          location: { lat: parsedLat, lng: parsedLng },
+          radius: Math.max(1, Math.min(50, parsedRadius))
+        }
+      }
+    }
+    return null
+  }, [searchParams])
+
+  // Initialize with URL parameters or fallback to geolocation
   useEffect(() => {
     const initializeLocation = async () => {
-      // Try to get user's current location first
+      // First, try to get coordinates from URL
+      const urlData = getInitialLocationFromURL()
+      
+      if (urlData) {
+        // Use coordinates from URL - no geolocation needed
+        setFilters(prev => ({ 
+          ...prev, 
+          location: urlData.location,
+          radius: urlData.radius 
+        }))
+        setCurrentLocation(urlData.location)
+        return
+      }
+
+      // If no URL coordinates, try geolocation
       if (navigator.geolocation) {
         const options = {
           enableHighAccuracy: true,
@@ -74,6 +131,8 @@ export function MapSearchClient() {
             }
             setFilters(prev => ({ ...prev, location }))
             setCurrentLocation(location)
+            // Update URL with geolocation coordinates
+            updateURL(location, filters.radius)
           },
           (error) => {
             console.error('Geolocation failed:', error)
@@ -84,6 +143,7 @@ export function MapSearchClient() {
             }
             setFilters(prev => ({ ...prev, location: defaultLocation }))
             setCurrentLocation(defaultLocation)
+            updateURL(defaultLocation, filters.radius)
           },
           options
         )
@@ -95,6 +155,7 @@ export function MapSearchClient() {
         }
         setFilters(prev => ({ ...prev, location: defaultLocation }))
         setCurrentLocation(defaultLocation)
+        updateURL(defaultLocation, filters.radius)
       }
     }
 
@@ -104,6 +165,7 @@ export function MapSearchClient() {
     }
 
     setSelectedFuelType('nafta')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Set current location for map centering when filters.location changes
@@ -111,11 +173,19 @@ export function MapSearchClient() {
     setCurrentLocation(filters.location)
   }, [filters.location])
 
+  // Update URL whenever location or radius changes (except during initial load)
+  useEffect(() => {
+    if (filters.location) {
+      updateURL(filters.location, filters.radius)
+    }
+  }, [filters.location, filters.radius, updateURL])
+
   // Fetch stations when filters change
   useEffect(() => {
     if (filters.location) {
       fetchStations()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchStations = async (offset = 0, append = false) => {
@@ -216,14 +286,6 @@ export function MapSearchClient() {
   }
 
 
-  const toggleFuelType = (fuelType: FuelType) => {
-    setFilters(prev => ({
-      ...prev,
-      fuelTypes: prev.fuelTypes.includes(fuelType)
-        ? prev.fuelTypes.filter(f => f !== fuelType)
-        : [...prev.fuelTypes, fuelType]
-    }))
-  }
 
   const clearFilters = () => {
     setFilters(prev => ({
