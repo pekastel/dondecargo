@@ -111,7 +111,7 @@ export function StationDetail({ station }: StationDetailProps) {
     const markerHtml = `
       <div class="station-marker-container">
         <!-- Base Marker Pin -->
-        <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-green-500 to-emerald-600 
+        <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 
                     flex items-center justify-center text-white text-xs font-bold shadow-lg 
                     relative z-10">
           <img src="${logoPath}" alt="${station.empresa}" 

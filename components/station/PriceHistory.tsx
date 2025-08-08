@@ -273,11 +273,7 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded" />
-              <span>Usuario Validado</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-orange-400 rounded" />
-              <span>Pendiente Validación</span>
+              <span>Usuario</span>
             </div>
           </div>
 
@@ -292,11 +288,6 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
                     <Badge variant={item.fuente === 'oficial' ? 'default' : 'secondary'} className="text-xs">
                       {item.fuente === 'oficial' ? 'Oficial' : 'Usuario'}
                     </Badge>
-                    {item.esValidado ? (
-                      <span className="text-green-600 text-xs">✅</span>
-                    ) : (
-                      <span className="text-orange-500 text-xs">⏳</span>
-                    )}
                   </div>
                   <span className="font-medium">{formatPrice(item.precio)}</span>
                 </div>

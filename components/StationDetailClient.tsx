@@ -13,6 +13,7 @@ import { FuelType, FUEL_LABELS, HorarioType, FuenteType } from '@/lib/types'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { authClient } from '@/lib/authClient'
 import { toast } from 'sonner'
+import { getCompanyLogoPath } from '@/lib/companyLogos'
 
 export interface StationPrice {
   id: string
@@ -394,11 +395,11 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
               <span className="hidden sm:inline">{favoriteLoading ? (isFavorite ? 'Quitando…' : 'Guardando…') : (isFavorite ? 'Guardado' : 'Guardar')}</span>
               <span className="sm:hidden">{favoriteLoading ? (isFavorite ? 'Quitando…' : 'Guardando…') : (isFavorite ? 'Guardado' : 'Guardar')}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:flex-initial">
+            {/* <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:flex-initial">
               <Share2 className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Compartir</span>
               <span className="sm:hidden">Compartir</span>
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -411,9 +412,19 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
                     <h1 className="text-xl sm:text-2xl font-bold">{station.nombre}</h1>
-                    <Badge variant="outline" className="text-xs w-fit">
-                      {station.empresa}
-                    </Badge>
+                    <div className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow relative flex-shrink-0">
+                      <img
+                        src={getCompanyLogoPath(station.empresa)}
+                        alt={station.empresa?.charAt(0)}
+                        className="w-6 h-6 object-contain rounded-full"
+                        onError={(e) => {
+                          const img = e.currentTarget as HTMLImageElement
+                          img.style.display = 'none'
+                          const p = img.parentElement
+                          if (p) p.textContent = station.empresa?.charAt(0) || '—'
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                     {station.rating && (
@@ -437,11 +448,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                   {currentPrices.map((precio) => (
                     <div
                       key={precio.id}
-                      className={`p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                        precio.precio === lowestPrice 
-                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 shadow-sm' 
-                          : 'border-border bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50'
-                      }`}
+                      className={`p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md border-border bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -699,17 +706,17 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
             )}
 
             {/* Price History */}
-            <PriceHistory 
+            {/* <PriceHistory 
               stationId={station.id}
               fuelType={selectedFuelType}
               onFuelTypeChange={setSelectedFuelType}
-            />
+            /> */}
+            <StationInfo station={station} />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             <StationDetail station={station} />
-            <StationInfo station={station} />
           </div>
         </div>
       </main>

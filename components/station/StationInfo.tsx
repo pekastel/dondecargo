@@ -152,10 +152,6 @@ export function StationInfo({ station }: StationInfoProps) {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleDirections} className="flex-1">
-            <MapPin className="h-4 w-4 mr-2" />
-            Cómo llegar
-          </Button>
           {station.telefono && (
             <Button variant="outline" onClick={handleCall} className="flex-1 sm:flex-initial">
               <Phone className="h-4 w-4 mr-2 sm:mr-0" />
@@ -163,36 +159,6 @@ export function StationInfo({ station }: StationInfoProps) {
             </Button>
           )}
         </div>
-      </Card>
-
-      {/* Services and Amenities */}
-      {(station.servicios && station.servicios.length > 0) && (
-        <Card className="p-4 sm:p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Servicios disponibles
-          </h3>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {station.servicios.map((servicio) => (
-              <div key={servicio} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20">
-                <span className="text-sm">
-                  {getServiceIcon(servicio)}
-                </span>
-                <span className="text-sm font-medium">{servicio}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Data Information */}
-      <Card className="p-4 sm:p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          Información de datos
-        </h3>
-        
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-2">
@@ -231,6 +197,28 @@ export function StationInfo({ station }: StationInfoProps) {
           <p>• Los datos se actualizan diariamente</p>
         </div>
       </Card>
+
+      {/* Services and Amenities */}
+      {(station.servicios && station.servicios.length > 0) && (
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Servicios disponibles
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {station.servicios.map((servicio) => (
+              <div key={servicio} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20">
+                <span className="text-sm">
+                  {getServiceIcon(servicio)}
+                </span>
+                <span className="text-sm font-medium">{servicio}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
     </div>
   )
 }
