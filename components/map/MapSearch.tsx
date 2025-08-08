@@ -27,6 +27,7 @@ interface MapSearchProps {
   currentLocation?: { lat: number; lng: number } | null
   onStationSelect?: (station: Station) => void
   fitToStations?: boolean
+  selectedTimeOfDay?: 'diurno' | 'nocturno' | null
 }
 
 interface LeafletMap {
@@ -68,7 +69,7 @@ declare global {
   }
 }
 
-export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect, fitToStations = false }: MapSearchProps) {
+export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect, fitToStations = false, selectedTimeOfDay = null }: MapSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const radiusCircleRef = useRef<LeafletCircle | null>(null)
@@ -152,30 +153,26 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
   // Initialize map
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !center) return
+    if (!mapRef.current || !visible || !center) return
 
-    // Clean up existing map if it exists
-    if (leafletMapRef.current) {
-      leafletMapRef.current.remove()
-      leafletMapRef.current = null
-    }
+    if (!leafletMapRef.current) {
+      // Initialize map
+      const map = window.L.map(mapRef.current).setView([center.lat, center.lng], 13)
 
-    // Create new map
-    const map = window.L.map(mapRef.current).setView([center.lat, center.lng], 13)
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map)
 
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map)
+      leafletMapRef.current = map
 
-    leafletMapRef.current = map
-
-    return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove()
-        leafletMapRef.current = null
+      return () => {
+        if (leafletMapRef.current) {
+          leafletMapRef.current.remove()
+          leafletMapRef.current = null
+        }
       }
     }
-  }, [mapLoaded, center])
+  }, [mapLoaded, center, visible])
 
   // Load user's favorites when authenticated
   useEffect(() => {
@@ -275,10 +272,13 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   //   return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
   // }
 
-  // Helper function to get display price based on selected fuel type
+  // Helper function to get display price based on selected fuel type and horario
   const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
+    const preciosFiltrados = Array.isArray(station.precios)
+      ? (selectedTimeOfDay ? station.precios.filter(p => p.horario === selectedTimeOfDay) : station.precios)
+      : []
     if (selectedFuelType) {
-      const fuelPrice = station.precios.find(p => p.tipoCombustible === selectedFuelType)
+      const fuelPrice = preciosFiltrados.find(p => p.tipoCombustible === selectedFuelType)
       if (fuelPrice) {
         return { price: fuelPrice.precio, label: getFuelLabel(selectedFuelType) }
       } else {
@@ -286,11 +286,11 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       }
     } else {
       // Show lowest price - check if prices array exists and has items
-      if (!station.precios || station.precios.length === 0) {
+      if (!preciosFiltrados || preciosFiltrados.length === 0) {
         return { price: null, label: 'Sin precios' }
       }
       
-      const validPrices = station.precios
+      const validPrices = preciosFiltrados
         .map(p => p.precio)
         .filter(price => price != null && !isNaN(price) && isFinite(price))
       
@@ -408,56 +408,66 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               </div>
             </div>
               
-              <!-- Fuel Prices Grid -->
-            <div class="grid grid-cols-2 gap-1.5 mb-2.5">
+            <!-- Fuel Prices Grid -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
               ${station.precios.length > 0 ? station.precios.map(precio => {
                 return `
-                <div class="relative flex flex-col px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-blue-100 ${selectedFuelType === precio.tipoCombustible ? 'bg-blue-50 text-blue-900' : 'bg-gray-50'}"
+                <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
                      onclick="window.location.href='/estacion/${station.id}'"
                      title="Click para ver detalles de la estación">
-                  
-                  <!-- Header with fuel type and community indicator -->
-                  <div class="flex items-center justify-between mb-1">
-                    <div class="flex items-center gap-1">
-                      <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                      ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                    
+                    <!-- Header with fuel type and community indicator -->
+                    <div class="flex items-center justify-between mb-1">
+                      <div class="flex items-center gap-1">
+                        <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
+                        ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">Cargando...</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg><span class="text-xs text-orange-600 font-medium">Com</span></span>' : ''}
+                      </div>
+                      ${(() => {
+                        const userReport = getUserReport(station.id, precio.tipoCombustible)
+                        return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
+                      })()}
                     </div>
+                    
+                    <!-- Official Price -->
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs text-gray-800 font-medium">Oficial</span>
+                      <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+                    </div>
+                    
+                    <!-- User Average Price (if available and sufficient reports) -->
                     ${(() => {
                       const userReport = getUserReport(station.id, precio.tipoCombustible)
-                      return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
+                      return userReport && userReport.cantidadReportes >= 2 ? `
+                        <div class="flex items-center justify-between mt-0.5">
+                          <span class="text-xs text-orange-600">Promedio</span>
+                          <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
+                        </div>
+                      ` : ''
                     })()}
                   </div>
-                  
-                  <!-- Official Price -->
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs text-gray-800 font-medium">Oficial</span>
-                    <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
-                  </div>
-                  
-                  <!-- User Average Price (if available and sufficient reports) -->
-                  ${(() => {
-                    const userReport = getUserReport(station.id, precio.tipoCombustible)
-                    return userReport && userReport.cantidadReportes >= 2 ? `
-                      <div class="flex items-center justify-between mt-0.5">
-                        <span class="text-xs text-orange-600">Promedio</span>
-                        <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
-                      </div>
-                    ` : ''
-                  })()}
-                </div>
-                `
-              }).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'}
+                  `
+                }).join('') : '<div class="col-span-2 text-center text-gray-400 text-xs py-2">Sin precios</div>'
+              }
             </div>
             
             <!-- Action Buttons -->
-            <div class="flex gap-1.5">
-              <button class="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-center transition-colors"
-                      onclick="window.location.href='/estacion/${station.id}'">
-                Detalles
+            <div class="flex gap-2">
+              <button class="flex-1 text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all shadow-sm flex items-center justify-center gap-1"
+                      onclick="window.location.href='/estacion/${station.id}'" title="Ver detalles de la estación">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <circle cx="12" cy="16" r="1"></circle>
+                </svg>
+                <span>Detalles</span>
               </button>
-              <button class="flex-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-center transition-colors"
-                      onclick="window.location.href='/reportar-precio/${station.id}'">
-                Reportar
+              <button class="flex-1 text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all shadow-sm flex items-center justify-center gap-1"
+                      onclick="window.location.href='/reportar-precio/${station.id}'" title="Reportar precio">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 4v16"></path>
+                  <path d="M4 5h10l-1-2h7l-1 2h-7"></path>
+                </svg>
+                <span>Reportar</span>
               </button>
             </div>
           </div>
@@ -528,7 +538,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, selectedStations, selectedFuelType, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports])
+  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports])
 
   const handleFavoriteToggle = async (stationId: string) => {
     if (!session?.user) {

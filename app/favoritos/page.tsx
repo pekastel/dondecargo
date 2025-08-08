@@ -10,6 +10,7 @@ import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { MapSearch } from '@/components/map/MapSearch'
 import type { Station } from '@/components/MapSearchClient'
 import { FUEL_LABELS, type FuelType } from '@/lib/types'
+import { Sun, Moon } from 'lucide-react'
 
 interface FavoritoItem {
   id: string
@@ -31,6 +32,7 @@ export default function FavoritosPage() {
   const [loading, setLoading] = useState(true)
   const [stations, setStations] = useState<Station[]>([])
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<'diurno' | 'nocturno'>('diurno')
 
   useEffect(() => {
     if (!session?.user) return
@@ -176,10 +178,28 @@ export default function FavoritosPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 lg:py-8">
+    <div className="container mx-auto px-2 py-2 lg:px-4 lg:py-4">
       <div className="flex items-center justify-between mb-3 lg:mb-6">
         <h1 className="text-xl lg:text-2xl font-bold">Mis favoritos</h1>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1" aria-label="Seleccionar horario">
+            <Button
+              variant={selectedTimeOfDay === 'diurno' ? 'default' : 'outline'}
+              size="icon"
+              onClick={() => setSelectedTimeOfDay('diurno')}
+              title="Precios diurnos"
+            >
+              <Sun className="h-4 w-4 text-amber-500" />
+            </Button>
+            <Button
+              variant={selectedTimeOfDay === 'nocturno' ? 'default' : 'outline'}
+              size="icon"
+              onClick={() => setSelectedTimeOfDay('nocturno')}
+              title="Precios nocturnos"
+            >
+              <Moon className="h-4 w-4 text-blue-500" />
+            </Button>
+          </div>
           <Button variant="outline" size="sm" asChild>
             <Link href="/buscar">Buscar estaciones</Link>
           </Button>
@@ -198,7 +218,7 @@ export default function FavoritosPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 lg:gap-4">
           {/* Map column */}
           <div className="xl:col-span-8 2xl:col-span-9">
             <div className="relative h-[380px] sm:h-[440px] lg:h-[560px] rounded-md border overflow-hidden">
@@ -212,6 +232,7 @@ export default function FavoritosPage() {
                 currentLocation={null}
                 onStationSelect={(station) => { router.push(`/estacion/${station.id}`) }}
                 fitToStations
+                selectedTimeOfDay={selectedTimeOfDay}
               />
             </div>
           </div>
@@ -223,7 +244,7 @@ export default function FavoritosPage() {
                 <div className="p-6 text-sm text-muted-foreground">No hay estaciones para mostrar.</div>
               ) : (
                 stations.map((station) => {
-                  const display = getDisplayPrice(station)
+                  const horarioPrices = (station.precios || []).filter(p => p.horario === selectedTimeOfDay)
                   return (
                     <div
                       key={station.id}
@@ -251,13 +272,20 @@ export default function FavoritosPage() {
                           </div>
                           <p className="text-xs text-muted-foreground truncate max-w-[420px]">{station.direccion}</p>
                           <p className="text-[11px] text-muted-foreground truncate max-w-[420px]">{station.localidad}, {station.provincia}</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {horarioPrices.length > 0 ? (
+                              horarioPrices.map((p, idx) => (
+                                <span key={`${station.id}-${p.tipoCombustible}-${idx}`} className="text-[11px] px-1.5 py-0.5 rounded border bg-muted">
+                                  {FUEL_LABELS[p.tipoCombustible]}: {formatCurrency(p.precio)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Sin precios {selectedTimeOfDay}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">{display.label}</div>
-                          <div className="text-sm font-bold text-primary">{display.price !== null ? formatCurrency(display.price) : '—'}</div>
-                        </div>
                         <Button
                           variant="outline"
                           size="sm"
