@@ -48,8 +48,8 @@ export default function Profile() {
         callbackURL: '/profile'
       });
       setMessage({ type: 'success', text: 'Correo de verificación enviado. ¡Por favor revisa tu bandeja de entrada!' });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Error al enviar el correo de verificación. Por favor intenta nuevamente.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Error al enviar el correo de verificación. Por favor intenta nuevamente.' });
     } finally {
       setIsVerifying(false);
     }

@@ -124,7 +124,7 @@ async function getEstadisticasGenerales(fechaDesde: Date) {
   })
 }
 
-async function getEstadisticasPrecios(fechaDesde: Date, params: any) {
+async function getEstadisticasPrecios(fechaDesde: Date, params: z.infer<typeof searchParamsSchema>) {
   const conditions = [gte(precios.fechaReporte, fechaDesde)]
   
   if (params.combustible) {
