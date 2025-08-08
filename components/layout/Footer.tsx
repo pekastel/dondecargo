@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Github, Twitter, Mail, ExternalLink } from 'lucide-react'
+import Image from 'next/image'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -56,14 +57,15 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600">
-                <MapPin className="h-5 w-5 text-white" />
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 p-1.5 md:p-1 shadow-lg">
+                <Image src="/icon0.svg" alt="Logo" width={34} height={34} />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 DondeCargo
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
               La plataforma para encontrar y comparar precios de combustibles en Argentina. 
               Datos oficiales + comunidad validada.

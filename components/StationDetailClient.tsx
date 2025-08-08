@@ -385,13 +385,14 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
           <div className="flex items-center gap-2">
             <Button
               variant={isFavorite ? "default" : "outline"}
-              size="sm"
               onClick={toggleFavorite}
-              className="flex-1 sm:flex-initial"
+              disabled={favoriteLoading}
+              aria-busy={favoriteLoading}
+              className="text-sm"
             >
-              <Heart className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">{isFavorite ? 'Guardado' : 'Guardar'}</span>
-              <span className="sm:hidden">{isFavorite ? 'Guardado' : 'Guardar'}</span>
+              <Heart className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-current' : ''} ${favoriteLoading ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{favoriteLoading ? (isFavorite ? 'Quitando…' : 'Guardando…') : (isFavorite ? 'Guardado' : 'Guardar')}</span>
+              <span className="sm:hidden">{favoriteLoading ? (isFavorite ? 'Quitando…' : 'Guardando…') : (isFavorite ? 'Guardado' : 'Guardar')}</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:flex-initial">
               <Share2 className="h-4 w-4 mr-1" />

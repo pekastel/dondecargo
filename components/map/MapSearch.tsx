@@ -5,6 +5,9 @@ import { Station } from '@/components/MapSearchClient'
 import { FuelType, FUEL_LABELS } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
+import { authClient } from '@/lib/authClient'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface UserPriceReport {
   tipoCombustible: string
@@ -74,6 +77,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // User reports are now managed directly in DOM, keeping minimal state for cache management
   const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
   const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
+  const { data: session } = authClient.useSession()
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
+  const [favLoading, setFavLoading] = useState<Set<string>>(new Set())
+  const router = useRouter()
 
 
   // Load Leaflet dynamically
@@ -167,6 +174,27 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       }
     }
   }, [mapLoaded, center])
+
+  // Load user's favorites when authenticated
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        if (!session?.user) {
+          setFavoriteIds(new Set())
+          return
+        }
+        const res = await fetch('/api/favoritos')
+        if (res.ok) {
+          const json = await res.json()
+          const ids: string[] = (json?.data || []).map((f: any) => f.estacionId).filter(Boolean)
+          setFavoriteIds(new Set(ids))
+        }
+      } catch (e) {
+        console.error('Error loading favorites', e)
+      }
+    }
+    loadFavorites()
+  }, [session?.user])
 
   // Update map center
   useEffect(() => {
@@ -334,6 +362,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       const displayPrice = getDisplayPrice(station)
       const logoPath = getCompanyLogoPath(station.empresa)
       const isSelected = selectedStations.some(s => s.id === station.id)
+      const isFav = favoriteIds.has(station.id)
 
       // Create marker with click popup functionality
       const markerHtml = `
@@ -364,10 +393,17 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                 <h3 class="text-sm font-medium text-gray-900 truncate">${station.nombre}</h3>
                 <p class="text-xs text-gray-500 truncate">${station.empresa}</p>
               </div>
-              <button class="ml-1 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600" 
-                      onclick="event.stopPropagation(); this.closest('.station-marker-container').click();">
-                ×
-              </button>
+              <div class="flex items-center gap-1">
+                <button class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-50"
+                        data-fav-toggle="true" data-station-id="${station.id}"
+                        title="${isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+                  <span class="text-[14px] ${isFav ? 'text-yellow-400' : 'text-gray-300'}">★</span>
+                </button>
+                <button class="ml-1 w-5 h-5 flex items-center justify-center rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600" 
+                        onclick="event.stopPropagation(); this.closest('.station-marker-container').click();">
+                  ×
+                </button>
+              </div>
             </div>
             
             <!-- Fuel Prices Grid -->
@@ -432,6 +468,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                  class="w-6 h-6 object-contain rounded-full"
                  onerror="this.style.display='none'; this.parentElement.textContent='${station.empresa.charAt(0)}';" />
           </div>
+          ${isFav ? `<div class="absolute -top-1 -left-1 z-20 bg-yellow-400 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold shadow">★</div>` : ''}
           
           <!-- Price Badge -->
           <div class="absolute -bottom-1 -right-1 z-20 ${isSelected ? 'bg-green-500 text-white' : 'bg-white border border-gray-200 text-blue-600'} rounded-full 
@@ -468,10 +505,72 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         })
       })
 
+      // Attach favorite toggle listener to the marker DOM element
+      // Using a microtask to ensure element exists
+      setTimeout(() => {
+        try {
+          const anyMarker: any = marker as any
+          const el: HTMLElement | null = anyMarker.getElement ? anyMarker.getElement() : null
+          if (!el) return
+          const favBtn = el.querySelector('[data-fav-toggle="true"]') as HTMLElement | null
+          if (!favBtn) return
+          favBtn.addEventListener('click', (e) => {
+            e.stopPropagation()
+            handleFavoriteToggle(station.id)
+          })
+        } catch (err) {
+          console.error('Fav listener attach error', err)
+        }
+      }, 0)
+
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, selectedStations, selectedFuelType, userReports, loadingReports, mapLoaded, fetchUserReports])
+  }, [stations, selectedStations, selectedFuelType, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports])
+
+  const handleFavoriteToggle = async (stationId: string) => {
+    if (!session?.user) {
+      toast('Iniciá sesión para usar Favoritos', {
+        action: { label: 'Ingresar', onClick: () => router.push('/login') }
+      })
+      return
+    }
+    if (favLoading.has(stationId)) return
+    setFavLoading(prev => new Set(prev).add(stationId))
+    const isFav = favoriteIds.has(stationId)
+    try {
+      if (isFav) {
+        const res = await fetch(`/api/favoritos?estacionId=${encodeURIComponent(stationId)}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error('DELETE favorito failed')
+        setFavoriteIds(prev => {
+          const n = new Set(prev)
+          n.delete(stationId)
+          return n
+        })
+        toast.success('Eliminado de favoritos')
+      } else {
+        const res = await fetch('/api/favoritos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estacionId: stationId })
+        })
+        if (!res.ok) throw new Error('POST favorito failed')
+        setFavoriteIds(prev => new Set(prev).add(stationId))
+        toast.success('Guardado en favoritos')
+      }
+    } catch (e) {
+      console.error('toggle favorite error', e)
+      toast.error('No se pudo actualizar el favorito')
+    } finally {
+      setFavLoading(prev => {
+        const n = new Set(prev)
+        n.delete(stationId)
+        return n
+      })
+      // Regenerate markers to reflect star state
+      generateMarkers()
+    }
+  }
 
   // Add station markers - now includes userReports and loadingReports in dependencies
   useEffect(() => {

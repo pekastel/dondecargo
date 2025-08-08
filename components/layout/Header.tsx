@@ -49,7 +49,15 @@ export function Header() {
           {/* Actions */}
           <div className="flex items-center space-x-4">
             <ModeToggle />
-            
+            {session?.user && (
+              <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
+                <Link href="/favoritos" className="flex items-center gap-1">
+                  <Star className="h-4 w-4" />
+                  <span>Favoritos</span>
+                </Link>
+              </Button>
+            )}
+
             {session?.user ? (
               <UserMenu />
             ) : (
@@ -127,6 +135,11 @@ export function Header() {
                         <div className="text-xs text-muted-foreground">{session.user.email}</div>
                       </div>
                     </div>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href="/favoritos" onClick={() => setMobileMenuOpen(false)}>
+                        <Star className="h-4 w-4 mr-2" /> Favoritos
+                      </Link>
+                    </Button>
                     <Button variant="ghost" className="w-full justify-start" asChild>
                       <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                         Mi perfil
