@@ -199,7 +199,7 @@ export default function FavoritosPage() {
               title="Precios diurnos"
               aria-pressed={selectedTimeOfDay === 'diurno'}
               role="tab"
-              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
             >
               Día
             </Button>
@@ -210,7 +210,7 @@ export default function FavoritosPage() {
               title="Precios nocturnos"
               aria-pressed={selectedTimeOfDay === 'nocturno'}
               role="tab"
-              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3 rounded-full"
             >
               Noche
             </Button>

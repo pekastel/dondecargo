@@ -54,6 +54,7 @@ interface LeafletCircle {
   remove: () => void
   setLatLng: (latlng: [number, number]) => LeafletCircle
   setRadius: (radius: number) => LeafletCircle
+  bringToFront?: () => LeafletCircle
 }
 
 interface Leaflet {
@@ -632,39 +633,74 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
   // Add/update radius circle
   useEffect(() => {
-    if (!leafletMapRef.current || !mapLoaded || !center) return
+    if (!leafletMapRef.current || !mapLoaded || !center || !visible) return
 
-    // Remove existing circle
     if (radiusCircleRef.current) {
-      radiusCircleRef.current.remove()
-      radiusCircleRef.current = null
+      radiusCircleRef.current
+        .setLatLng([center.lat, center.lng])
+        .setRadius(radius * 1000)
+      if (typeof radiusCircleRef.current.bringToFront === 'function') {
+        radiusCircleRef.current.bringToFront()
+      }
+    } else {
+      radiusCircleRef.current = window.L.circle([center.lat, center.lng], {
+        radius: radius * 1000, // Convert km to meters
+        color: '#3b82f6',
+        fillColor: '#3b82f6', 
+        fillOpacity: 0.1,
+        weight: 2,
+        opacity: 0.6,
+        dashArray: '5, 5'
+      }).addTo(leafletMapRef.current)
     }
-
-    // Create new circle
-    const circle = window.L.circle([center.lat, center.lng], {
-      radius: radius * 1000, // Convert km to meters
-      color: '#3b82f6',
-      fillColor: '#3b82f6', 
-      fillOpacity: 0.1,
-      weight: 2,
-      opacity: 0.6,
-      dashArray: '5, 5'
-    }).addTo(leafletMapRef.current)
-
-    radiusCircleRef.current = circle
-  }, [center, radius, mapLoaded])
+  }, [center, radius, mapLoaded, visible])
 
   // Handle map visibility changes
   useEffect(() => {
-    if (leafletMapRef.current && visible) {
-      // Invalidate map size when becoming visible to ensure proper rendering
-      setTimeout(() => {
-        if (leafletMapRef.current) {
-          leafletMapRef.current.invalidateSize()
+    if (!leafletMapRef.current) return
+    if (!visible) return
+    // Wait until the container has a non-zero size, then refresh map and circle
+    let attempts = 0
+    const maxAttempts = 20 // ~2s
+    const checkAndRefresh = () => {
+      if (!leafletMapRef.current || !mapRef.current) return
+      const w = mapRef.current.offsetWidth
+      const h = mapRef.current.offsetHeight
+      if (w > 0 && h > 0) {
+        leafletMapRef.current.invalidateSize()
+        if (center) {
+          // Ensure circle exists and is updated
+          if (radiusCircleRef.current) {
+            radiusCircleRef.current
+              .setLatLng([center.lat, center.lng])
+              .setRadius(radius * 1000)
+            if (typeof radiusCircleRef.current.bringToFront === 'function') {
+              radiusCircleRef.current.bringToFront()
+            }
+          } else {
+            radiusCircleRef.current = window.L.circle([center.lat, center.lng], {
+              radius: radius * 1000, // Convert km to meters
+              color: '#3b82f6',
+              fillColor: '#3b82f6', 
+              fillOpacity: 0.1,
+              weight: 2,
+              opacity: 0.6,
+              dashArray: '5, 5'
+            }).addTo(leafletMapRef.current)
+          }
+          // Nudge view to re-render overlays if necessary
+          leafletMapRef.current.setView([center.lat, center.lng], 13)
         }
-      }, 100)
+        clearInterval(interval)
+      } else if (++attempts >= maxAttempts) {
+        clearInterval(interval)
+      }
     }
-  }, [visible])
+    const interval = setInterval(checkAndRefresh, 100)
+    // Try immediately in case size is already correct
+    checkAndRefresh()
+    return () => clearInterval(interval)
+  }, [visible, center, radius])
 
   // Cleanup circle on unmount
   useEffect(() => {

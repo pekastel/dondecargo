@@ -488,7 +488,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                   Filtros
                 </Button>
                 
-                <div className="flex border border-border rounded-lg sm:px-3">
+                <div className="flex border border-border rounded-lg">
                   <Button
                     variant={viewMode === 'map' ? 'default' : 'ghost'}
                     size="sm"
@@ -514,7 +514,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
           {/* Map View */}
           <div className={`absolute inset-0 ${viewMode === 'map' ? 'block' : 'hidden'}`}>
             <MapSearch 
-              key={`map-${filters.location?.lat}-${filters.location?.lng}`}
+              key={`map-${filters.location?.lat}-${filters.location?.lng}-${viewMode}`}
               stations={stations}
               center={filters.location}
               radius={filters.radius}
