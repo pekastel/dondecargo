@@ -79,6 +79,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   const currentLocationMarkerRef = useRef<LeafletMarker | null>(null)
   const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [mapInitialized, setMapInitialized] = useState(false)
   // User reports are now managed directly in DOM, keeping minimal state for cache management
   const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
   const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
@@ -153,14 +154,16 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     loadLeaflet()
   }, [])
 
-  // Initialize map
+  // Initialize map (only once when Leaflet is loaded)
   useEffect(() => {
-    if (!mapRef.current || !visible || !center) return
+    if (!mapRef.current || !mapLoaded) return
 
     if (!leafletMapRef.current) {
       // Initialize map
       const map = window.L.map(mapRef.current)
-      map.setView([center.lat, center.lng], 13)
+      if (center) {
+        map.setView([center.lat, center.lng], 13)
+      }
 
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: 'OpenStreetMap contributors'
@@ -172,15 +175,17 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       }
 
       leafletMapRef.current = map
+      setMapInitialized(true)
+    }
 
-      return () => {
-        if (leafletMapRef.current) {
-          leafletMapRef.current.remove()
-          leafletMapRef.current = null
-        }
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove()
+        leafletMapRef.current = null
+        setMapInitialized(false)
       }
     }
-  }, [mapLoaded, center, visible])
+  }, [mapLoaded])
 
   // Load user's favorites when authenticated
   useEffect(() => {
@@ -609,7 +614,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // Add station markers - now includes userReports and loadingReports in dependencies
   useEffect(() => {
     generateMarkers()
-  }, [mapLoaded, generateMarkers])
+  }, [mapLoaded, mapInitialized, generateMarkers])
 
   // Auto-fit map bounds to include all stations (optional)
   useEffect(() => {
@@ -662,22 +667,29 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         opacity: 0.6,
         dashArray: '5, 5'
       }).addTo(leafletMapRef.current)
+      if (typeof radiusCircleRef.current.bringToFront === 'function') {
+        radiusCircleRef.current.bringToFront()
+      }
     }
-  }, [center, radius, mapLoaded, visible])
+  }, [center, radius, mapLoaded, visible, mapInitialized])
 
-  // Handle map visibility changes
+  // Handle map visibility/initialization changes and ensure overlays
   useEffect(() => {
-    if (!leafletMapRef.current) return
     if (!visible) return
-    // Wait until the container has a non-zero size, then refresh map and circle
+    // Wait until the map instance exists AND the container has a non-zero size
     let attempts = 0
-    const maxAttempts = 20 // ~2s
+    const maxAttempts = 30 // ~3s
     const checkAndRefresh = () => {
-      if (!leafletMapRef.current || !mapRef.current) return
-      const w = mapRef.current.offsetWidth
-      const h = mapRef.current.offsetHeight
+      const mapInstance = leafletMapRef.current
+      const container = mapRef.current
+      if (!mapInstance || !container) {
+        if (++attempts >= maxAttempts) return
+        return
+      }
+      const w = container.offsetWidth
+      const h = container.offsetHeight
       if (w > 0 && h > 0) {
-        leafletMapRef.current.invalidateSize()
+        mapInstance.invalidateSize()
         if (center) {
           // Ensure circle exists and is updated
           if (radiusCircleRef.current) {
@@ -696,10 +708,13 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               weight: 2,
               opacity: 0.6,
               dashArray: '5, 5'
-            }).addTo(leafletMapRef.current)
+            }).addTo(mapInstance)
+            if (typeof radiusCircleRef.current.bringToFront === 'function') {
+              radiusCircleRef.current.bringToFront()
+            }
           }
           // Nudge view to re-render overlays if necessary
-          leafletMapRef.current.setView([center.lat, center.lng], 13)
+          mapInstance.setView([center.lat, center.lng], 13)
         }
         clearInterval(interval)
       } else if (++attempts >= maxAttempts) {
@@ -710,7 +725,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     // Try immediately in case size is already correct
     checkAndRefresh()
     return () => clearInterval(interval)
-  }, [visible, center, radius])
+  }, [visible, center, radius, mapInitialized, mapLoaded])
 
   // Cleanup circle on unmount
   useEffect(() => {
