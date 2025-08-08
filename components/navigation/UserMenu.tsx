@@ -24,6 +24,7 @@ import {
   BookOpen,
   FileText,
   TrendingUp,
+  Star,
 } from 'lucide-react';
 
 export default function UserMenu() {
@@ -121,6 +122,11 @@ export default function UserMenu() {
           <DropdownMenuItem onClick={() => router.push('/reportar')}>
             <TrendingUp className="mr-2 h-4 w-4" />
             <span>Reportar</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => router.push('/favoritos')}>
+            <Star className="mr-2 h-4 w-4" />
+            <span>Favoritos</span>
           </DropdownMenuItem>
           
           <DropdownMenuItem onClick={() => router.push('/mcp-help')}>

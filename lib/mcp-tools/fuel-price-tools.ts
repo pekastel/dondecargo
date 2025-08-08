@@ -29,13 +29,13 @@ export const searchStationsTool = {
     empresa?: string;
     provincia?: string;
     localidad?: string;
-    combustible?: FuelType;
-    horario?: HorarioType;
+    combustible?: string;
+    horario?: 'diurno' | 'nocturno';
     precioMin?: number;
     precioMax?: number;
     limit?: number;
     offset?: number;
-  }, _userId: string) => {
+  }) => {
     try {
       const result = await fuelService.searchStations(params);
       
@@ -84,7 +84,7 @@ export const getStationDetailsTool = {
   schema: {
     stationId: z.string().min(1, "Station ID is required"),
   },
-  handler: async (params: { stationId: string }, _userId: string) => {
+  handler: async (params: { stationId: string }) => {
     try {
       const station = await fuelService.getStationDetails(params.stationId);
       
@@ -94,7 +94,7 @@ export const getStationDetailsTool = {
 
       const pricesText = station.precios.length > 0
         ? station.precios
-            .reduce((groups: Record<string, unknown[]>, price) => {
+            .reduce((groups: Record<string, Array<typeof station.precios[0]>>, price) => {
               if (!groups[price.horario]) groups[price.horario] = [];
               groups[price.horario].push(price);
               return groups;
@@ -102,13 +102,12 @@ export const getStationDetailsTool = {
         : {};
 
       let pricesDisplay = '';
-      Object.entries(pricesText).forEach(([horario, prices]: [string, unknown[]]) => {
+      Object.entries(pricesText).forEach(([horario, prices]: [string, Array<typeof station.precios[0]>]) => {
         pricesDisplay += `\\n**${horario.charAt(0).toUpperCase() + horario.slice(1)}:**\\n`;
         prices.forEach(price => {
           const fuelLabel = FUEL_LABELS[price.tipoCombustible as FuelType] || price.tipoCombustible;
-          const validatedIcon = price.esValidado ? '✅' : '⚠️';
           const sourceText = price.fuente === 'oficial' ? 'Oficial' : 'Usuario';
-          pricesDisplay += `  ${fuelLabel}: $${price.precio} ${validatedIcon} (${sourceText})\\n`;
+          pricesDisplay += `  ${fuelLabel}: $${price.precio} (${sourceText})\\n`;
         });
       });
 
@@ -144,34 +143,33 @@ export const findCheapestFuelTool = {
     limit: z.number().min(1).max(20).optional().default(10).describe("Maximum number of results (max 20)"),
   },
   handler: async (params: {
-    fuelType: FuelType;
+    fuelType: string;
     lat?: number;
     lng?: number;
     radius?: number;
-    horario?: HorarioType;
+    horario?: 'diurno' | 'nocturno';
     limit?: number;
-  }, _userId: string) => {
+  }) => {
     try {
       const result = await fuelService.findCheapestFuel(
-        params.fuelType,
+        params.fuelType as FuelType,
         params.lat,
         params.lng,
         params.radius,
-        params.horario,
+        params.horario as HorarioType,
         params.limit
       );
       
       if (result.length === 0) {
-        return createMcpResponse(`No se encontraron precios para ${FUEL_LABELS[params.fuelType]} en la zona especificada.`);
+        return createMcpResponse(`No se encontraron precios para ${FUEL_LABELS[params.fuelType as FuelType]} en la zona especificada.`);
       }
 
       const cheapestList = result.map((station, index) => {
         const price = station.precios[0]; // Should only have one price per station
         const distance = station.distancia ? ` (${station.distancia.toFixed(1)}km)` : '';
-        const validatedIcon = price.esValidado ? '✅' : '⚠️';
         const sourceText = price.fuente === 'oficial' ? 'Oficial' : 'Usuario';
         
-        return `${index + 1}. **$${price.precio}** ${validatedIcon} - ${station.nombre} (${station.empresa})${distance}\\n` +
+        return `${index + 1}. **$${price.precio}** - ${station.nombre} (${station.empresa})${distance}\\n` +
                `   📍 ${station.direccion}, ${station.localidad}\\n` +
                `   📊 Fuente: ${sourceText}, Reportado: ${price.fechaReporte?.toLocaleDateString() || 'N/A'}`;
       }).join('\\n\\n');
@@ -180,7 +178,7 @@ export const findCheapestFuelTool = {
         ? `cerca de la ubicación (${params.lat}, ${params.lng}) en un radio de ${params.radius || 20}km`
         : 'en el área de búsqueda';
 
-      const summary = `🔍 **Los ${result.length} precios más baratos de ${FUEL_LABELS[params.fuelType]} (${params.horario})** ${locationInfo}:`;
+      const summary = `🔍 **Los ${result.length} precios más baratos de ${FUEL_LABELS[params.fuelType as FuelType]} (${params.horario})** ${locationInfo}:`;
 
       return createMcpResponse(`${summary}\\n\\n${cheapestList}`);
     } catch (error) {
@@ -202,10 +200,10 @@ export const getPriceHistoryTool = {
   },
   handler: async (params: {
     stationId: string;
-    fuelType?: FuelType;
-    horario?: HorarioType;
+    fuelType?: string;
+    horario?: 'diurno' | 'nocturno';
     days?: number;
-  }, _userId: string) => {
+  }) => {
     try {
       // First get station details for context
       const station = await fuelService.getStationDetails(params.stationId);
@@ -215,13 +213,13 @@ export const getPriceHistoryTool = {
 
       const history = await fuelService.getPriceHistory(
         params.stationId,
-        params.fuelType,
-        params.horario,
+        params.fuelType as FuelType | undefined,
+        params.horario as HorarioType,
         params.days
       );
       
       if (history.length === 0) {
-        const fuelInfo = params.fuelType ? ` de ${FUEL_LABELS[params.fuelType]}` : '';
+        const fuelInfo = params.fuelType ? ` de ${FUEL_LABELS[params.fuelType as FuelType]}` : '';
         return createMcpResponse(`No se encontró historial de precios${fuelInfo} para esta estación en los últimos ${params.days} días.`);
       }
 
@@ -238,9 +236,8 @@ export const getPriceHistoryTool = {
         historyDisplay += `\\n**${fuelLabel}:**\\n`;
         
         prices.slice(0, 10).forEach(price => { // Limit to 10 most recent
-          const validatedIcon = price.esValidado ? '✅' : '⚠️';
           const sourceText = price.fuente === 'oficial' ? 'Oficial' : 'Usuario';
-          historyDisplay += `  $${price.precio} ${validatedIcon} - ${price.fechaVigencia.toLocaleDateString()} (${sourceText})\\n`;
+          historyDisplay += `  $${price.precio} - ${price.fechaVigencia.toLocaleDateString()} (${sourceText})\\n`;
         });
       });
 
@@ -263,7 +260,7 @@ export const getRegionalSummaryTool = {
   schema: {
     provincia: z.string().optional().describe("Province name to filter summary by"),
   },
-  handler: async (params: { provincia?: string }, _userId: string) => {
+  handler: async (params: { provincia?: string }) => {
     try {
       const summary = await fuelService.getRegionalSummary(params.provincia);
       
@@ -273,7 +270,15 @@ export const getRegionalSummaryTool = {
       }
 
       // Group by province and locality
-      const summaryByRegion = summary.reduce((groups: Record<string, unknown>, item) => {
+      interface RegionSummary {
+        provincia: string;
+        localidad: string;
+        companies: Set<string>;
+        totalStations: number;
+        fuelData: Record<string, { avg: number; stations: number }>;
+      }
+      
+      const summaryByRegion = summary.reduce((groups: Record<string, RegionSummary>, item) => {
         const key = `${item.provincia} - ${item.localidad}`;
         if (!groups[key]) {
           groups[key] = {
@@ -297,14 +302,14 @@ export const getRegionalSummaryTool = {
       }, {});
 
       let summaryDisplay = '';
-      Object.entries(summaryByRegion).slice(0, 15).forEach(([, data]: [string, Record<string, unknown>]) => {
+      Object.entries(summaryByRegion).slice(0, 15).forEach(([, data]) => {
         const companiesText = Array.from(data.companies).slice(0, 3).join(', ');
         const moreCompanies = data.companies.size > 3 ? ` +${data.companies.size - 3} más` : '';
         
         summaryDisplay += `\\n**${data.localidad}, ${data.provincia}**\\n`;
         summaryDisplay += `  🏪 ${data.totalStations} estaciones - Empresas: ${companiesText}${moreCompanies}\\n`;
         
-        Object.entries(data.fuelData as Record<string, { avg: number; stations: number }>).forEach(([fuel, info]) => {
+        Object.entries(data.fuelData).forEach(([fuel, info]) => {
           summaryDisplay += `  ⛽ ${fuel}: $${info.avg.toFixed(2)} promedio\\n`;
         });
       });

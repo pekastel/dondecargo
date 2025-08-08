@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, ArrowLeft, Heart, Share2, Star, Users, CheckCircle2, Sun, Moon } from 'lucide-react'
 import { FuelType, FUEL_LABELS, HorarioType, FuenteType } from '@/lib/types'
 import { UserAvatar } from '@/components/ui/UserAvatar'
+import { authClient } from '@/lib/authClient'
+import { toast } from 'sonner'
 
 export interface StationPrice {
   id: string
@@ -103,11 +105,13 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType>('nafta')
   const [isFavorite, setIsFavorite] = useState(false)
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [userReports, setUserReports] = useState<UserPriceReport[]>([])
   const [individualReports, setIndividualReports] = useState<IndividualReport[]>([])
   const [loadingReports, setLoadingReports] = useState(true)
   const [showAllReports, setShowAllReports] = useState(false)
   const [horarioToggles, setHorarioToggles] = useState<Record<string, HorarioType>>({})
+  const { data: session } = authClient.useSession()
 
   // Fetch user reports for this station
   useEffect(() => {
@@ -130,6 +134,25 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     fetchUserReports()
   }, [station.id])
 
+  // Load initial favorite state for authenticated users
+  useEffect(() => {
+    const loadFavorite = async () => {
+      if (!session?.user) return
+      try {
+        const res = await fetch(`/api/favoritos?estacionId=${station.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (typeof data.isFavorite === 'boolean') {
+            setIsFavorite(data.isFavorite)
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching favorite state', e)
+      }
+    }
+    loadFavorite()
+  }, [session?.user, station.id])
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -150,9 +173,46 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
 
   // Removed unused handlers - handleCall and handleDirections
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite)
-    // TODO: Persist to backend/localStorage
+  const toggleFavorite = async () => {
+    if (!session?.user) {
+      toast('Iniciá sesión para usar Favoritos', {
+        action: {
+          label: 'Ingresar',
+          onClick: () => router.push('/login'),
+        },
+      })
+      return
+    }
+
+    try {
+      setFavoriteLoading(true)
+      if (isFavorite) {
+        const res = await fetch(`/api/favoritos?estacionId=${station.id}`, { method: 'DELETE' })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'No se pudo eliminar de favoritos')
+        }
+        setIsFavorite(false)
+        toast.success('Eliminado de favoritos')
+      } else {
+        const res = await fetch('/api/favoritos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estacionId: station.id }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'No se pudo guardar en favoritos')
+        }
+        setIsFavorite(true)
+        toast.success('Guardado en favoritos')
+      }
+    } catch (e: any) {
+      console.error('toggleFavorite error', e)
+      toast.error(e?.message || 'Ocurrió un error')
+    } finally {
+      setFavoriteLoading(false)
+    }
   }
 
   const formatPrice = (price: number | null | undefined) => {

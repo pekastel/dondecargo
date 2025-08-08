@@ -24,35 +24,35 @@ const handler = withMcpAuth(auth, (req, session) => {
 				searchStationsTool.name,
 				searchStationsTool.description,
 				searchStationsTool.schema,
-				async ({ params }) => searchStationsTool.handler(params, userId)
+				async (params) => searchStationsTool.handler(params)
 			);
 			
 			server.tool(
 				getStationDetailsTool.name,
 				getStationDetailsTool.description,
 				getStationDetailsTool.schema,
-				async ({ params }) => getStationDetailsTool.handler(params, userId)
+				async (params) => getStationDetailsTool.handler(params)
 			);
 			
 			server.tool(
 				findCheapestFuelTool.name,
 				findCheapestFuelTool.description,
 				findCheapestFuelTool.schema,
-				async ({ params }) => findCheapestFuelTool.handler(params, userId)
+				async (params) => findCheapestFuelTool.handler(params)
 			);
 			
 			server.tool(
 				getPriceHistoryTool.name,
 				getPriceHistoryTool.description,
 				getPriceHistoryTool.schema,
-				async ({ params }) => getPriceHistoryTool.handler(params, userId)
+				async (params) => getPriceHistoryTool.handler(params)
 			);
 			
 			server.tool(
 				getRegionalSummaryTool.name,
 				getRegionalSummaryTool.description,
 				getRegionalSummaryTool.schema,
-				async ({ params }) => getRegionalSummaryTool.handler(params, userId)
+				async (params) => getRegionalSummaryTool.handler(params)
 			);
 		},
 		{
