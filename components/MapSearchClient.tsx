@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { MapSearch } from '@/components/map/MapSearch'
 import { MapFilters } from '@/components/map/MapFilters'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Filter, List, Settings, RotateCcw } from 'lucide-react'
+import { Filter, List, Settings, RotateCcw, Map as MapIcon } from 'lucide-react'
 import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
 
 export type PriceRange = { min: number; max: number }
@@ -64,6 +64,20 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
   const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const listEndRef = useRef<HTMLDivElement | null>(null)
+
+  // Currency formatter (ARS)
+  const formatCurrency = useCallback((value: number) => {
+    try {
+      return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        maximumFractionDigits: 0
+      }).format(value)
+    } catch {
+      return `$${Math.round(value)}`
+    }
+  }, [])
 
   // Function to update URL parameters when coordinates change
   const updateURL = useCallback((location: { lat: number; lng: number } | null, radius?: number) => {
@@ -203,8 +217,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         }
       }
 
-      // Dynamic limit based on radius - more stations for larger areas
-      const limit = Math.min(100, Math.max(50, Math.round(filters.radius * 2)))
+      // Smaller fixed page size to minimize per-request payload and favor progressive loading
+      const limit = 24
       params.append('limit', limit.toString())
       params.append('offset', offset.toString())
       
@@ -245,7 +259,9 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         setStations(transformedStations)
       }
       
-      setHasMore(data.pagination.hasMore && transformedStations.length > 0)
+      // Be resilient if API doesn't include pagination metadata
+      const apiHasMore = data?.pagination?.hasMore
+      setHasMore((apiHasMore === undefined ? transformedStations.length === limit : apiHasMore) && transformedStations.length > 0)
       
     } catch (error) {
       console.error('Error fetching stations:', error)
@@ -264,6 +280,64 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       fetchStations(stations.length, true)
     }
   }
+
+  // Aggregations (computed client-side to avoid extra server load)
+  const companyAverages = useMemo(() => {
+    const totals = new Map<string, { sum: number; count: number }>()
+    for (const s of stations) {
+      for (const p of s.precios) {
+        if (filters.timeOfDay && p.horario !== filters.timeOfDay) continue
+        if (filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(p.tipoCombustible)) continue
+        const key = s.empresa || '—'
+        const entry = totals.get(key) || { sum: 0, count: 0 }
+        entry.sum += p.precio
+        entry.count += 1
+        totals.set(key, entry)
+      }
+    }
+    return Array.from(totals.entries())
+      .map(([empresa, { sum, count }]) => ({ empresa, promedio: count ? sum / count : 0, count }))
+      .sort((a, b) => a.promedio - b.promedio)
+  }, [stations, filters.fuelTypes, filters.timeOfDay]) as Array<{ empresa: string; promedio: number; count: number }>
+
+  const fuelAverages = useMemo(() => {
+    const totals = new Map<FuelType, { sum: number; count: number }>()
+    for (const s of stations) {
+      for (const p of s.precios) {
+        if (filters.timeOfDay && p.horario !== filters.timeOfDay) continue
+        if (filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(p.tipoCombustible)) continue
+        const key = p.tipoCombustible
+        const entry = totals.get(key) || { sum: 0, count: 0 }
+        entry.sum += p.precio
+        entry.count += 1
+        totals.set(key, entry)
+      }
+    }
+    return Array.from(totals.entries())
+      .map(([tipo, { sum, count }]) => ({ tipo, promedio: count ? sum / count : 0, count }))
+      .sort((a, b) => a.promedio - b.promedio)
+  }, [stations, filters.fuelTypes, filters.timeOfDay]) as Array<{ tipo: FuelType; promedio: number; count: number }>
+
+  // Infinite scroll sentinel for list view
+  useEffect(() => {
+    if (viewMode !== 'list') return
+    if (!hasMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMoreStations()
+        }
+      },
+      { root: null, rootMargin: '800px', threshold: 0 }
+    )
+    const target = listEndRef.current
+    if (target) observer.observe(target)
+    return () => {
+      if (target) observer.unobserve(target)
+      observer.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, hasMore, isLoadingMore, stations.length])
 
 
 
@@ -377,7 +451,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                   onClick={() => setViewMode('map')}
                   className="text-xs"
                 >
-                  🗺️ Mapa
+                  <MapIcon className="h-4 w-4 mr-1" />
+                  Mapa
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -415,28 +490,109 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
           {/* List View */}
           {viewMode === 'list' && (
             <div className="h-full overflow-y-auto p-4 bg-background">
-              <div className="max-w-4xl mx-auto space-y-4">
-                {stations.map(station => (
-                  <Card key={station.id} className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border border-border/50 hover:border-primary/20"
-                        onClick={() => window.location.href = `/estacion/${station.id}`}>
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-semibold text-lg">{station.nombre}</h4>
-                        <p className="text-sm text-muted-foreground">{station.direccion}</p>
-                        <p className="text-xs text-muted-foreground">{station.localidad}, {station.provincia}</p>
-                      </div>
-                      <Badge variant="outline" className="font-medium">{station.empresa}</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {station.precios.slice(0, 4).map(precio => (
-                        <div key={precio.tipoCombustible} className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 text-sm">
-                          <span className="font-medium">{FUEL_LABELS[precio.tipoCombustible]}</span>
-                          <span className="font-bold text-primary">${precio.precio}</span>
+              <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-4">
+                {/* Results grid */}
+                <div className="xl:col-span-8 2xl:col-span-9">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
+                    {stations.map(station => (
+                      <Card
+                        key={station.id}
+                        className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer border border-border/50 hover:border-primary/20"
+                        onClick={() => (window.location.href = `/estacion/${station.id}`)}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-semibold text-base sm:text-lg">{station.nombre}</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{station.direccion}</p>
+                            <p className="text-[11px] sm:text-xs text-muted-foreground">{station.localidad}, {station.provincia}</p>
+                          </div>
+                          <Badge variant="outline" className="font-medium">{station.empresa}</Badge>
                         </div>
-                      ))}
+                        <div className="flex flex-wrap gap-2">
+                          {station.precios.slice(0, 4).map(precio => (
+                            <div
+                              key={precio.tipoCombustible}
+                              className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 text-xs sm:text-sm"
+                            >
+                              <span className="font-medium">{FUEL_LABELS[precio.tipoCombustible]}</span>
+                              <span className="font-bold text-primary">{formatCurrency(precio.precio)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Infinite scroll sentinel */}
+                  {hasMore && <div ref={listEndRef} className="h-10" />}
+
+                  {/* Fallback load more button (in case IntersectionObserver is unavailable) */}
+                  {hasMore && (
+                    <div className="flex justify-center pt-2 pb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={loadMoreStations}
+                        disabled={isLoadingMore}
+                        className="text-xs"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
+                            Cargando...
+                          </>
+                        ) : (
+                          'Cargar más'
+                        )}
+                      </Button>
                     </div>
-                  </Card>
-                ))}
+                  )}
+                </div>
+
+                {/* Analytics Sidebar */}
+                <div className="xl:col-span-4 2xl:col-span-3">
+                  <div className="sticky top-2 space-y-4">
+                    <Card className="p-4">
+                      <h4 className="font-semibold text-sm">Promedios por empresa</h4>
+                      <p className="text-xs text-muted-foreground">Según filtros activos y resultados cargados</p>
+                      <div className="mt-3 space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                        {companyAverages.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Sin datos para calcular</p>
+                        ) : (
+                          companyAverages.slice(0, 20).map(item => (
+                            <div key={item.empresa} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge variant="outline" className="truncate max-w-[160px]">{item.empresa}</Badge>
+                                <span className="text-[11px] text-muted-foreground">{item.count}</span>
+                              </div>
+                              <span className="font-medium text-sm">{formatCurrency(item.promedio)}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-semibold text-sm">Promedios por combustible</h4>
+                      <p className="text-xs text-muted-foreground">Según filtros activos y resultados cargados</p>
+                      <div className="mt-3 space-y-2">
+                        {fuelAverages.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Sin datos para calcular</p>
+                        ) : (
+                          fuelAverages.map(item => (
+                            <div key={item.tipo} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium">{FUEL_LABELS[item.tipo]}</span>
+                                <span className="text-[11px] text-muted-foreground">{item.count}</span>
+                              </div>
+                              <span className="font-medium text-sm">{formatCurrency(item.promedio)}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+                </div>
               </div>
             </div>
           )}
