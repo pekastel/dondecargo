@@ -48,8 +48,8 @@ export default function Profile() {
         callbackURL: '/profile'
       });
       setMessage({ type: 'success', text: 'Correo de verificación enviado. ¡Por favor revisa tu bandeja de entrada!' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error al enviar el correo de verificación. Por favor intenta nuevamente.' });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Error al enviar el correo de verificación. Por favor intenta nuevamente.' });
     } finally {
       setIsVerifying(false);
     }
@@ -118,7 +118,7 @@ export default function Profile() {
       }
 
       // Use Better Auth updateUser method
-      const { data, error } = await authClient.updateUser(updateData);
+      const { error } = await authClient.updateUser(updateData);
 
       if (error) {
         throw new Error(error.message || 'Error al actualizar el perfil');
