@@ -49,15 +49,6 @@ export function Header() {
           {/* Actions */}
           <div className="flex items-center space-x-4">
             <ModeToggle />
-            {session?.user && (
-              <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
-                <Link href="/favoritos" className="flex items-center gap-1">
-                  <Star className="h-4 w-4" />
-                  <span>Favoritos</span>
-                </Link>
-              </Button>
-            )}
-
             {session?.user ? (
               <UserMenu />
             ) : (

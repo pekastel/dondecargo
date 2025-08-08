@@ -26,6 +26,7 @@ interface MapSearchProps {
   selectedFuelType: FuelType | null
   currentLocation?: { lat: number; lng: number } | null
   onStationSelect?: (station: Station) => void
+  fitToStations?: boolean
 }
 
 interface LeafletMap {
@@ -33,6 +34,7 @@ interface LeafletMap {
   invalidateSize: () => void
   remove: () => void
   removeLayer: (layer: unknown) => void
+  fitBounds: (bounds: [[number, number], [number, number]], options?: Record<string, unknown>) => void
 }
 
 interface LeafletMarker {
@@ -66,7 +68,7 @@ declare global {
   }
 }
 
-export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect }: MapSearchProps) {
+export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect, fitToStations = false }: MapSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const radiusCircleRef = useRef<LeafletCircle | null>(null)
@@ -370,9 +372,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
           <!-- Floating Price Details Card (shown when selected) -->
           <div class="absolute z-50 bottom-full mb-2 left-1/2 transform -translate-x-1/2 
                       bg-white rounded-md shadow-lg border border-gray-100 
-                      px-3 py-2.5 min-w-[240px] max-w-[280px]
-                      ${isSelected ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}
-                      transition-all duration-200 ease-out station-popup-card">
+              px-3 py-2.5 min-w-[240px] max-w-[280px]
+              ${isSelected ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}
+              transition-all duration-200 ease-out station-popup-card">
             
             <!-- Arrow -->
             <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-0.5">
@@ -381,13 +383,13 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
             
             <!-- Station Header -->
             <div class="flex items-center gap-2.5 mb-2.5">
-              <div class="w-8 h-8 relative flex-shrink-0 bg-gray-50 rounded-md overflow-hidden">
-                <img src="${logoPath}" alt="${station.empresa}" 
-                     class="w-full h-full object-contain p-0.5"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                <div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-xs">
-                  ${station.empresa.charAt(0)}
-                </div>
+              <div class="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow relative flex-shrink-0">
+                <img
+                  src="${logoPath}"
+                  alt="${station.empresa ? station.empresa.charAt(0) : '—'}"
+                  class="w-6 h-6 object-contain rounded-full"
+                  onerror="const img = this; img.style.display='none'; const p = img.parentElement; if (p) p.textContent='${station.empresa ? station.empresa.charAt(0) : '—'}';"
+                />
               </div>
               <div class="flex-grow min-w-0">
                 <h3 class="text-sm font-medium text-gray-900 truncate">${station.nombre}</h3>
@@ -405,8 +407,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                 </button>
               </div>
             </div>
-            
-            <!-- Fuel Prices Grid -->
+              
+              <!-- Fuel Prices Grid -->
             <div class="grid grid-cols-2 gap-1.5 mb-2.5">
               ${station.precios.length > 0 ? station.precios.map(precio => {
                 return `
@@ -576,6 +578,25 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   useEffect(() => {
     generateMarkers()
   }, [mapLoaded, generateMarkers])
+
+  // Auto-fit map bounds to include all stations (optional)
+  useEffect(() => {
+    if (!leafletMapRef.current || !mapLoaded || !fitToStations) return
+    if (!stations || stations.length === 0) return
+    const latitudes = stations.map(s => s.latitud).filter(v => Number.isFinite(v))
+    const longitudes = stations.map(s => s.longitud).filter(v => Number.isFinite(v))
+    if (latitudes.length === 0 || longitudes.length === 0) return
+    const minLat = Math.min(...latitudes)
+    const maxLat = Math.max(...latitudes)
+    const minLng = Math.min(...longitudes)
+    const maxLng = Math.max(...longitudes)
+    if (minLat === maxLat && minLng === maxLng) {
+      // Single point - set a closer zoom
+      leafletMapRef.current.setView([minLat, minLng], 15)
+    } else {
+      leafletMapRef.current.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [40, 40] })
+    }
+  }, [stations, mapLoaded, fitToStations])
 
   // Cleanup markers on unmount
   useEffect(() => {

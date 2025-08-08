@@ -380,8 +380,6 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
     return { price: minCandidate.precio, label: FUEL_LABELS[minCandidate.tipoCombustible] }
   }, [selectedFuelType, filters.timeOfDay, filters.fuelTypes])
 
-
-
   const clearFilters = () => {
     setFilters(prev => ({
       ...prev,
