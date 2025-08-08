@@ -2,36 +2,13 @@ import { auth } from "@/lib/auth";
 import { createMcpHandler } from "@vercel/mcp-adapter";
 import { withMcpAuth } from "better-auth/plugins";
 import { env } from "@/lib/env";
-
-// TODO: Implement fuel price MCP tools
-// These are placeholder imports that need to be replaced with actual fuel price tools
-// For now, commenting out to fix build
-/*
 import {
-	createClientTool,
-	listClientsTool,
-	updateClientTool,
-	deactivateClientTool,
-} from "@/lib/mcp-tools/client-tools";
-import {
-	createProjectTool,
-	listProjectsTool,
-	updateProjectTool,
-	deactivateProjectTool,
-} from "@/lib/mcp-tools/project-tools";
-import {
-	startTimeTrackingTool,
-	stopTimeTrackingTool,
-	getActiveTimeEntryTool,
-	addManualTimeEntryTool,
-	updateTimeEntryTool,
-} from "@/lib/mcp-tools/time-tracking-tools";
-import {
-	listTimeEntresTool,
-	getTimeSummaryTool,
-	calculateEarningsTool,
-} from "@/lib/mcp-tools/report-tools";
-*/
+	searchStationsTool,
+	getStationDetailsTool,
+	findCheapestFuelTool,
+	getPriceHistoryTool,
+	getRegionalSummaryTool,
+} from "@/lib/mcp-tools/fuel-price-tools";
 
 const handler = withMcpAuth(auth, (req, session) => {
 	const userId = session.userId;
@@ -42,19 +19,50 @@ const handler = withMcpAuth(auth, (req, session) => {
 	
 	return createMcpHandler(
 		(server) => {
-			// TODO: Add fuel price MCP tools here
-			// For now, creating a basic MCP server without tools
-			// Future fuel price tools will be:
-			// - list_stations: Get gas stations near location
-			// - get_station_prices: Get current prices for a station  
-			// - report_price: Report a new fuel price
-			// - confirm_price: Confirm a user-reported price
-			// - get_price_history: Get historical prices for a fuel type
+			// Register fuel price search tools
+			server.tool(
+				searchStationsTool.name,
+				searchStationsTool.description,
+				searchStationsTool.schema,
+				async ({ params }) => searchStationsTool.handler(params, userId)
+			);
+			
+			server.tool(
+				getStationDetailsTool.name,
+				getStationDetailsTool.description,
+				getStationDetailsTool.schema,
+				async ({ params }) => getStationDetailsTool.handler(params, userId)
+			);
+			
+			server.tool(
+				findCheapestFuelTool.name,
+				findCheapestFuelTool.description,
+				findCheapestFuelTool.schema,
+				async ({ params }) => findCheapestFuelTool.handler(params, userId)
+			);
+			
+			server.tool(
+				getPriceHistoryTool.name,
+				getPriceHistoryTool.description,
+				getPriceHistoryTool.schema,
+				async ({ params }) => getPriceHistoryTool.handler(params, userId)
+			);
+			
+			server.tool(
+				getRegionalSummaryTool.name,
+				getRegionalSummaryTool.description,
+				getRegionalSummaryTool.schema,
+				async ({ params }) => getRegionalSummaryTool.handler(params, userId)
+			);
 		},
 		{
 			capabilities: {
 				tools: {
-					// TODO: Add fuel price tools capabilities here
+					search_stations: {},
+					get_station_details: {},
+					find_cheapest_fuel: {},
+					get_price_history: {},
+					get_regional_summary: {},
 				},
 			},
 		},
