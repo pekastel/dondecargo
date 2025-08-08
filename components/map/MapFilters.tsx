@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card } from '@/components/ui/card'
 import { MapPin, Target, Search, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -342,7 +341,7 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
           <input
             type="range"
             min="1"
-            max="50"
+            max="25"
             value={filters.radius}
             onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"

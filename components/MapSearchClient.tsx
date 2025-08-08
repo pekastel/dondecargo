@@ -439,77 +439,78 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header Bar */}
-        <div className="border-b border-border bg-card/50 backdrop-blur-sm px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-sm font-medium px-3 py-1">
-                {stations.length} estaciones{hasMore ? '+' : ''}
-              </Badge>
-              {loading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                  Actualizando...
-                </div>
-              )}
-              {hasMore && !loading && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadMoreStations}
-                  disabled={isLoadingMore}
-                  className="text-xs"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
-                      Cargando...
-                    </>
-                  ) : (
-                    'Cargar más'
-                  )}
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              {/* Mobile Filters Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setShowFilters(true)}
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                Filtros
-              </Button>
-              
-              <div className="flex border border-border rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'map' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('map')}
-                  className="text-xs"
-                >
-                  <MapIcon className="h-4 w-4 mr-1" />
-                  Mapa
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="text-xs"
-                >
-                  <List className="h-4 w-4 mr-1" />
-                  Lista
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Header Bar moved to overlay */}
 
         {/* Map/List Content - Full Height */}
         <div className="flex-1 relative overflow-hidden">
+          {/* Header Bar (overlaying map) */}
+          <div className="absolute top-0 left-0 right-0 z-2000 border-b border-border bg-card/40 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Badge variant="secondary" className="hidden sm:block text-[12px] sm:text-sm font-medium leading-none px-2 sm:px-3 py-0.5 sm:py-1">
+                  {stations.length} estaciones{hasMore ? '+' : ''}
+                </Badge>
+                {loading && (
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-sm text-muted-foreground">
+                    <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    Actualizando...
+                  </div>
+                )}
+                {hasMore && !loading && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadMoreStations}
+                    disabled={isLoadingMore}
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-1" />
+                        Cargando...
+                      </>
+                    ) : (
+                      'Cargar más'
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                {/* Mobile Filters Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                  onClick={() => setShowFilters(true)}
+                >
+                  <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  Filtros
+                </Button>
+                
+                <div className="flex border border-border rounded-lg sm:px-3">
+                  <Button
+                    variant={viewMode === 'map' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('map')}
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                  >
+                    <MapIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    Mapa
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-6 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
+                  >
+                    <List className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                    Lista
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* Map View */}
           <div className={`absolute inset-0 ${viewMode === 'map' ? 'block' : 'hidden'}`}>
             <MapSearch 
@@ -529,7 +530,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
           
           {/* List View */}
           {viewMode === 'list' && (
-            <div className="h-full overflow-y-auto p-4 pb-28 lg:pb-8 bg-background">
+            <div className="h-full overflow-y-auto p-4 pt-24 pb-28 lg:pb-8 bg-background">
               <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-4">
                 {/* Results grid */}
                 <div className="xl:col-span-8 2xl:col-span-9">
@@ -691,9 +692,9 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(true)}
-              className="text-xs h-8"
+              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
             >
-              <Settings className="h-3 w-3 mr-1" />
+              <Settings className="h-3 w-3 mr-2" />
               Más filtros
             </Button>
           </div>
@@ -706,7 +707,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
                 variant={selectedFuelType === fuel ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedFuelType(fuel as FuelType)}
-                className="rounded-full px-3 py-2 text-xs font-medium transition-all duration-200"
+                className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
               >
                 {label}
               </Button>

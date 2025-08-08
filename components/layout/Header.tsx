@@ -81,7 +81,7 @@ export function Header() {
         {mobileMenuOpen && (
           <Card className="md:hidden mt-2 p-4 border-t">
             <nav className="space-y-4">
-              {navigation.map((item) => (
+              {mainNavigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}

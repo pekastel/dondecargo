@@ -11,6 +11,8 @@ import { MapSearch } from '@/components/map/MapSearch'
 import type { Station } from '@/components/MapSearchClient'
 import { FUEL_LABELS, type FuelType } from '@/lib/types'
  import { useFuelPreference } from '@/lib/stores/useFuelPreference'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Info } from 'lucide-react'
 
 interface FavoritoItem {
   id: string
@@ -197,7 +199,7 @@ export default function FavoritosPage() {
               title="Precios diurnos"
               aria-pressed={selectedTimeOfDay === 'diurno'}
               role="tab"
-              className="rounded-full px-3 py-1 text-xs"
+              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
             >
               Día
             </Button>
@@ -208,13 +210,26 @@ export default function FavoritosPage() {
               title="Precios nocturnos"
               aria-pressed={selectedTimeOfDay === 'nocturno'}
               role="tab"
-              className="rounded-full px-3 py-1 text-xs"
+              className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
             >
               Noche
             </Button>
           </div>
-          <span className="hidden sm:inline text-xs text-muted-foreground">Actualiza los precios en mapa y lista</span>
-          <Button variant="outline" size="sm" asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:inline-flex h-7 w-7 text-muted-foreground"
+                aria-label="Ayuda: seleccionar horario"
+              >
+                <Info className="h-4 w-4" />
+                <span className="sr-only">Ayuda</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Actualiza los precios en mapa y lista</TooltipContent>
+          </Tooltip>
+          <Button variant="outline" size="sm" asChild className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3">
             <Link href="/buscar">Buscar estaciones</Link>
           </Button>
         </div>
@@ -231,7 +246,7 @@ export default function FavoritosPage() {
                 variant={selectedFuelType === (fuel as FuelType) ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedFuelType(fuel as FuelType)}
-                className="rounded-full px-3 py-2 text-xs font-medium transition-all duration-200"
+                className="h-5 sm:h-8 text-[12px] sm:text-xs px-2 sm:px-3"
               >
                 {label}
               </Button>

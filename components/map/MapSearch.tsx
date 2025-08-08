@@ -36,6 +36,7 @@ interface LeafletMap {
   remove: () => void
   removeLayer: (layer: unknown) => void
   fitBounds: (bounds: [[number, number], [number, number]], options?: Record<string, unknown>) => void
+  zoomControl: { setPosition: (position: string) => void }
 }
 
 interface LeafletMarker {
@@ -157,11 +158,17 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
     if (!leafletMapRef.current) {
       // Initialize map
-      const map = window.L.map(mapRef.current).setView([center.lat, center.lng], 13)
+      const map = window.L.map(mapRef.current)
+      map.setView([center.lat, center.lng], 13)
 
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: 'OpenStreetMap contributors'
       }).addTo(map)
+
+      // Position zoom controls on the left (we'll center via CSS)
+      if (map && (map as any).zoomControl && typeof (map as any).zoomControl.setPosition === 'function') {
+        map.zoomControl.setPosition('topleft')
+      }
 
       leafletMapRef.current = map
 
@@ -722,8 +729,16 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
           font-weight: 500;
           letter-spacing: 0.025em;
         }
+        /* Center Leaflet zoom controls vertically on the left, scoped to this map */
+        .leaflet-zoom-left-center .leaflet-top.leaflet-left {
+          top: 50% !important;
+          transform: translateY(-50%);
+        }
+        .leaflet-zoom-left-center .leaflet-top.leaflet-left .leaflet-control-zoom {
+          margin-top: 0; /* remove default top margin so true center */
+        }
       `}</style>
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className="w-full h-full leaflet-zoom-left-center" />
       
       {loading && (
         <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">

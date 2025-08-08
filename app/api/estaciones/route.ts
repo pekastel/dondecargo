@@ -24,7 +24,9 @@ function createDbConnection() {
 const searchParamsSchema = z.object({
   lat: z.string().optional(),
   lng: z.string().optional(),
-  radius: z.string().optional(),
+  radius: z.string().refine((val) => val === undefined || (Number(val) >= 0 && Number(val) <= 25), {
+    message: "radius debe ser un valor entre 0 y 25"
+  }).optional(),
   empresa: z.string().optional(),
   provincia: z.string().optional(),
   localidad: z.string().optional(),
@@ -53,11 +55,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const params = searchParamsSchema.parse(Object.fromEntries(searchParams))
     
-    console.log('📊 Search params:', params)
-
     const lat = params.lat ? parseFloat(params.lat) : undefined
     const lng = params.lng ? parseFloat(params.lng) : undefined
-    const radius = params.radius ? Math.min(parseFloat(params.radius), 50) : 10 // default 10km, max 50km
+    const radius = params.radius ? Math.min(parseFloat(params.radius), 25) : 10 // default 10km, max 20km
     const limit = params.limit ? parseInt(params.limit) : 100
     const offset = params.offset ? parseInt(params.offset) : 0
     

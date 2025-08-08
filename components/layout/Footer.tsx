@@ -49,7 +49,7 @@ export function Footer() {
   
   return (
     <footer className={`${isSearchPage 
-      ? 'fixed bottom-0 left-0 right-0 z-4000 bg-background/70 backdrop-blur-sm shadow-lg' 
+      ? 'fixed bottom-0 left-0 right-0 z-4000 bg-background/70 backdrop-blur-sm shadow-lg hidden lg:block' 
       : 'border-t bg-background'}`}>
       <div className={`container mx-auto px-4 ${isSearchPage ? 'py-1' : 'py-12'}`}>
         {/* Mostrar versión completa solo si no estamos en la página de búsqueda */}
