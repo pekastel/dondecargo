@@ -55,7 +55,7 @@ export default function ProfileSettings() {
 
     try {
       // Use Better Auth changePassword method
-      const { data, error } = await authClient.changePassword({
+      const { error } = await authClient.changePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
@@ -84,18 +84,6 @@ export default function ProfileSettings() {
   };
 
   if (!session?.user) return null;
-
-  const headerActions = (
-    <Button 
-      variant="outline" 
-      size="sm"
-      onClick={() => router.push('/profile')}
-      className="flex items-center gap-2"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      Volver al Perfil
-    </Button>
-  );
 
   return (
     <>
