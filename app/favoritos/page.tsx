@@ -10,7 +10,7 @@ import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { MapSearch } from '@/components/map/MapSearch'
 import type { Station } from '@/components/MapSearchClient'
 import { FUEL_LABELS, type FuelType } from '@/lib/types'
-import { Sun, Moon } from 'lucide-react'
+ 
 
 interface FavoritoItem {
   id: string
@@ -31,8 +31,30 @@ export default function FavoritosPage() {
   const [items, setItems] = useState<FavoritoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [stations, setStations] = useState<Station[]>([])
-  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
+  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>('nafta')
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<'diurno' | 'nocturno'>('diurno')
+
+  // Initialize selected fuel type from localStorage (shared with MapSearchClient) and persist on change
+  useEffect(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? (window.localStorage.getItem('selectedFuelType') as FuelType | null) : null
+      if (stored) {
+        setSelectedFuelType(stored as FuelType)
+      } else {
+        setSelectedFuelType('nafta' as FuelType)
+      }
+    } catch {
+      setSelectedFuelType('nafta' as FuelType)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedFuelType) {
+      try {
+        window.localStorage.setItem('selectedFuelType', selectedFuelType)
+      } catch {}
+    }
+  }, [selectedFuelType])
 
   useEffect(() => {
     if (!session?.user) return
@@ -182,27 +204,58 @@ export default function FavoritosPage() {
       <div className="flex items-center justify-between mb-3 lg:mb-6">
         <h1 className="text-xl lg:text-2xl font-bold">Mis favoritos</h1>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1" aria-label="Seleccionar horario">
+          <div
+            className="inline-flex items-center rounded-full border bg-muted/30 p-0.5"
+            aria-label="Seleccionar horario"
+            role="tablist"
+          >
             <Button
               variant={selectedTimeOfDay === 'diurno' ? 'default' : 'outline'}
-              size="icon"
+              size="sm"
               onClick={() => setSelectedTimeOfDay('diurno')}
               title="Precios diurnos"
+              aria-pressed={selectedTimeOfDay === 'diurno'}
+              role="tab"
+              className="rounded-full px-3 py-1 text-xs"
             >
-              <Sun className="h-4 w-4 text-amber-500" />
+              Día
             </Button>
             <Button
               variant={selectedTimeOfDay === 'nocturno' ? 'default' : 'outline'}
-              size="icon"
+              size="sm"
               onClick={() => setSelectedTimeOfDay('nocturno')}
               title="Precios nocturnos"
+              aria-pressed={selectedTimeOfDay === 'nocturno'}
+              role="tab"
+              className="rounded-full px-3 py-1 text-xs"
             >
-              <Moon className="h-4 w-4 text-blue-500" />
+              Noche
             </Button>
           </div>
+          <span className="hidden sm:inline text-xs text-muted-foreground">Actualiza los precios en mapa y lista</span>
           <Button variant="outline" size="sm" asChild>
             <Link href="/buscar">Buscar estaciones</Link>
           </Button>
+        </div>
+      </div>
+
+      {/* Prominent Fuel Type Selector */}
+      <div className="mb-3 lg:mb-4">
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-muted-foreground">Precio destacado (según horario):</h4>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(FUEL_LABELS).map(([fuel, label]) => (
+              <Button
+                key={fuel}
+                variant={selectedFuelType === (fuel as FuelType) ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedFuelType(fuel as FuelType)}
+                className="rounded-full px-3 py-2 text-xs font-medium transition-all duration-200"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -222,6 +275,9 @@ export default function FavoritosPage() {
           {/* Map column */}
           <div className="xl:col-span-8 2xl:col-span-9">
             <div className="relative h-[380px] sm:h-[440px] lg:h-[560px] rounded-md border overflow-hidden">
+              <div className="absolute top-2 left-2 z-[400] text-xs px-2 py-1 rounded border bg-background/90 backdrop-blur">
+                {selectedTimeOfDay === 'diurno' ? 'Precios: Día' : 'Precios: Noche'}
+              </div>
               <MapSearch
                 stations={stations}
                 center={mapCenterAndRadius.center}
@@ -240,6 +296,9 @@ export default function FavoritosPage() {
           {/* List column */}
           <div className="xl:col-span-4 2xl:col-span-3">
             <div className="rounded-md border divide-y max-h-[560px] overflow-y-auto bg-background">
+              <div className="flex items-center justify-between p-2 px-3 text-xs text-muted-foreground bg-muted/40">
+                Mostrando precios: {selectedTimeOfDay === 'diurno' ? 'Día' : 'Noche'}
+              </div>
               {stations.length === 0 ? (
                 <div className="p-6 text-sm text-muted-foreground">No hay estaciones para mostrar.</div>
               ) : (

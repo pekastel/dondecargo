@@ -63,7 +63,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map')
-  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>(null)
+  const [selectedFuelType, setSelectedFuelType] = useState<FuelType | null>('nafta')
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const listEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -159,9 +159,27 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       initializeLocation()
     }
 
-    setSelectedFuelType('nafta')
+    try {
+      const stored = typeof window !== 'undefined' ? (window.localStorage.getItem('selectedFuelType') as FuelType | null) : null
+      if (stored && (FUEL_TYPES as string[]).includes(stored)) {
+        setSelectedFuelType(stored as FuelType)
+      } else {
+        setSelectedFuelType('nafta')
+      }
+    } catch {
+      setSelectedFuelType('nafta')
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCoords])
+
+  // Persist selected fuel type
+  useEffect(() => {
+    if (selectedFuelType) {
+      try {
+        window.localStorage.setItem('selectedFuelType', selectedFuelType)
+      } catch {}
+    }
+  }, [selectedFuelType])
 
   // Set current location for map centering when filters.location changes
   useEffect(() => {

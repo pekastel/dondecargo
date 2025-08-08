@@ -365,6 +365,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       const logoPath = getCompanyLogoPath(station.empresa)
       const isSelected = selectedStations.some(s => s.id === station.id)
       const isFav = favoriteIds.has(station.id)
+      // Filter prices by selected time of day to avoid duplicates in the popup grid
+      const preciosToShow = Array.isArray(station.precios)
+        ? (selectedTimeOfDay ? station.precios.filter(p => p.horario === selectedTimeOfDay) : station.precios)
+        : []
 
       // Create marker with click popup functionality
       const markerHtml = `
@@ -410,7 +414,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               
             <!-- Fuel Prices Grid -->
             <div class="grid grid-cols-2 gap-2 mb-3">
-              ${station.precios.length > 0 ? station.precios.map(precio => {
+              ${preciosToShow.length > 0 ? preciosToShow.map(precio => {
                 return `
                 <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
                      onclick="window.location.href='/estacion/${station.id}'"
