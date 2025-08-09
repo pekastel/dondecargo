@@ -45,23 +45,6 @@ export async function GET(request: NextRequest) {
     const limit = params.limit ? parseInt(params.limit) : 20
     const offset = params.offset ? parseInt(params.offset) : 0
 
-    let query = db
-      .select({
-        id: reportesPrecios.id,
-        estacionId: reportesPrecios.estacionId,
-        tipoCombustible: reportesPrecios.tipoCombustible,
-        precio: reportesPrecios.precio,
-        horario: reportesPrecios.horario,
-        notas: reportesPrecios.notas,
-        fechaCreacion: reportesPrecios.fechaCreacion,
-        // Include station details
-        estacionNombre: estaciones.nombre,
-        estacionEmpresa: estaciones.empresa,
-        estacionDireccion: estaciones.direccion,
-      })
-      .from(reportesPrecios)
-      .leftJoin(estaciones, eq(reportesPrecios.estacionId, estaciones.id))
-
     // Apply filters
     const conditions = []
 
@@ -78,16 +61,35 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(reportesPrecios.estacionId, params.estacionId))
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions))
-    }
+    // Build the base query
+    const baseQuery = db
+      .select({
+        id: reportesPrecios.id,
+        estacionId: reportesPrecios.estacionId,
+        tipoCombustible: reportesPrecios.tipoCombustible,
+        precio: reportesPrecios.precio,
+        horario: reportesPrecios.horario,
+        notas: reportesPrecios.notas,
+        fechaCreacion: reportesPrecios.fechaCreacion,
+        // Include station details
+        estacionNombre: estaciones.nombre,
+        estacionEmpresa: estaciones.empresa,
+        estacionDireccion: estaciones.direccion,
+      })
+      .from(reportesPrecios)
+      .leftJoin(estaciones, eq(reportesPrecios.estacionId, estaciones.id))
 
-    query = query
-      .orderBy(desc(reportesPrecios.fechaCreacion))
-      .limit(limit)
-      .offset(offset)
-
-    const result = await query
+    // Execute query with conditional where
+    const result = conditions.length > 0
+      ? await baseQuery
+          .where(and(...conditions))
+          .orderBy(desc(reportesPrecios.fechaCreacion))
+          .limit(limit)
+          .offset(offset)
+      : await baseQuery
+          .orderBy(desc(reportesPrecios.fechaCreacion))
+          .limit(limit)
+          .offset(offset)
 
     return NextResponse.json({
       data: result,

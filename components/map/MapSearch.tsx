@@ -170,8 +170,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       }).addTo(map)
 
       // Position zoom controls on the left (we'll center via CSS)
-      if (map && (map as any).zoomControl && typeof (map as any).zoomControl.setPosition === 'function') {
-        map.zoomControl.setPosition('topleft')
+      const mapWithZoom = map as { zoomControl?: { setPosition: (position: string) => void } }
+      if (map && mapWithZoom.zoomControl && typeof mapWithZoom.zoomControl.setPosition === 'function') {
+        mapWithZoom.zoomControl.setPosition('topleft')
       }
 
       leafletMapRef.current = map
@@ -198,7 +199,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         const res = await fetch('/api/favoritos')
         if (res.ok) {
           const json = await res.json()
-          const ids: string[] = (json?.data || []).map((f: any) => f.estacionId).filter(Boolean)
+          const ids: string[] = (json?.data || []).map((f: { estacionId?: string }) => f.estacionId).filter(Boolean)
           setFavoriteIds(new Set(ids))
         }
       } catch (e) {
@@ -548,7 +549,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Using a microtask to ensure element exists
       setTimeout(() => {
         try {
-          const anyMarker: any = marker as any
+          const anyMarker = marker as { getElement?: () => HTMLElement | null }
           const el: HTMLElement | null = anyMarker.getElement ? anyMarker.getElement() : null
           if (!el) return
           const favBtn = el.querySelector('[data-fav-toggle="true"]') as HTMLElement | null

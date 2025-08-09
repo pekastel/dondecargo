@@ -11,7 +11,7 @@ const db = drizzle(connection)
 const searchParamsSchema = z.object({
   tipo: z.enum(['general', 'precios', 'empresas', 'regiones']).optional(),
   periodo: z.enum(['7d', '30d', '90d', '365d']).optional(),
-  combustible: z.string().optional(),
+  combustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
   empresa: z.string().optional(),
   provincia: z.string().optional(),
 })
@@ -91,10 +91,9 @@ async function getEstadisticasGenerales(fechaDesde: Date) {
         )
       ),
     
-    // Pending reports
+    // Total user reports
     db.select({ count: count() })
-      .from(reportesPrecios)
-      .where(eq(reportesPrecios.estado, 'pendiente')),
+      .from(reportesPrecios),
     
     // Active companies
     db.select({ empresa: estaciones.empresa, count: count() })

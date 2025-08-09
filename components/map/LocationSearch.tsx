@@ -272,7 +272,7 @@ export function LocationSearch({ onLocationSelect, placeholder = "Buscar direcci
           {/* No Results */}
           {!loading && results.length === 0 && query.length >= 3 && (
             <div className="text-center py-4 text-sm text-muted-foreground">
-              No se encontraron resultados para "{query}"
+              No se encontraron resultados para &quot;{query}&quot;
             </div>
           )}
 

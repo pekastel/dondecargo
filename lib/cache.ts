@@ -1,9 +1,9 @@
 // Server-side cache implementation
-let Redis: any
+let Redis: typeof import('redis') | null = null
 if (typeof window === 'undefined') {
   try {
-    Redis = require('redis')
-  } catch (e) {
+    Redis = eval('require')('redis') as typeof import('redis')
+  } catch (e: unknown) {
     console.warn('Redis not available, using memory cache only')
   }
 }
@@ -14,7 +14,7 @@ interface CacheItem<T = unknown> {
 }
 
 class CacheService {
-  private redis: any = null
+  private redis: import('redis').RedisClientType | null = null
   private memoryCache = new Map<string, CacheItem>()
   private connected = false
   private isServer = typeof window === 'undefined'

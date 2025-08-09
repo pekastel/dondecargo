@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { MapPin, Phone, Star, ExternalLink } from 'lucide-react'
+import { MapPin, Phone, ExternalLink } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
 
@@ -16,7 +14,7 @@ interface StationDetailProps {
 interface LeafletMap {
   setView: (latlng: [number, number], zoom: number) => void
   remove: () => void
-  removeLayer: (layer: any) => void
+  removeLayer: (layer: unknown) => void
 }
 
 interface LeafletMarker {
@@ -30,10 +28,10 @@ interface LeafletTileLayer {
 
 interface Leaflet {
   map: (element: HTMLElement) => LeafletMap
-  tileLayer: (url: string, options?: any) => LeafletTileLayer
-  marker: (latlng: [number, number], options?: any) => LeafletMarker
-  divIcon: (options: any) => any
-  icon: (options: any) => any
+  tileLayer: (url: string, options?: Record<string, unknown>) => LeafletTileLayer
+  marker: (latlng: [number, number], options?: Record<string, unknown>) => LeafletMarker
+  divIcon: (options: Record<string, unknown>) => unknown
+  icon: (options: Record<string, unknown>) => unknown
 }
 
 declare global {

@@ -208,9 +208,9 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
         setIsFavorite(true)
         toast.success('Guardado en favoritos')
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('toggleFavorite error', e)
-      toast.error(e?.message || 'Ocurrió un error')
+      toast.error(e instanceof Error ? e.message : 'Ocurrió un error')
     } finally {
       setFavoriteLoading(false)
     }

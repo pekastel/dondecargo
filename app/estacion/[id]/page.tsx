@@ -3,7 +3,7 @@ import { StationDetailClient } from '@/components/StationDetailClient'
 import { notFound } from 'next/navigation'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // Fetch real station data from API
@@ -32,9 +32,9 @@ async function getStation(id: string) {
       rating: station.rating || null,
       reviewCount: station.reviewCount || 0,
       // Transform prices to match expected format
-      precios: station.precios.map((precio: any) => ({
+      precios: station.precios.map((precio: { precio: string | number; [key: string]: unknown }) => ({
         ...precio,
-        precio: parseFloat(precio.precio)
+        precio: typeof precio.precio === 'string' ? parseFloat(precio.precio) : Number(precio.precio)
       }))
     }
   } catch (error) {
@@ -56,10 +56,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${station.nombre} - ${station.direccion} | DondeCargo`,
-    description: `Precios actualizados de combustibles en ${station.nombre}, ${station.direccion}. Nafta desde $${Math.min(...station.precios.map(p => p.precio))}.`,
+    description: `Precios actualizados de combustibles en ${station.nombre}, ${station.direccion}. Nafta desde $${Math.min(...station.precios.map((p: { precio: number }) => p.precio))}.`,
     openGraph: {
       title: `${station.nombre} - Precios de Combustibles`,
-      description: `Precios actualizados: ${station.precios.map(p => `${p.tipoCombustible} $${p.precio}`).join(', ')}`,
+      description: `Precios actualizados: ${station.precios.map((p: { tipoCombustible: string; precio: number }) => `${p.tipoCombustible} $${p.precio}`).join(', ')}`,
       type: 'article',
       locale: 'es_AR',
       siteName: 'DondeCargo',

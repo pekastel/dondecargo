@@ -28,7 +28,19 @@ export async function GET(request: NextRequest) {
     const limit = params.limit ? parseInt(params.limit) : 20
     const offset = params.offset ? parseInt(params.offset) : 0
 
-    let query = db
+    // Apply filters
+    const conditions = []
+
+    if (params.precioId) {
+      conditions.push(eq(confirmacionesPrecios.precioId, params.precioId))
+    }
+
+    if (params.usuarioId) {
+      conditions.push(eq(confirmacionesPrecios.usuarioId, params.usuarioId))
+    }
+
+    // Build query with conditional where clause
+    const baseQuery = db
       .select({
         id: confirmacionesPrecios.id,
         precioId: confirmacionesPrecios.precioId,
@@ -45,27 +57,16 @@ export async function GET(request: NextRequest) {
       .leftJoin(precios, eq(confirmacionesPrecios.precioId, precios.id))
       .leftJoin(estaciones, eq(precios.estacionId, estaciones.id))
 
-    // Apply filters
-    const conditions = []
-
-    if (params.precioId) {
-      conditions.push(eq(confirmacionesPrecios.precioId, params.precioId))
-    }
-
-    if (params.usuarioId) {
-      conditions.push(eq(confirmacionesPrecios.usuarioId, params.usuarioId))
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions))
-    }
-
-    query = query
-      .orderBy(desc(confirmacionesPrecios.fechaCreacion))
-      .limit(limit)
-      .offset(offset)
-
-    const result = await query
+    const result = conditions.length > 0
+      ? await baseQuery
+          .where(and(...conditions))
+          .orderBy(desc(confirmacionesPrecios.fechaCreacion))
+          .limit(limit)
+          .offset(offset)
+      : await baseQuery
+          .orderBy(desc(confirmacionesPrecios.fechaCreacion))
+          .limit(limit)
+          .offset(offset)
 
     return NextResponse.json({
       data: result,

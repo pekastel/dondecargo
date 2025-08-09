@@ -23,7 +23,7 @@ function createDbConnection() {
 
 const searchParamsSchema = z.object({
   estacionId: z.string().optional(),
-  tipoCombustible: z.string().optional(),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
   horario: z.enum(['diurno', 'nocturno']).optional(),
   fuente: z.enum(['oficial', 'usuario']).optional(),
   esValidado: z.string().optional(),
@@ -56,28 +56,6 @@ export async function GET(request: NextRequest) {
     const offset = params.offset ? parseInt(params.offset) : 0
     const orderBy = params.orderBy || 'fecha'
     const orderDir = params.orderDir || 'desc'
-
-    let query = db
-      .select({
-        id: precios.id,
-        estacionId: precios.estacionId,
-        tipoCombustible: precios.tipoCombustible,
-        precio: precios.precio,
-        horario: precios.horario,
-        fechaVigencia: precios.fechaVigencia,
-        fuente: precios.fuente,
-        esValidado: precios.esValidado,
-        fechaReporte: precios.fechaReporte,
-        notas: precios.notas,
-        // Include station details
-        estacionNombre: estaciones.nombre,
-        estacionEmpresa: estaciones.empresa,
-        estacionDireccion: estaciones.direccion,
-        estacionLocalidad: estaciones.localidad,
-        estacionProvincia: estaciones.provincia,
-      })
-      .from(precios)
-      .leftJoin(estaciones, eq(precios.estacionId, estaciones.id))
 
     // Apply filters
     const conditions = []
@@ -118,33 +96,46 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(estaciones.provincia, params.provincia))
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions))
-    }
+    // Build the base query
+    const baseQuery = db
+      .select({
+        id: precios.id,
+        estacionId: precios.estacionId,
+        tipoCombustible: precios.tipoCombustible,
+        precio: precios.precio,
+        horario: precios.horario,
+        fechaVigencia: precios.fechaVigencia,
+        fuente: precios.fuente,
+        esValidado: precios.esValidado,
+        fechaReporte: precios.fechaReporte,
+        notas: precios.notas,
+        // Include station details
+        estacionNombre: estaciones.nombre,
+        estacionEmpresa: estaciones.empresa,
+        estacionDireccion: estaciones.direccion,
+        estacionLocalidad: estaciones.localidad,
+        estacionProvincia: estaciones.provincia,
+      })
+      .from(precios)
+      .leftJoin(estaciones, eq(precios.estacionId, estaciones.id))
 
-    // Apply ordering
-    switch (orderBy) {
-      case 'precio':
-        query = orderDir === 'asc' 
-          ? query.orderBy(asc(precios.precio))
-          : query.orderBy(desc(precios.precio))
-        break
-      case 'estacion':
-        query = orderDir === 'asc'
-          ? query.orderBy(asc(estaciones.nombre))
-          : query.orderBy(desc(estaciones.nombre))
-        break
-      case 'fecha':
-      default:
-        query = orderDir === 'asc'
-          ? query.orderBy(asc(precios.fechaVigencia))
-          : query.orderBy(desc(precios.fechaVigencia))
-        break
-    }
+    // Determine ordering
+    const orderColumn = orderBy === 'precio' ? precios.precio 
+      : orderBy === 'estacion' ? estaciones.nombre 
+      : precios.fechaVigencia
+    const orderFn = orderDir === 'asc' ? asc : desc
 
-    query = query.limit(limit).offset(offset)
-
-    const result = await query
+    // Execute query with conditional where
+    const result = conditions.length > 0
+      ? await baseQuery
+          .where(and(...conditions))
+          .orderBy(orderFn(orderColumn))
+          .limit(limit)
+          .offset(offset)
+      : await baseQuery
+          .orderBy(orderFn(orderColumn))
+          .limit(limit)
+          .offset(offset)
 
     return NextResponse.json({
       data: result,

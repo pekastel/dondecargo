@@ -69,32 +69,6 @@ export async function GET(request: NextRequest) {
       ? Math.min(5000, parseFloat(params.precioMax)) 
       : undefined
 
-    let query = db
-      .select({
-        id: estaciones.id,
-        nombre: estaciones.nombre,
-        empresa: estaciones.empresa,
-        direccion: estaciones.direccion,
-        localidad: estaciones.localidad,
-        provincia: estaciones.provincia,
-        latitud: estaciones.latitud,
-        longitud: estaciones.longitud,
-        fechaActualizacion: estaciones.fechaActualizacion,
-        // Calculate distance if lat/lng provided
-        distancia: lat && lng 
-          ? sql<number>`
-              (6371 * acos(
-                cos(radians(${lat})) * 
-                cos(radians(${estaciones.latitud})) * 
-                cos(radians(${estaciones.longitud}) - radians(${lng})) + 
-                sin(radians(${lat})) * 
-                sin(radians(${estaciones.latitud}))
-              ))
-            `.as('distancia')
-          : sql<null>`null`.as('distancia')
-      })
-      .from(estaciones)
-
     // Apply filters
     const conditions = []
 
@@ -135,20 +109,44 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions))
-    }
+    // Build the base query
+    const baseQuery = db
+      .select({
+        id: estaciones.id,
+        nombre: estaciones.nombre,
+        empresa: estaciones.empresa,
+        direccion: estaciones.direccion,
+        localidad: estaciones.localidad,
+        provincia: estaciones.provincia,
+        latitud: estaciones.latitud,
+        longitud: estaciones.longitud,
+        fechaActualizacion: estaciones.fechaActualizacion,
+        // Calculate distance if lat/lng provided
+        distancia: lat && lng 
+          ? sql<number>`
+              (6371 * acos(
+                cos(radians(${lat})) * 
+                cos(radians(${estaciones.latitud})) * 
+                cos(radians(${estaciones.longitud}) - radians(${lng})) + 
+                sin(radians(${lat})) * 
+                sin(radians(${estaciones.latitud}))
+              ))
+            `.as('distancia')
+          : sql<null>`null`.as('distancia')
+      })
+      .from(estaciones)
 
-    // Order by distance if location provided, otherwise by name
-    if (lat && lng) {
-      query = query.orderBy(sql`distancia ASC`)
-    } else {
-      query = query.orderBy(asc(estaciones.nombre))
-    }
-
-    query = query.limit(limit).offset(offset)
-
-    const result = await query
+    // Apply conditional where, ordering, and pagination
+    const result = conditions.length > 0
+      ? await baseQuery
+          .where(and(...conditions))
+          .orderBy(lat && lng ? sql`distancia ASC` : asc(estaciones.nombre))
+          .limit(limit)
+          .offset(offset)
+      : await baseQuery
+          .orderBy(lat && lng ? sql`distancia ASC` : asc(estaciones.nombre))
+          .limit(limit)
+          .offset(offset)
     console.log(`📊 Found ${result.length} stations`)
 
     // Get current prices for each station (simplified query)

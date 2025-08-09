@@ -22,13 +22,13 @@ function createDbConnection() {
 }
 
 const searchParamsSchema = z.object({
-  tipoCombustible: z.string().optional(),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
   horario: z.enum(['diurno', 'nocturno']).optional(),
   dias: z.string().optional(), // Number of days to look back
 })
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

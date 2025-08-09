@@ -21,14 +21,14 @@ function createDbConnection() {
 }
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   let db: ReturnType<typeof createDbConnection> | null = null
+  const { id } = await params
   
   try {
-    const { id } = await params
 
     console.log(`🔍 Starting station detail API request for ID: ${id}`)
     
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      stationId: params.id,
+      stationId: id,
       databaseUrl: process.env.DATABASE_URL ? 'Set' : 'Not set'
     })
     

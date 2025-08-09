@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { env } from '@/lib/env'
 
 export const runtime = 'nodejs'
-export const revalidate = 60 * 60 * 24 // 24h
+export const revalidate = 86400 // 24h
 
 function normalizeBaseUrl(url: string): string {
   const withProtocol = /^https?:\/\//.test(url) ? url : `https://${url}`

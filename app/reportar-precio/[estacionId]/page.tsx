@@ -7,9 +7,9 @@ import { PriceReportPage } from '@/components/reportar-precio/PriceReportPage'
 import { Card } from '@/components/ui/card'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     estacionId: string
-  }
+  }>
 }
 
 async function getStationWithPrices(id: string) {
@@ -33,7 +33,11 @@ async function getStationWithPrices(id: string) {
 
     return {
       ...station[0],
-      precios: currentPrices,
+      geojson: station[0].geojson as object,
+      precios: currentPrices.map(precio => ({
+        ...precio,
+        precio: parseFloat(precio.precio)
+      })),
     }
   } catch (error) {
     console.error('Error fetching station:', error)

@@ -238,7 +238,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       const data = await response.json()
       
       // Transform API response to match our Station interface
-      const transformedStations: Station[] = data.data.map((station: any) => ({
+      const transformedStations: Station[] = data.data.map((station: { id: string; nombre: string; empresa: string; direccion: string; localidad: string; provincia: string; latitud: number; longitud: number; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; fechaVigencia: string; [key: string]: unknown }>; [key: string]: unknown }) => ({
         id: station.id,
         nombre: station.nombre,
         empresa: station.empresa,
@@ -247,7 +247,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         provincia: station.provincia,
         latitud: station.latitud,
         longitud: station.longitud,
-        precios: (station.precios || []).map((precio: any) => ({
+        precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia: string; [key: string]: unknown }) => ({
           tipoCombustible: precio.tipoCombustible,
           precio: parseFloat(precio.precio),
           horario: precio.horario,

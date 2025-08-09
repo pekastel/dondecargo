@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { RotateCcw, TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react'
+import { RotateCcw, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { FuelType, FUEL_LABELS, FuenteType } from '@/lib/types'
 
 interface PriceHistoryProps {
@@ -58,7 +58,7 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
       const data = await response.json()
       
       // Transform API response to match our PriceHistoryItem interface
-      const transformedHistory: PriceHistoryItem[] = data.data.map((item: any) => ({
+      const transformedHistory: PriceHistoryItem[] = data.data.map((item: { fechaVigencia: string; precio: string | number; fuente: string; [key: string]: unknown }) => ({
         fecha: new Date(item.fechaVigencia),
         precio: parseFloat(item.precio),
         fuente: item.fuente,

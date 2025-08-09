@@ -73,7 +73,7 @@ export default function FavoritosPage() {
         const concurrency = 5
         const results: Station[] = []
 
-        const toStation = (fav: FavoritoItem, detail: any): Station => ({
+        const toStation = (fav: FavoritoItem, detail: { nombre?: string; empresa?: string; direccion?: string; localidad?: string; provincia?: string; latitud?: number; longitud?: number; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; [key: string]: unknown }>; [key: string]: unknown } | null): Station => ({
           id: fav.estacionId,
           nombre: fav.nombre || detail?.nombre || '',
           empresa: fav.empresa || detail?.empresa || '',
@@ -83,11 +83,11 @@ export default function FavoritosPage() {
           latitud: (fav.latitud ?? detail?.latitud) || 0,
           longitud: (fav.longitud ?? detail?.longitud) || 0,
           precios: Array.isArray(detail?.precios)
-            ? detail.precios.map((p: any) => ({
-                tipoCombustible: p.tipoCombustible,
+            ? detail.precios.map((p: { tipoCombustible: string; precio: string | number; horario: string; [key: string]: unknown }) => ({
+                tipoCombustible: p.tipoCombustible as FuelType,
                 precio: typeof p.precio === 'string' ? parseFloat(p.precio) : Number(p.precio),
-                horario: p.horario,
-                fechaActualizacion: new Date(p.fechaVigencia || p.fechaActualizacion || Date.now()),
+                horario: p.horario as 'diurno' | 'nocturno',
+                fechaActualizacion: new Date((p.fechaVigencia as string | number | Date) || (p.fechaActualizacion as string | number | Date) || Date.now()),
               }))
             : [],
         })

@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ExternalLink, Phone, Clock, MapPin, Building, CreditCard, Wrench, Star, Calendar, Database } from 'lucide-react'
+import { ExternalLink, Phone, Clock, Building, Wrench, Star, Calendar } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
 
 interface StationInfoProps {
