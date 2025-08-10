@@ -77,7 +77,7 @@ class CacheService {
       const memoryItem = this.memoryCache.get(key)
       if (memoryItem) {
         if (memoryItem.expires > Date.now()) {
-          return memoryItem.data
+          return memoryItem.data as T
         } else {
           // Expired, delete from memory
           this.memoryCache.delete(key)

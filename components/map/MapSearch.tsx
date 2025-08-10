@@ -350,7 +350,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     `
 
     // Create custom icon for current location
-    const currentLocationIcon = window.L.divIcon({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentLocationIcon = (window as any).L.divIcon({
       html: currentLocationHtml,
       className: 'current-location-custom-marker',
       iconSize: [20, 20],
@@ -519,7 +520,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       `
 
       // Create custom icon with HTML content
-      const customIcon = window.L.divIcon({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const customIcon = (window as any).L.divIcon({
         html: markerHtml,
         className: 'custom-marker',
         iconSize: [60, 60], 

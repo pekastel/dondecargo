@@ -36,7 +36,8 @@ async function getStationWithPrices(id: string) {
       geojson: station[0].geojson as object,
       precios: currentPrices.map(precio => ({
         ...precio,
-        precio: parseFloat(precio.precio)
+        precio: parseFloat(precio.precio),
+        usuarioId: precio.usuarioId || undefined
       })),
     }
   } catch (error) {

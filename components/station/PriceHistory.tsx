@@ -60,7 +60,7 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
       // Transform API response to match our PriceHistoryItem interface
       const transformedHistory: PriceHistoryItem[] = data.data.map((item: { fechaVigencia: string; precio: string | number; fuente: string; [key: string]: unknown }) => ({
         fecha: new Date(item.fechaVigencia),
-        precio: parseFloat(item.precio),
+        precio: parseFloat(item.precio.toString()),
         fuente: item.fuente,
         esValidado: item.esValidado
       }))

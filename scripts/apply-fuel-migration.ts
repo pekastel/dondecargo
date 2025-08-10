@@ -11,7 +11,7 @@ if (!DATABASE_URL) {
 }
 
 async function applyMigration() {
-  const connection = postgres(DATABASE_URL, { max: 1 })
+  const connection = postgres(DATABASE_URL!, { max: 1 })
   const db = drizzle(connection)
 
   try {

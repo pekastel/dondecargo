@@ -148,17 +148,21 @@ export class FuelService {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = query.where(and(...conditions)) as any
     }
 
     // Order by distance if location provided, otherwise by name
     if (lat && lng) {
-      query = query.orderBy(sql`distancia ASC`)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = query.orderBy(sql`distancia ASC`) as any
     } else {
-      query = query.orderBy(asc(estaciones.nombre))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = query.orderBy(asc(estaciones.nombre)) as any
     }
 
-    query = query.limit(limit).offset(offset)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query = query.limit(limit).offset(offset) as any
 
     const result = await query
 
@@ -170,8 +174,12 @@ export class FuelService {
       
       const priceConditions = [
         inArray(precios.estacionId, stationIds),
-        eq(precios.horario, horario)
       ]
+      
+      // Handle horario filter - if 'ambos' is specified, don't filter by horario
+      if (horario !== 'ambos') {
+        priceConditions.push(eq(precios.horario, horario))
+      }
       
       if (combustible) {
         priceConditions.push(eq(precios.tipoCombustible, combustible))
@@ -314,12 +322,13 @@ export class FuelService {
       .innerJoin(precios, eq(precios.estacionId, estaciones.id))
       .where(and(
         eq(precios.tipoCombustible, fuelType),
-        eq(precios.horario, horario)
+        ...(horario !== 'ambos' ? [eq(precios.horario, horario)] : [])
       ))
 
     // Distance filter if location provided
     if (lat && lng && radius) {
-      query = query.where(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = (query as any).where(
         sql`
           (6371 * acos(
             cos(radians(${lat})) * 
@@ -334,9 +343,11 @@ export class FuelService {
 
     // Order by price (cheapest first), then by distance if location provided
     if (lat && lng) {
-      query = query.orderBy(asc(precios.precio), sql`distancia ASC`)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = (query as any).orderBy(asc(precios.precio), sql`distancia ASC`)
     } else {
-      query = query.orderBy(asc(precios.precio))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      query = (query as any).orderBy(asc(precios.precio))
     }
 
     const result = await query.limit(limit)
@@ -383,9 +394,13 @@ export class FuelService {
     
     const conditions = [
       eq(preciosHistorico.estacionId, stationId),
-      eq(preciosHistorico.horario, horario),
       gte(preciosHistorico.fechaVigencia, fromDate)
     ]
+    
+    // Handle horario filter - if 'ambos' is specified, don't filter by horario
+    if (horario !== 'ambos') {
+      conditions.push(eq(preciosHistorico.horario, horario))
+    }
     
     if (fuelType) {
       conditions.push(eq(preciosHistorico.tipoCombustible, fuelType))

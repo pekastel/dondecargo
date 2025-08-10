@@ -274,7 +274,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
           precioPromedio: totalReportes > 0 ? 
             ((diurno.precioPromedio * parseInt(diurno.cantidadReportes)) + (nocturno.precioPromedio * parseInt(nocturno.cantidadReportes))) / totalReportes :
             (diurno.precioPromedio + nocturno.precioPromedio) / 2,
-          cantidadReportes: totalReportes,
+          cantidadReportes: totalReportes.toString(),
           precioMinimo: Math.min(diurno.precioMinimo, nocturno.precioMinimo),
           precioMaximo: Math.max(diurno.precioMaximo, nocturno.precioMaximo),
           ultimoReporte,
@@ -367,7 +367,7 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     }
 
     const selectedHorario = horarioToggles[consolidatedReport.tipoCombustible] || 'diurno'
-    return selectedHorario === 'diurno' ? consolidatedReport.diurno : consolidatedReport.nocturno
+    return selectedHorario === 'diurno' ? (consolidatedReport.diurno || null) : (consolidatedReport.nocturno || null)
   }
 
   const currentPrices = station.precios.filter(p => p.horario === 'diurno')
@@ -587,8 +587,8 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                                     {FUEL_LABELS[consolidatedReport.tipoCombustible]}
                                   </span>
                                   {selectedHorario === 'diurno' ? 
-                                    <Sun className="h-3 w-3 text-amber-500" title="Horario diurno" /> : 
-                                    <Moon className="h-3 w-3 text-blue-500" title="Horario nocturno" />
+                                    <Sun className="h-3 w-3 text-amber-500" /> : 
+                                    <Moon className="h-3 w-3 text-blue-500" />
                                   }
                                   {hasMultipleHorarios && (
                                     <Badge variant="secondary" className="text-xs px-1.5 py-0">
@@ -670,10 +670,10 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                                   </span>
                                   <div className="flex items-center gap-1 ml-1">
                                     {report.horarios.includes('diurno') && (
-                                      <Sun className="h-3 w-3 text-amber-500" title="Horario diurno" />
+                                      <Sun className="h-3 w-3 text-amber-500" />
                                     )}
                                     {report.horarios.includes('nocturno') && (
-                                      <Moon className="h-3 w-3 text-blue-500" title="Horario nocturno" />
+                                      <Moon className="h-3 w-3 text-blue-500" />
                                     )}
                                   </div>
                                 </div>

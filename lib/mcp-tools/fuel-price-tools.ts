@@ -37,7 +37,10 @@ export const searchStationsTool = {
     offset?: number;
   }) => {
     try {
-      const result = await fuelService.searchStations(params);
+      const result = await fuelService.searchStations({
+        ...params,
+        combustible: params.combustible as FuelType | undefined
+      });
       
       if (result.data.length === 0) {
         return createMcpResponse("No se encontraron estaciones con los criterios especificados.");
@@ -62,7 +65,7 @@ export const searchStationsTool = {
         params.empresa ? `empresa: ${params.empresa}` : '',
         params.provincia ? `provincia: ${params.provincia}` : '',
         params.localidad ? `localidad: ${params.localidad}` : '',
-        params.combustible ? `combustible: ${FUEL_LABELS[params.combustible]}` : '',
+        params.combustible ? `combustible: ${FUEL_LABELS[params.combustible as FuelType]}` : '',
         params.precioMin ? `precio min: $${params.precioMin}` : '',
         params.precioMax ? `precio max: $${params.precioMax}` : '',
       ].filter(Boolean).join(', ');

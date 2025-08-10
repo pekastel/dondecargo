@@ -34,11 +34,6 @@ interface Leaflet {
   icon: (options: Record<string, unknown>) => unknown
 }
 
-declare global {
-  interface Window {
-    L: Leaflet
-  }
-}
 
 export function StationDetail({ station }: StationDetailProps) {
   const mapRef = useRef<HTMLDivElement>(null)
@@ -97,11 +92,15 @@ export function StationDetail({ station }: StationDetailProps) {
     }
 
     // Create new map
-    const map = window.L.map(mapRef.current).setView([station.latitud, station.longitud], 16)
-
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const leafletMap: any = (window as any).L.map(mapRef.current).setView([station.latitud, station.longitud], 16)
+    
+    // Add tile layer
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tileLayer = (window as any).L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
-    }).addTo(map)
+    })
+    tileLayer.addTo(leafletMap)
 
     const logoPath = getCompanyLogoPath(station.empresa)
 
@@ -120,7 +119,8 @@ export function StationDetail({ station }: StationDetailProps) {
     `
 
     // Create custom icon with HTML content
-    const customIcon = window.L.divIcon({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const customIcon = (window as any).L.divIcon({
       html: markerHtml,
       className: 'custom-marker',
       iconSize: [32, 32],
@@ -128,9 +128,10 @@ export function StationDetail({ station }: StationDetailProps) {
       popupAnchor: [0, -32]
     })
 
-    const marker = window.L.marker([station.latitud, station.longitud], {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const marker = (window as any).L.marker([station.latitud, station.longitud], {
       icon: customIcon
-    }).addTo(map)
+    }).addTo(leafletMap)
 
     marker.bindPopup(`
       <div style="text-align: center; padding: 12px; min-width: 200px;">
@@ -143,7 +144,7 @@ export function StationDetail({ station }: StationDetailProps) {
       </div>
     `)
 
-    leafletMapRef.current = map
+    leafletMapRef.current = leafletMap
 
     return () => {
       if (leafletMapRef.current) {

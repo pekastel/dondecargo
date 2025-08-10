@@ -47,7 +47,7 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   
   // Collapsible sections state

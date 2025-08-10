@@ -346,7 +346,8 @@ class OfficialDataLoader {
             // New price - insert
             await this.db.insert(precios).values({
               id: createId(),
-              ...price
+              ...price,
+              precio: price.precio.toString()
             })
             pricesInserted++
           } else {

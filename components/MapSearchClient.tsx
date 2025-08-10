@@ -249,7 +249,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         longitud: station.longitud,
         precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia: string; [key: string]: unknown }) => ({
           tipoCombustible: precio.tipoCombustible,
-          precio: parseFloat(precio.precio),
+          precio: parseFloat(precio.precio.toString()),
           horario: precio.horario,
           fechaActualizacion: new Date(precio.fechaVigencia)
         }))

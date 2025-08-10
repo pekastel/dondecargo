@@ -31,7 +31,7 @@ function loadTermsMetadata(): TermsMetadata {
     const generatedPath = path.join(process.cwd(), 'lib', 'generated', 'terms-hash.json');
     const content = readFileSync(generatedPath, 'utf8');
     cachedTermsMetadata = JSON.parse(content);
-    return cachedTermsMetadata;
+    return cachedTermsMetadata!;
   } catch (error) {
     // Fallback: generate hash from HTML file (development scenario)
     console.warn('Generated terms hash not found, generating from HTML file...');
@@ -67,7 +67,7 @@ function generateHashFromHtmlFile(): TermsMetadata {
     cachedTermsMetadata = metadata;
     return metadata;
   } catch (error) {
-    throw new Error(`Failed to generate terms hash: ${error.message}`);
+    throw new Error(`Failed to generate terms hash: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

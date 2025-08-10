@@ -26,7 +26,7 @@ export function LocationSearch({ onLocationSelect, placeholder = "Buscar direcci
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Load recent searches from localStorage
