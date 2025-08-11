@@ -1,4 +1,4 @@
-# DondeCargo v2 - Especificación UI/UX Detallada
+# DondeCargo - Especificación UI/UX Detallada
 
 ## 1. Arquitectura General de Componentes
 

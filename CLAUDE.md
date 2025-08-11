@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**DondeCargo v2** es una plataforma conversacional para visualización y gestión de precios de combustibles en Argentina. La aplicación combina datos oficiales del gobierno con contribuciones de usuarios validados para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional (MCP) y un mapa interactivo.
+**DondeCargo** es una plataforma conversacional para visualización y gestión de precios de combustibles en Argentina. La aplicación combina datos oficiales del gobierno con contribuciones de usuarios validados para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional (MCP) y un mapa interactivo.
 
 ### Propuesta de Valor
 - **Datos confiables**: Integración directa con APIs oficiales de datos abiertos del gobierno argentino
@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Arquitectura del Sistema
 
-DondeCargo v2 implementa una arquitectura **conversacional-first** que prioriza la interacción natural con datos de precios de combustibles mediante MCP (Model Context Protocol).
+DondeCargo implementa una arquitectura **conversacional-first** que prioriza la interacción natural con datos de precios de combustibles mediante MCP (Model Context Protocol).
 
 ### Principios Arquitectónicos
 1. **Interfaz conversacional primaria**: Toda la funcionalidad accesible mediante comandos naturales vía MCP

@@ -51,7 +51,7 @@ export const env = createEnv({
     ENABLE_EMAIL_VERIFICATION: z
       .enum(["true", "false"])
       .optional()
-      .default("false")
+      .default("true")
       .transform((val) => val === "true")
       .describe("Enable email verification for new user registrations"),
     
