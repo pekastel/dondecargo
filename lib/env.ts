@@ -47,12 +47,6 @@ export const env = createEnv({
       .optional()
       .describe("Destination email for contact form submissions"),
 
-    CONTACT_SUBJECT_PREFIX: z
-      .string()
-      .optional()
-      .default("[Contacto]")
-      .describe("Subject prefix added to contact form messages"),
-    
     // Email Verification Feature Toggle
     ENABLE_EMAIL_VERIFICATION: z
       .enum(["true", "false"])
@@ -126,7 +120,6 @@ export const env = createEnv({
     LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
     LOOPS_CONTACT_TEMPLATE_ID: process.env.LOOPS_CONTACT_TEMPLATE_ID,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
-    CONTACT_SUBJECT_PREFIX: process.env.CONTACT_SUBJECT_PREFIX,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
     REDIS_URL: process.env.REDIS_URL,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,

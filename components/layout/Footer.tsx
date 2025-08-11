@@ -14,12 +14,12 @@ export function Footer() {
     product: [
       { name: 'Buscar Precios', href: '/buscar' },
       { name: 'Términos y Condiciones', href: '/terminos-y-condiciones.html' },
-      { name: 'Política de Privacidad', href: '/privacidad' }
+      { name: 'Política de Privacidad', href: '/privacidad' },
+      { name: 'Contacto', href: '/contacto' }
     ],
     developers: [
       { name: 'GitHub', href: 'https://github.com/pekastel/dondecargo', external: true },
       { name: 'Configuración MCP', href: '/mcp-help' },
-      { name: 'Contacto', href: '/contacto' }
     ]
   }
 

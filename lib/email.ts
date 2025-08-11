@@ -135,7 +135,7 @@ export async function sendContactMessageEmail(data: ContactEmailData): Promise<v
       dataVariables: {
         name: data.name,
         email: data.email,
-        subject: `${env.CONTACT_SUBJECT_PREFIX ?? ''} ${data.subject}`.trim(),
+        subject: data.subject,
         message: data.message,
       },
     });
