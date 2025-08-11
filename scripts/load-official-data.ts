@@ -3,7 +3,7 @@ import { join } from 'path'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { estaciones, precios, preciosHistorico } from '@/drizzle/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 // Load environment variables
@@ -114,7 +114,7 @@ class OfficialDataLoader {
 
   constructor() {
     const dbHost = (() => { try { return new URL(DATABASE_URL!).hostname } catch { return 'unknown' } })()
-    this.connection = postgres(DATABASE_URL!, { max: 1 })
+    this.connection = postgres(DATABASE_URL!, { max: 1, prepare: false })
     this.db = drizzle(this.connection)
     console.log(`🔌 DB connection initialized (host=${dbHost}, max=1)`) 
   }
@@ -294,66 +294,104 @@ class OfficialDataLoader {
       let stationsInserted = 0
       let stationsUpdated = 0
       let stationsUnchanged = 0
-      let stationIndex = 0
-      
-      for (const station of stations) {
-        try {
-          stationIndex++
-          // Check if station exists by id (which is now idempresa)
-          const existing = await this.db
-            .select()
-            .from(estaciones)
-            .where(eq(estaciones.id, station.id))
-            .limit(1)
-          
-          if (existing.length === 0) {
-            await this.db.insert(estaciones).values(station)
-            stationsInserted++
-          } else {
-            // Update existing station
-            const e = existing[0]
-            const latChanged = Math.abs((e.latitud ?? 0) - station.latitud) > 1e-8
-            const lngChanged = Math.abs((e.longitud ?? 0) - station.longitud) > 1e-8
-            const needsUpdate = (
-              e.nombre !== station.nombre ||
-              e.empresa !== station.empresa ||
-              e.cuit !== station.cuit ||
-              e.direccion !== station.direccion ||
-              e.localidad !== station.localidad ||
-              e.provincia !== station.provincia ||
-              e.region !== station.region ||
-              latChanged ||
-              lngChanged
-            )
 
-            if (needsUpdate) {
-              await this.db
-                .update(estaciones)
-                .set({
-                  nombre: station.nombre,
-                  empresa: station.empresa,
-                  cuit: station.cuit,
-                  direccion: station.direccion,
-                  localidad: station.localidad,
-                  provincia: station.provincia,
-                  region: station.region,
-                  latitud: station.latitud,
-                  longitud: station.longitud,
-                  fechaActualizacion: new Date()
-                })
-                .where(eq(estaciones.id, station.id))
-              stationsUpdated++
-            } else {
-              stationsUnchanged++
-            }
-          }
-          if (stationIndex % 500 === 0) {
-            console.log(`  • Stations ${stationIndex}/${stations.length} (ins=${stationsInserted}, upd=${stationsUpdated}, same=${stationsUnchanged})`)
-          }
+      // 1) Prefetch existing stations in one query
+      const stationIds = stations.map(s => s.id)
+      console.time('stations_prefetch')
+      const existingRows = stationIds.length > 0
+        ? await this.db
+            .select({
+              id: estaciones.id,
+              nombre: estaciones.nombre,
+              empresa: estaciones.empresa,
+              cuit: estaciones.cuit,
+              direccion: estaciones.direccion,
+              localidad: estaciones.localidad,
+              provincia: estaciones.provincia,
+              region: estaciones.region,
+              latitud: estaciones.latitud,
+              longitud: estaciones.longitud,
+            })
+            .from(estaciones)
+            .where(inArray(estaciones.id, stationIds))
+        : []
+      console.timeEnd('stations_prefetch')
+
+      const existingMap = new Map(existingRows.map(r => [r.id, r]))
+
+      // 2) Split into toInsert vs toUpdate
+      const toInsert: ProcessedStation[] = []
+      const toUpdate: ProcessedStation[] = []
+      for (const s of stations) {
+        const e = existingMap.get(s.id)
+        if (!e) toInsert.push(s)
+        else toUpdate.push(s)
+      }
+
+      // 3) Bulk insert in chunks
+      const insertChunkSize = 1000
+      console.time('stations_bulk_insert')
+      for (let i = 0; i < toInsert.length; i += insertChunkSize) {
+        const chunk = toInsert.slice(i, i + insertChunkSize)
+        if (chunk.length === 0) continue
+        try {
+          await this.db.insert(estaciones).values(chunk)
+          stationsInserted += chunk.length
+          console.log(`  • Stations inserted ${Math.min(i + chunk.length, toInsert.length)}/${toInsert.length}`)
         } catch (error) {
-          console.warn(`⚠️  Error processing station ${station.nombre}:`, error)
+          console.warn('⚠️  Error in stations bulk insert chunk:', error)
         }
       }
+      console.timeEnd('stations_bulk_insert')
+
+      // 4) Update only changed rows (per-row updates, but far fewer)
+      console.time('stations_changed_updates')
+      let processedUpdates = 0
+      for (const station of toUpdate) {
+        const e = existingMap.get(station.id)!
+        const latChanged = Math.abs((e.latitud ?? 0) - station.latitud) > 1e-8
+        const lngChanged = Math.abs((e.longitud ?? 0) - station.longitud) > 1e-8
+        const needsUpdate = (
+          e.nombre !== station.nombre ||
+          e.empresa !== station.empresa ||
+          e.cuit !== station.cuit ||
+          e.direccion !== station.direccion ||
+          e.localidad !== station.localidad ||
+          e.provincia !== station.provincia ||
+          e.region !== station.region ||
+          latChanged ||
+          lngChanged
+        )
+        if (needsUpdate) {
+          try {
+            await this.db
+              .update(estaciones)
+              .set({
+                nombre: station.nombre,
+                empresa: station.empresa,
+                cuit: station.cuit,
+                direccion: station.direccion,
+                localidad: station.localidad,
+                provincia: station.provincia,
+                region: station.region,
+                latitud: station.latitud,
+                longitud: station.longitud,
+                fechaActualizacion: new Date()
+              })
+              .where(eq(estaciones.id, station.id))
+            stationsUpdated++
+          } catch (error) {
+            console.warn(`⚠️  Error updating station ${station.nombre}:`, error)
+          }
+        } else {
+          stationsUnchanged++
+        }
+        processedUpdates++
+        if (processedUpdates % 500 === 0) {
+          console.log(`  • Stations checked (updates) ${processedUpdates}/${toUpdate.length} (upd=${stationsUpdated}, same=${stationsUnchanged})`)
+        }
+      }
+      console.timeEnd('stations_changed_updates')
       console.timeEnd('stations_upsert')
       console.log(`✅ Stations summary: ins=${stationsInserted}, upd=${stationsUpdated}, same=${stationsUnchanged}`)
       
