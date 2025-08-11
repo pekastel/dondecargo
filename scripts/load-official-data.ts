@@ -113,8 +113,10 @@ class OfficialDataLoader {
   private connection: ReturnType<typeof postgres>
 
   constructor() {
+    const dbHost = (() => { try { return new URL(DATABASE_URL!).hostname } catch { return 'unknown' } })()
     this.connection = postgres(DATABASE_URL!, { max: 1 })
     this.db = drizzle(this.connection)
+    console.log(`🔌 DB connection initialized (host=${dbHost}, max=1)`) 
   }
 
   async downloadCSV(): Promise<string> {
@@ -189,9 +191,15 @@ class OfficialDataLoader {
     const stationsMap = new Map<string, ProcessedStation>()
     const prices: ProcessedPrice[] = []
     const processedRows = limit ? rows.slice(0, limit) : rows
+    const totalRows = processedRows.length
+    let i = 0
     
     for (const row of processedRows) {
       try {
+        i++
+        if (i % 50000 === 0) {
+          console.log(`  • Processed ${i}/${totalRows} rows -> stations=${stationsMap.size}, prices=${prices.length}`)
+        }
         // Process station using idempresa as unique key AND as station ID
         const stationKey = row.idempresa
         const stationId = row.idempresa // Use idempresa as the primary key
@@ -271,6 +279,7 @@ class OfficialDataLoader {
 
   async saveData(stations: ProcessedStation[], prices: ProcessedPrice[], replaceExisting: boolean = false) {
     console.log('💾 Saving data to database...')
+    console.time('save_total')
     
     try {
       if (replaceExisting) {
@@ -281,11 +290,14 @@ class OfficialDataLoader {
       
       // Insert stations
       console.log(`📍 Inserting ${stations.length} stations...`)
+      console.time('stations_upsert')
       let stationsInserted = 0
       let stationsUpdated = 0
+      let stationIndex = 0
       
       for (const station of stations) {
         try {
+          stationIndex++
           // Check if station exists by id (which is now idempresa)
           const existing = await this.db
             .select()
@@ -315,19 +327,26 @@ class OfficialDataLoader {
               .where(eq(estaciones.id, station.id))
             stationsUpdated++
           }
+          if (stationIndex % 500 === 0) {
+            console.log(`  • Stations ${stationIndex}/${stations.length} (ins=${stationsInserted}, upd=${stationsUpdated})`)
+          }
         } catch (error) {
           console.warn(`⚠️  Error processing station ${station.nombre}:`, error)
         }
       }
+      console.timeEnd('stations_upsert')
       
       // Insert prices
       console.log(`💰 Processing ${prices.length} prices...`)
+      console.time('prices_upsert')
       let pricesInserted = 0
       let pricesUpdated = 0
       let pricesUnchanged = 0
+      let priceIndex = 0
       
       for (const price of prices) {
         try {
+          priceIndex++
           // Check if price already exists
           const existing = await this.db
             .select()
@@ -382,11 +401,15 @@ class OfficialDataLoader {
               pricesUnchanged++
             }
           }
+          if (priceIndex % 5000 === 0) {
+            console.log(`  • Prices ${priceIndex}/${prices.length} (ins=${pricesInserted}, upd=${pricesUpdated}, same=${pricesUnchanged})`)
+          }
           
         } catch (error) {
           console.warn(`⚠️  Error processing price:`, error)
         }
       }
+      console.timeEnd('prices_upsert')
       
       console.log(`✅ Inserted ${stationsInserted} new stations, ${pricesInserted} new prices, updated ${pricesUpdated} prices, and ${pricesUnchanged} prices were unchanged`)
       
@@ -394,6 +417,7 @@ class OfficialDataLoader {
       console.error('❌ Error saving data:', error)
       throw error
     }
+    console.timeEnd('save_total')
   }
 
   async close() {
@@ -414,11 +438,18 @@ async function main() {
   
   try {
     // Download and parse CSV
+    console.time('download_csv')
     const csvText = await loader.downloadCSV()
+    console.timeEnd('download_csv')
+    console.time('parse_csv')
     const rows = loader.parseCSV(csvText)
+    console.timeEnd('parse_csv')
     
     // Process data
+    console.time('process_data')
     const { stations, prices } = loader.processData(rows, limit)
+    console.timeEnd('process_data')
+    console.log(`📦 Prepared for save -> stations=${stations.length}, prices=${prices.length}`)
     
     if (dryRun) {
       console.log('🔍 DRY RUN - No data will be saved')
@@ -437,7 +468,9 @@ async function main() {
       
     } else {
       // Save to database
+      console.time('save_data')
       await loader.saveData(stations, prices, replaceExisting)
+      console.timeEnd('save_data')
       console.log('🎉 Import completed successfully!')
     }
     
