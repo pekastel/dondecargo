@@ -338,7 +338,7 @@ DondeCargo está construido con tecnologías modernas para rendimiento, escalabi
 - **Nomatim** for geocoding
 - **pnpm** monorepo tooling
 
-## Why is this free?
+## ¿Por qué es gratuito?
 DondeCargo es desarrollado y mantenido por **[Lumile](https://www.lumile.com.ar)** para experimentar con tecnologías de punta como MCPs en escenarios reales. Al compartir el código, nos:
 - Devolvemos a la comunidad que nos empoderó en nuestro trabajo diario.
 - Recopilamos feedback que hace el producto mejor para todos.

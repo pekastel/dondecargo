@@ -178,12 +178,12 @@ Crea tu cuenta para colaborar
               <div className="space-y-1">
                 <Label 
                   htmlFor="terms" 
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  Acepto los términos y condiciones
+                  Acepto los Términos y la Política de Privacidad
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Al registrarte, aceptas nuestros{" "}
+                  Declaro ser mayor de 18 años.{" "}
                   <Link 
                     href="/terminos-y-condiciones.html" 
                     target="_blank" 
@@ -191,7 +191,15 @@ Crea tu cuenta para colaborar
                   >
                     términos y condiciones
                   </Link>
-                  {" "}y reconoces que tus datos podrán ser utilizados para análisis y publicidad.
+                  {" "}y la{" "}
+                  <Link
+                    href="/privacidad"
+                    target="_blank"
+                    className="text-blue-600 hover:text-blue-500 underline"
+                  >
+                    política de privacidad
+                  </Link>
+                  .
                 </p>
               </div>
             </div>
@@ -205,7 +213,7 @@ Crea tu cuenta para colaborar
                 if (password !== passwordConfirmation) {
                   toast.error("Las contraseñas no coinciden");
                 } else if (!acceptedTerms) {
-                  toast.error("Debes aceptar los términos y condiciones");
+                  toast.error("Debés declarar mayoría de edad y aceptar los Términos y la Política de Privacidad");
                 } else {
                   toast.error("Por favor completa todos los campos requeridos");
                 }
