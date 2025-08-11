@@ -4,6 +4,7 @@ import { db } from "@/drizzle/connection";
 import { mcp } from "better-auth/plugins";
 // import { Pool } from "pg";
 import { getBaseUrl } from "./utils/url";
+import { getAllowedOrigins } from "./utils/cors";
 import { admin } from "better-auth/plugins";
 import { sendVerificationEmail } from "./email";
 import { env } from "@/lib/env";
@@ -60,16 +61,7 @@ export const auth = betterAuth({
     admin()
   ],
   baseURL,
-  trustedOrigins: [
-    "https://localhost:3000", // Another possible localhost URL for desktop clients [2]
-    "https://localhost:6274",  // Inspector
-    "https://claude.ai", // The base domain of Claude.ai
-    "https://www.claude.ai", // www variant
-    "https://app.claude.ai", // app subdomain
-    "https://api.claude.ai", // API subdomain
-    // If you are deploying on Vercel and using preview deployments:
-    baseURL,
-  ],
+  trustedOrigins: getAllowedOrigins(),
   secret: env.AUTH_SECRET,
   emailAndPassword: {
     enabled: true,

@@ -1,12 +1,15 @@
 import { getBaseUrl } from "../../../lib/utils/url";
+import { getCorsHeaders } from "../../../lib/utils/cors";
 
 /**
  * OAuth Protected Resource Discovery endpoint
  * This endpoint provides information about the OAuth protected resource
  * according to RFC 8414 (OAuth 2.0 Authorization Server Metadata)
  */
-export const GET = () => {
+export const GET = (request: Request) => {
     const baseURL = getBaseUrl();
+    const origin = request.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
     
     return new Response(JSON.stringify({
         resource: baseURL,
@@ -24,23 +27,22 @@ export const GET = () => {
         status: 200,
         headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            ...corsHeaders,
             "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, mcp-protocol-version",
-            "Access-Control-Max-Age": "86400",
         },
     });
 }
 
 // Handle OPTIONS requests for CORS preflight
-export const OPTIONS = () => {
+export const OPTIONS = (request: Request) => {
+    const origin = request.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
+    
     return new Response(null, {
         status: 204,
         headers: {
-            "Access-Control-Allow-Origin": "*",
+            ...corsHeaders,
             "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization, mcp-protocol-version",
-            "Access-Control-Max-Age": "86400",
         },
     });
 }

@@ -2,18 +2,32 @@
 
 import SignIn from "@/components/sign-in";
 import { authClient } from "@/lib/authClient";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  const searchParams = useSearchParams();
+
+  const redirectTarget = useMemo(() => {
+    const raw = searchParams?.get("callbackURL")
+      || searchParams?.get("callbackUrl")
+      || searchParams?.get("redirectTo")
+      || searchParams?.get("redirect")
+      || searchParams?.get("returnTo")
+      || searchParams?.get("next")
+      || "/buscar";
+    // Sanitize: only allow same-origin absolute-path redirects
+    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+    return "/buscar";
+  }, [searchParams]);
 
   useEffect(() => {
     if (session && !isPending) {
-      router.push("/buscar");
+      router.replace(redirectTarget);
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, redirectTarget]);
 
   // Show a loading state while authentication is being verified
   if (isPending) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { ArrowLeft, AlertCircle, CheckCircle2, Info, Lock } from 'lucide-react'
 import { FuelType, FUEL_LABELS, HorarioType } from '@/lib/types'
 import { StationFull } from '@/components/StationDetailClient'
 import { authClient } from '@/lib/authClient'
@@ -34,6 +34,8 @@ type PriceReportForm = z.infer<typeof priceReportSchema>
 
 export function PriceReportPage({ station }: PriceReportPageProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
@@ -142,18 +144,32 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Authentication Check */}
           {!session?.user && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Debes <Button 
-                  variant="link" 
-                  className="p-0 h-auto" 
-                  onClick={() => router.push('/login')}
-                >
-                  iniciar sesión
-                </Button> para reportar precios.
-              </AlertDescription>
-            </Alert>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-blue-100 p-2">
+                  <Lock className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-blue-900">Iniciar sesión para reportar precios</p>
+                  <p className="text-sm text-blue-800 mt-1">
+                    Necesitamos que te identifiques para dar validez a los reportes. Es rápido y gratuito.
+                  </p>
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        const qs = searchParams?.toString() ?? ''
+                        const target = qs ? `${pathname}?${qs}` : pathname
+                        router.push(`/login?callbackURL=${encodeURIComponent(target)}`)
+                      }}
+                    >
+                      Iniciar sesión
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Fuel Type Selection */}
