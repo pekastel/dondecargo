@@ -54,10 +54,6 @@ export default function NotFound() {
               <Link href="/contacto" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">
                 Contacto
               </Link>
-              <span className="text-slate-400">•</span>
-              <Link href="/ayuda" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline">
-                Centro de ayuda
-              </Link>
             </div>
           </div>
         </div>

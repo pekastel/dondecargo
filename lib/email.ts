@@ -16,6 +16,7 @@ const loops = env.LOOPS_API_KEY ? new LoopsClient(env.LOOPS_API_KEY) : null;
 const EMAIL_VERIFICATION_TEMPLATE_ID = env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID;
 
 const REPORT_PRICE_TEMPLATE_ID = env.LOOPS_REPORT_PRICE_TEMPLATE_ID;
+const CONTACT_TEMPLATE_ID = env.LOOPS_CONTACT_TEMPLATE_ID;
 
 export interface VerificationEmailData {
   user: {
@@ -25,6 +26,13 @@ export interface VerificationEmailData {
   };
   url: string;
   token: string;
+}
+
+export interface ContactEmailData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
 }
 
 export interface ReportPriceEmailData {
@@ -100,4 +108,41 @@ export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): 
 export async function sendPasswordResetEmail(data: { user: { email: string; name: string }, url: string }): Promise<void> {
   // Implementation for password reset emails using Loops
   // This would use a different transactional template
+}
+
+export async function sendContactMessageEmail(data: ContactEmailData): Promise<void> {
+  // Ensure Loops is configured
+  if (!loops) {
+    console.error('Loops.js is not configured. Please set LOOPS_API_KEY in your environment variables.');
+    throw new Error('Email service not configured');
+  }
+
+  if (!CONTACT_TEMPLATE_ID) {
+    console.error('Missing LOOPS_CONTACT_TEMPLATE_ID for contact messages.');
+    throw new Error('Contact email template not configured');
+  }
+
+  const toEmail = env.CONTACT_TO_EMAIL;
+  if (!toEmail) {
+    console.error('Missing CONTACT_TO_EMAIL env var for contact messages.');
+    throw new Error('Destination email not configured');
+  }
+
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: CONTACT_TEMPLATE_ID,
+      email: toEmail,
+      dataVariables: {
+        name: data.name,
+        email: data.email,
+        subject: `${env.CONTACT_SUBJECT_PREFIX ?? ''} ${data.subject}`.trim(),
+        message: data.message,
+      },
+    });
+
+    console.log(`Contact message forwarded to ${toEmail}`);
+  } catch (error) {
+    console.error('Failed to send contact message email:', error);
+    throw new Error('Failed to send contact message');
+  }
 }

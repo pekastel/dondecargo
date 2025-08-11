@@ -17,9 +17,9 @@ export function Footer() {
       { name: 'Política de Privacidad', href: '/privacidad' }
     ],
     developers: [
-      { name: 'GitHub', href: 'https://github.com/lumile/dondecargo-v2', external: true },
+      { name: 'GitHub', href: 'https://github.com/pekastel/dondecargo', external: true },
       { name: 'Configuración MCP', href: '/mcp-help' },
-      { name: 'Contacto', href: 'mailto:hola@lumile.com.ar' }
+      { name: 'Contacto', href: '/contacto' }
     ]
   }
 

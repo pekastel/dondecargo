@@ -38,6 +38,12 @@ export const mainNavigation: NavigationItem[] = [
     href: '/favoritos',
     icon: <Star className="h-4 w-4" />,
     description: 'Tus estaciones guardadas'
+  },
+  {
+    name: 'Contacto',
+    href: '/contacto',
+    icon: <HelpCircle className="h-4 w-4" />,
+    description: 'Escribinos tu consulta'
   }
 ]
 

@@ -337,7 +337,7 @@ export default function McpHelpClient() {
                   </Button>
                   <Button 
                     variant="secondary"
-                    onClick={() => window.open('https://github.com/lumile/timetracker-mcp', '_blank')}
+                    onClick={() => window.open('https://github.com/pekastel/dondecargo', '_blank')}
                     className="bg-white text-blue-600 hover:bg-gray-100"
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />

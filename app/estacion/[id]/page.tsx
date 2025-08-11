@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { StationDetailClient } from '@/components/StationDetailClient'
 import { notFound } from 'next/navigation'
+import { getBaseUrl } from '@/lib/utils/url'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -9,7 +10,10 @@ interface PageProps {
 // Fetch real station data from API
 async function getStation(id: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/estaciones/${id}`, {
+    // Use shared utility to resolve base URL across environments
+    const baseUrl = getBaseUrl()
+
+    const response = await fetch(`${baseUrl}/api/estaciones/${id}`, {
       cache: 'no-store' // Always fetch fresh data
     })
 
