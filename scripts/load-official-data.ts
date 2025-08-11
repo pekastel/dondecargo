@@ -293,6 +293,7 @@ class OfficialDataLoader {
       console.time('stations_upsert')
       let stationsInserted = 0
       let stationsUpdated = 0
+      let stationsUnchanged = 0
       let stationIndex = 0
       
       for (const station of stations) {
@@ -310,31 +311,51 @@ class OfficialDataLoader {
             stationsInserted++
           } else {
             // Update existing station
-            await this.db
-              .update(estaciones)
-              .set({
-                nombre: station.nombre,
-                empresa: station.empresa,
-                cuit: station.cuit,
-                direccion: station.direccion,
-                localidad: station.localidad,
-                provincia: station.provincia,
-                region: station.region,
-                latitud: station.latitud,
-                longitud: station.longitud,
-                fechaActualizacion: new Date()
-              })
-              .where(eq(estaciones.id, station.id))
-            stationsUpdated++
+            const e = existing[0]
+            const latChanged = Math.abs((e.latitud ?? 0) - station.latitud) > 1e-8
+            const lngChanged = Math.abs((e.longitud ?? 0) - station.longitud) > 1e-8
+            const needsUpdate = (
+              e.nombre !== station.nombre ||
+              e.empresa !== station.empresa ||
+              e.cuit !== station.cuit ||
+              e.direccion !== station.direccion ||
+              e.localidad !== station.localidad ||
+              e.provincia !== station.provincia ||
+              e.region !== station.region ||
+              latChanged ||
+              lngChanged
+            )
+
+            if (needsUpdate) {
+              await this.db
+                .update(estaciones)
+                .set({
+                  nombre: station.nombre,
+                  empresa: station.empresa,
+                  cuit: station.cuit,
+                  direccion: station.direccion,
+                  localidad: station.localidad,
+                  provincia: station.provincia,
+                  region: station.region,
+                  latitud: station.latitud,
+                  longitud: station.longitud,
+                  fechaActualizacion: new Date()
+                })
+                .where(eq(estaciones.id, station.id))
+              stationsUpdated++
+            } else {
+              stationsUnchanged++
+            }
           }
           if (stationIndex % 500 === 0) {
-            console.log(`  • Stations ${stationIndex}/${stations.length} (ins=${stationsInserted}, upd=${stationsUpdated})`)
+            console.log(`  • Stations ${stationIndex}/${stations.length} (ins=${stationsInserted}, upd=${stationsUpdated}, same=${stationsUnchanged})`)
           }
         } catch (error) {
           console.warn(`⚠️  Error processing station ${station.nombre}:`, error)
         }
       }
       console.timeEnd('stations_upsert')
+      console.log(`✅ Stations summary: ins=${stationsInserted}, upd=${stationsUpdated}, same=${stationsUnchanged}`)
       
       // Insert prices
       console.log(`💰 Processing ${prices.length} prices...`)
