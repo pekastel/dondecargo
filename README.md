@@ -1,8 +1,8 @@
-# DondeCargo v2
+# DondeCargo
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**DondeCargo v2** es una plataforma conversacional para visualización y gestión de precios de combustibles en Argentina. Combina datos oficiales del gobierno con contribuciones de usuarios validados para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional y un mapa interactivo.
+**DondeCargo** es una plataforma conversacional para visualización y gestión de precios de combustibles en Argentina. Combina datos oficiales del gobierno con contribuciones de usuarios validados para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional y un mapa interactivo.
 
 ## Resumen Ejecutivo
 
@@ -54,7 +54,7 @@
 
 ## Arquitectura General
 
-DondeCargo v2 implementa una arquitectura **conversacional-first** que redefine la interacción con datos de precios de combustibles. El sistema se adapta a consultas en lenguaje natural mientras proporciona visualizaciones ricas a través de una interfaz web opcional.
+DondeCargo implementa una arquitectura **conversacional-first** que redefine la interacción con datos de precios de combustibles. El sistema se adapta a consultas en lenguaje natural mientras proporciona visualizaciones ricas a través de una interfaz web opcional.
 
 ### Principios Arquitectónicos
 
@@ -145,8 +145,8 @@ This architecture eliminates resource duplication while maintaining appropriate 
 ### Setup Steps
 ```bash
 # Clone repository
-git clone https://github.com/lumile/dondecargo-v2.git
-cd dondecargo-v2
+git clone https://github.com/pekastel/dondecargo.git
+cd dondecargo
 
 # Install dependencies
 pnpm install
@@ -175,7 +175,7 @@ pnpm db:seed
 
 # For development: Start PostgreSQL container using Docker
 ./start-postgres.sh
-# This will start a PostgreSQL container with the dondecargo-v2 database
+# This will start a PostgreSQL container with the dondecargo database
 # The script will display the DATABASE_URL to add to your .env file
 
 # Start development server
@@ -192,13 +192,12 @@ Open `http://localhost:3000` and start using DondeCargo through conversation.
 | `BETTER_AUTH_SECRET` | Secreto para Better Auth (generar con: `openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | URL base de tu aplicación (ej: `http://localhost:3000`) |
 | `REDIS_URL` | Redis connection string (opcional, recomendado para producción) |
+| `ENABLE_EMAIL_VERIFICATION` | Habilita la verificación de email para nuevos usuarios |
 
 ### Variables Opcionales
 | Variable | Descripción |
 |----------|-------------|
 | `LOOPS_API_KEY` | API key para verificación de email via Loops.js |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Token para mapas interactivos (si usas Mapbox) |
-| `CRON_SECRET` | Secreto para endpoints de actualización automática |
 | `NODE_ENV` | `development` o `production` |
 
 ### Sistema de Registro de Usuarios
@@ -245,36 +244,16 @@ review_user_submissions(approve: boolean, submission_id: string, reviewer_notes?
 validate_user_account(user_id: string, validation_level: 'registered' | 'validated')
 ```
 
-#### Setting Up MCP Client
+### Email Verification Setup
 
-1. Install an MCP-compatible client (Claude Desktop, Cursor, etc.)
-2. Add the following configuration:
-   ```json
-   {
-     "mcpServers": {
-       "dondecargo": {
-         "command": "npx",
-         "args": ["dondecargo-mcp"],
-         "env": {
-           "DATABASE_URL": "your-database-url"
-         }
-       }
-     }
-   }
-   ```
+DondeCargo includes email verification for new user registrations. This feature is enabled by default to keep the setup simple, but you can disable it for enhanced security.
 
-### Optional Features
-
-#### Email Verification Setup
-
-DondeCargo includes optional email verification for new user registrations. This feature is disabled by default to keep the setup simple, but you can enable it for enhanced security.
-
-#### Why Email Verification?
+### Why Email Verification?
 - **Enhanced Security**: Ensures users have access to their registered email
 - **Reduced Spam**: Prevents registration with fake email addresses
 - **Better User Experience**: Users receive professional verification emails
 
-#### Setting up Email Verification
+### Setting up Email Verification
 
 1. **Create a Loops.js Account**
    - Sign up at [loops.so](https://loops.so)
@@ -301,20 +280,8 @@ DondeCargo includes optional email verification for new user registrations. This
 
 4. **Restart your application** - Email verification is now enabled!
 
-#### How it Works
-- When `ENABLE_EMAIL_VERIFICATION=true`, new users must verify their email before signing in
-- Users receive a verification email via Loops.js with a secure verification link
-- Unverified users see a clear message when attempting to sign in
-- The feature is completely optional and can be disabled anytime
-
-#### Using Alternative Email Services
-This implementation uses Loops.js, but you can easily integrate other email services:
-- Replace the implementation in `lib/email.ts`
-- Keep the same interface for seamless integration
-- Examples: SendGrid, Mailgun, AWS SES, etc.
-
 ## One-Click Vercel Deploy
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flumile%2Fdondecargo-v2&env=BETTER_AUTH_SECRET,REDIS_URL,DATABASE_URL)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpekastel%2Fdondecargo&env=BETTER_AUTH_SECRET,REDIS_URL,DATABASE_URL,LOOPS_API_KEY,LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,LOOPS_REPORT_PRICE_TEMPLATE_ID,LOOPS_CONTACT_TEMPLATE_ID,CONTACT_TO_EMAIL,ENABLE_EMAIL_VERIFICATION,NODE_ENV,BASE_URL)
 
 1. Click the button above.
 2. Populate the same env vars shown in the table.
@@ -372,56 +339,18 @@ DondeCargo está construido con tecnologías modernas para rendimiento, escalabi
 - **pnpm** monorepo tooling
 
 ## Why is this free?
-DondeCargo is developed and maintained by **[Lumile](https://www.lumile.com.ar)** to experiment with cutting-edge technologies such as MCPs in real-world scenarios. By sharing the code we:
-- Give back to the community that empowers our daily work.
-- Gather feedback that makes the product better for everyone.
-- Demonstrate how conversational AI can transform traditional data access patterns.
+DondeCargo es desarrollado y mantenido por **[Lumile](https://www.lumile.com.ar)** para experimentar con tecnologías de punta como MCPs en escenarios reales. Al compartir el código, nos:
+- Devolvemos a la comunidad que nos empoderó en nuestro trabajo diario.
+- Recopilamos feedback que hace el producto mejor para todos.
+- Demostramos cómo la IA conversacional puede transformar los patrones de acceso tradicionales a datos.
 
-If DondeCargo helps you find the best fuel prices, consider starring ⭐ the repo or sharing it with friends!
+Si DondeCargo te ayuda a encontrar los mejores precios de combustible, considera darle una estrella ⭐ al repositorio o compartirlo con amigos!
 
-## Roadmap - DondeCargo v2
+## Contribuyendo
+Los cambios son bienvenidos! Por favor, abre un issue primero para discutir cambios importantes. Asegúrate de que los tests pasen y sigue el estilo de codificación existente.
 
-### Fase 1: Funcionalidad Base 
-- [ ] Integración con datos oficiales del gobierno argentino
-- [ ] Sistema de 4 niveles de usuarios (Anónimo, Registrado, Validado, Admin)
-- [ ] Mapa interactivo con geolocalización
-- [ ] Soporte para 5 tipos de combustibles
-- [ ] Variaciones de precios diurnos/nocturnos
-- [ ] Sistema de validación de usuarios
-- [ ] MCP protocol implementation
-
-### Fase 2: Mejoras de UX/UI 
-- [ ] Panel de filtros avanzados en el mapa
-- [ ] Vista móvil optimizada para detalles de estación
-- [ ] Animaciones y microinteracciones
-- [ ] Modo oscuro mejorado
-- [ ] Accesibilidad WCAG 2.1
-
-### Fase 3: Características Avanzadas 
-- [ ] Sistema de notificaciones de cambios de precios
-- [ ] Analytics de tendencias de precios por zona
-- [ ] Comparador de precios históricos
-- [ ] Integración con sistemas de navegación
-- [ ] Reportes personalizados por usuario
-
-### Fase 4: Expansión 
-- [ ] API pública para desarrolladores
-- [ ] Integración con apps de navegación (Waze, Google Maps)
-- [ ] Soporte para otras regiones de Argentina
-- [ ] Aplicación móvil nativa
-- [ ] Sistema de recompensas para usuarios validados
-
-### Fase 5: Enterprise 
-- [ ] Dashboard empresarial para cadenas de estaciones
-- [ ] API de precios para aplicaciones comerciales
-- [ ] Reportes y analytics avanzados
-- [ ] Integración con sistemas ERP
-
-## Contributing
-Pull Requests are welcome! Please open an issue first to discuss major changes. Make sure tests pass and follow the existing coding style.
-
-## License
-This project is licensed under the **MIT License** — see the [`LICENSE`](LICENSE) file for details.
+## Licencia
+Este proyecto está licenciado bajo la **MIT License** — véase el archivo [`LICENSE`](LICENSE) para detalles.
 
 ---
-Made with ❤️ by [Lumile](https://www.lumile.com.ar)
+Hecho con ❤️ por [Lumile](https://www.lumile.com.ar)

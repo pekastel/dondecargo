@@ -11,9 +11,6 @@ import { getCurrentTermsHash } from "./terms-hash";
 
 const baseURL = getBaseUrl();
 
-// Email verification configuration (optional feature)
-// Set ENABLE_EMAIL_VERIFICATION=true to enable email verification and require it for login
-// Set ENABLE_EMAIL_VERIFICATION=false or leave unset to disable email verification
 const enableEmailVerification = env.ENABLE_EMAIL_VERIFICATION;
 
 export const auth = betterAuth({
@@ -107,10 +104,6 @@ export const auth = betterAuth({
       },
     },
   },
-  // Email verification configuration (optional feature)
-  // This block is only included if email verification is enabled
-  // To enable: set ENABLE_EMAIL_VERIFICATION=true and configure email service
-  // To disable: set ENABLE_EMAIL_VERIFICATION=false or leave unset
   ...(enableEmailVerification && {
     emailVerification: {
       sendVerificationEmail: async (data) => {

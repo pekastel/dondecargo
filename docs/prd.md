@@ -1,4 +1,4 @@
-# Product Requirements Document (PRD) - DondeCargo v2
+# Product Requirements Document (PRD) - DondeCargo
 
 ## 1. Visión General del Producto
 
