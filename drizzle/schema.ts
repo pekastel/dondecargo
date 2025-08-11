@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, decimal, doublePrecision, json, uuid, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer, decimal, doublePrecision, json, uuid, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 // Import Better Auth schema to prevent Drizzle from dropping those tables
@@ -53,6 +53,9 @@ export const precios = pgTable('precios', {
   fuenteIdx: index('precios_fuente_idx').on(table.fuente),
   usuarioIdx: index('precios_usuario_idx').on(table.usuarioId),
   validadoIdx: index('precios_validado_idx').on(table.esValidado),
+  // Unique constraint to enable efficient upserts per (estacion, tipo, horario, fuente)
+  estacionTipoHorarioFuenteUnique: uniqueIndex('precios_estacion_tipo_horario_fuente_unique')
+    .on(table.estacionId, table.tipoCombustible, table.horario, table.fuente),
 }));
 
 // Histórico de precios (para tracking de cambios)

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "precios_estacion_tipo_horario_fuente_unique" ON "precios" USING btree ("estacion_id","tipo_combustible","horario","fuente");

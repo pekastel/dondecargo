@@ -3,7 +3,7 @@ import { join } from 'path'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { estaciones, precios, preciosHistorico } from '@/drizzle/schema'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, sql } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 // Load environment variables
@@ -395,79 +395,130 @@ class OfficialDataLoader {
       console.timeEnd('stations_upsert')
       console.log(`✅ Stations summary: ins=${stationsInserted}, upd=${stationsUpdated}, same=${stationsUnchanged}`)
       
-      // Insert prices
+      // Insert prices (batch upsert)
       console.log(`💰 Processing ${prices.length} prices...`)
       console.time('prices_upsert')
       let pricesInserted = 0
       let pricesUpdated = 0
       let pricesUnchanged = 0
-      let priceIndex = 0
-      
-      for (const price of prices) {
-        try {
-          priceIndex++
-          // Check if price already exists
-          const existing = await this.db
-            .select()
+
+      // Prefetch existing prices for involved stations/products/horarios to avoid per-row selects
+      const priceStationIds = Array.from(new Set(prices.map(p => p.estacionId)))
+      const priceTipos = Array.from(new Set(prices.map(p => p.tipoCombustible)))
+      const priceHorarios = Array.from(new Set(prices.map(p => p.horario)))
+
+      console.time('prices_prefetch')
+      const existingPrices = (priceStationIds.length > 0)
+        ? await this.db
+            .select({
+              id: precios.id,
+              estacionId: precios.estacionId,
+              tipoCombustible: precios.tipoCombustible,
+              horario: precios.horario,
+              fuente: precios.fuente,
+              precio: precios.precio,
+              fechaVigencia: precios.fechaVigencia,
+            })
             .from(precios)
             .where(
               and(
-                eq(precios.estacionId, price.estacionId),
-                eq(precios.tipoCombustible, price.tipoCombustible),
-                eq(precios.horario, price.horario),
+                inArray(precios.estacionId, priceStationIds),
+                inArray(precios.tipoCombustible, priceTipos as any),
+                inArray(precios.horario, priceHorarios as any),
                 eq(precios.fuente, 'oficial')
               )
             )
-            .limit(1)
-          
-          if (existing.length === 0) {
-            // New price - insert
-            await this.db.insert(precios).values({
-              id: createId(),
-              ...price,
-              precio: price.precio.toString()
-            })
-            pricesInserted++
+        : []
+      console.timeEnd('prices_prefetch')
+
+      // Build a map by composite key
+      const keyOf = (p: { estacionId: string; tipoCombustible: string; horario: string; fuente: string }) => `${p.estacionId}|${p.tipoCombustible}|${p.horario}|${p.fuente}`
+      const existingPriceMap = new Map(existingPrices.map(p => [keyOf(p), p]))
+
+      const toInsertOrUpdate: ProcessedPrice[] = []
+      const changedForHistory: ProcessedPrice[] = []
+      const EPS = 0.001
+
+      for (const p of prices) {
+        const key = keyOf({ estacionId: p.estacionId, tipoCombustible: p.tipoCombustible, horario: p.horario, fuente: 'oficial' })
+        const existing = existingPriceMap.get(key)
+        if (!existing) {
+          // New row -> will insert
+          toInsertOrUpdate.push(p)
+          pricesInserted++
+        } else {
+          const existingPriceNum = parseFloat(existing.precio as string)
+          if (Math.abs(existingPriceNum - p.precio) > EPS) {
+            // Changed -> include in upsert and history
+            toInsertOrUpdate.push(p)
+            changedForHistory.push(p)
+            pricesUpdated++
           } else {
-            // Check if price actually changed
-            const existingPrice = parseFloat(existing[0].precio)
-            const newPrice = price.precio
-            
-            if (Math.abs(existingPrice - newPrice) > 0.001) { // Price changed
-              // Update existing price
-              await this.db
-                .update(precios)
-                .set({
-                  precio: price.precio.toString(),
-                  fechaVigencia: price.fechaVigencia,
-                  fechaReporte: new Date()
-                })
-                .where(eq(precios.id, existing[0].id))
-                // Always save to historical data for complete audit trail
-                await this.db.insert(preciosHistorico).values({
-                  id: createId(),
-                  estacionId: price.estacionId,
-                  tipoCombustible: price.tipoCombustible,
-                  precio: price.precio.toString(),
-                  horario: price.horario,
-                  fechaVigencia: price.fechaVigencia,
-                  fuente: price.fuente,
-                  esValidado: price.esValidado,
-                  fechaCreacion: new Date()
-                })
-              pricesUpdated++
-            } else {
-              pricesUnchanged++
-            }
+            pricesUnchanged++
           }
-          if (priceIndex % 5000 === 0) {
-            console.log(`  • Prices ${priceIndex}/${prices.length} (ins=${pricesInserted}, upd=${pricesUpdated}, same=${pricesUnchanged})`)
-          }
-          
-        } catch (error) {
-          console.warn(`⚠️  Error processing price:`, error)
         }
       }
+
+      // Upsert in chunks using the unique constraint (estacionId, tipoCombustible, horario, fuente)
+      const upsertChunkSize = 1000
+      console.time('prices_bulk_upsert')
+      for (let i = 0; i < toInsertOrUpdate.length; i += upsertChunkSize) {
+        const chunk = toInsertOrUpdate.slice(i, i + upsertChunkSize)
+        if (chunk.length === 0) continue
+        try {
+          await this.db
+            .insert(precios)
+            .values(chunk.map(p => ({
+              estacionId: p.estacionId,
+              tipoCombustible: p.tipoCombustible,
+              precio: p.precio.toString(),
+              horario: p.horario,
+              fechaVigencia: p.fechaVigencia,
+              fuente: 'oficial' as const,
+              esValidado: p.esValidado,
+              fechaReporte: new Date(),
+            })))
+            .onConflictDoUpdate({
+              target: [precios.estacionId, precios.tipoCombustible, precios.horario, precios.fuente],
+              set: {
+                precio: sql`excluded.precio`,
+                fechaVigencia: sql`excluded.fecha_vigencia`,
+                fechaReporte: new Date(),
+              },
+              // Only update when price actually changed
+              where: sql`${precios.precio} IS DISTINCT FROM excluded.precio`
+            })
+          if ((i / upsertChunkSize) % 5 === 0) {
+            console.log(`  • Prices upserted ${Math.min(i + chunk.length, toInsertOrUpdate.length)}/${toInsertOrUpdate.length}`)
+          }
+        } catch (error) {
+          console.warn('⚠️  Error in prices bulk upsert chunk:', error)
+        }
+      }
+      console.timeEnd('prices_bulk_upsert')
+
+      // Insert history only for changed rows (same chunks)
+      console.time('prices_history_insert')
+      for (let i = 0; i < changedForHistory.length; i += upsertChunkSize) {
+        const chunk = changedForHistory.slice(i, i + upsertChunkSize)
+        if (chunk.length === 0) continue
+        try {
+          await this.db.insert(preciosHistorico).values(chunk.map(p => ({
+            estacionId: p.estacionId,
+            tipoCombustible: p.tipoCombustible,
+            precio: p.precio.toString(),
+            horario: p.horario,
+            fechaVigencia: p.fechaVigencia,
+            fuente: p.fuente,
+            esValidado: p.esValidado,
+            fechaCreacion: new Date(),
+          })))
+        } catch (error) {
+          console.warn('⚠️  Error in prices history insert chunk:', error)
+        }
+      }
+      console.timeEnd('prices_history_insert')
+
       console.timeEnd('prices_upsert')
       
       console.log(`✅ Inserted ${stationsInserted} new stations, ${pricesInserted} new prices, updated ${pricesUpdated} prices, and ${pricesUnchanged} prices were unchanged`)
