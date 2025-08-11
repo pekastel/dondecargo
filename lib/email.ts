@@ -1,6 +1,7 @@
 import { LoopsClient } from 'loops';
 import { getBaseUrl } from './utils/url';
 import { env } from '@/lib/env';
+import { safeLog } from '@/lib/utils/errors';
 
 // Email service configuration (optional feature)
 // Loops.js is an optional email service for sending transactional emails
@@ -53,7 +54,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
   
   // Check if Loops.js is configured
   if (!loops) {
-    console.error('Loops.js is not configured. Please set LOOPS_API_KEY in your environment variables.');
+    safeLog('⚠️ Email service not configured - skipping email send');
     throw new Error('Email service not configured');
   }
   
@@ -80,7 +81,7 @@ export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): 
   
   // Check if Loops.js is configured
   if (!loops) {
-    console.error('Loops.js is not configured. Please set LOOPS_API_KEY in your environment variables.');
+    safeLog('⚠️ Email service not configured - skipping email send');
     throw new Error('Email service not configured');
   }
   
@@ -113,7 +114,7 @@ export async function sendPasswordResetEmail(data: { user: { email: string; name
 export async function sendContactMessageEmail(data: ContactEmailData): Promise<void> {
   // Ensure Loops is configured
   if (!loops) {
-    console.error('Loops.js is not configured. Please set LOOPS_API_KEY in your environment variables.');
+    safeLog('⚠️ Email service not configured - skipping email send');
     throw new Error('Email service not configured');
   }
 

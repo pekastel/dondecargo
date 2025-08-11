@@ -4,6 +4,7 @@ import postgres from 'postgres'
 import { estaciones, precios } from '@/drizzle/schema'
 import { eq, and, sql, desc, asc, inArray } from 'drizzle-orm'
 import { z } from 'zod'
+import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
 
 // Create connection with error handling
 function createDbConnection() {
@@ -46,11 +47,11 @@ export async function GET(request: NextRequest) {
   let db: ReturnType<typeof createDbConnection> | null = null
   
   try {
-    console.log('🔍 Starting estaciones API request')
+    safeLog('🔍 Starting estaciones API request')
     
     // Create database connection
     db = createDbConnection()
-    console.log('✅ Database connection created')
+    safeLog('✅ Database connection created')
     
     const { searchParams } = new URL(request.url)
     const params = searchParamsSchema.parse(Object.fromEntries(searchParams))
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest) {
           .orderBy(lat && lng ? sql`distancia ASC` : asc(estaciones.nombre))
           .limit(limit)
           .offset(offset)
-    console.log(`📊 Found ${result.length} stations`)
+    safeLog(`📊 Found ${result.length} stations`)
 
     // Get current prices for each station (simplified query)
     let stationsWithPrices = result
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
     if (result.length > 0) {
       try {
         const stationIds = result.map(s => s.id)
-        console.log(`🔍 Fetching prices for ${stationIds.length} stations`)
+        safeLog(`🔍 Fetching prices for ${stationIds.length} stations`)
         
         const priceConditions = [
           inArray(precios.estacionId, stationIds),
@@ -185,7 +186,7 @@ export async function GET(request: NextRequest) {
           .orderBy(desc(precios.fechaVigencia))
           .limit(500) // Reasonable limit
         
-        console.log(`📊 Found ${currentPrices.length} prices`)
+        safeLog(`📊 Found ${currentPrices.length} prices`)
         
         // Group prices by station
         const pricesByStation = currentPrices.reduce((acc, price) => {
@@ -203,7 +204,7 @@ export async function GET(request: NextRequest) {
         }))
         
       } catch (priceError) {
-        console.warn('⚠️  Error fetching prices, returning stations only:', priceError)
+        safeLog('⚠️  Error fetching prices, returning stations only')
         stationsWithPrices = result.map(station => ({
           ...station,
           precios: []
@@ -222,19 +223,27 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Error fetching estaciones:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      databaseUrl: process.env.DATABASE_URL ? 'Set' : 'Not set'
-    })
-    
-    return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return createErrorResponse(
+        'estaciones API validation',
+        error,
+        400,
+        'Parámetros de búsqueda inválidos'
+      );
+    }
+
+    // Handle database connection errors
+    if (error instanceof Error && error.message.includes('DATABASE_URL')) {
+      return handleDatabaseError('estaciones API', error);
+    }
+
+    // Generic error handling
+    return createErrorResponse(
+      'estaciones API',
+      error,
+      500,
+      'Error al buscar estaciones'
+    );
   }
 }

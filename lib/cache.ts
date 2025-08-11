@@ -1,10 +1,12 @@
 // Server-side cache implementation
+import { safeLog } from './utils/errors';
+
 let Redis: typeof import('redis') | null = null
 if (typeof window === 'undefined') {
   try {
     Redis = eval('require')('redis') as typeof import('redis')
   } catch (e: unknown) {
-    console.warn('Redis not available, using memory cache only')
+    safeLog('⚠️ Redis not available, using memory cache only')
   }
 }
 
@@ -32,25 +34,25 @@ class CacheService {
     try {
       const redisUrl = process.env.REDIS_URL
       if (!redisUrl) {
-        console.log('Redis URL not configured, using memory cache only')
+        safeLog('ℹ️ Redis URL not configured, using memory cache only')
         return
       }
 
       this.redis = Redis.createClient({ url: redisUrl })
 
       this.redis.on('error', (err: Error) => {
-        console.error('Redis Client Error:', err)
+        safeLog('❌ Redis client error', { error: err.message })
         this.connected = false
       })
 
       this.redis.on('connect', () => {
-        console.log('Redis connected successfully')
+        safeLog('✅ Redis connected successfully')
         this.connected = true
       })
 
       await this.redis.connect()
     } catch (error) {
-      console.warn('Failed to initialize Redis, falling back to memory cache:', error)
+      safeLog('⚠️ Failed to initialize Redis, falling back to memory cache')
       this.redis = null
       this.connected = false
     }
@@ -86,7 +88,7 @@ class CacheService {
 
       return null
     } catch (error) {
-      console.error('Cache get error:', error)
+      safeLog('❌ Cache get error')
       return null
     }
   }
@@ -107,7 +109,7 @@ class CacheService {
       // Clean up expired memory cache entries periodically
       this.cleanupMemoryCache()
     } catch (error) {
-      console.error('Cache set error:', error)
+      safeLog('❌ Cache set error')
       // Still store in memory if Redis fails
       this.memoryCache.set(key, cacheItem)
     }
@@ -125,7 +127,7 @@ class CacheService {
       }
       this.memoryCache.delete(key)
     } catch (error) {
-      console.error('Cache delete error:', error)
+      safeLog('❌ Cache delete error')
     }
   }
 
@@ -136,7 +138,7 @@ class CacheService {
       }
       this.memoryCache.clear()
     } catch (error) {
-      console.error('Cache clear error:', error)
+      safeLog('❌ Cache clear error')
     }
   }
 

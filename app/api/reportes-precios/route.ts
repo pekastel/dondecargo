@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { sendReportPriceThankYouEmail } from '@/lib/email'
 import { FUEL_LABELS } from '@/lib/types'
+import { createErrorResponse, handleAuthError, handleNotFoundError, safeLog } from '@/lib/utils/errors'
 
 const connection = postgres(process.env.DATABASE_URL!)
 const db = drizzle(connection)
@@ -33,10 +34,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      )
+      return handleAuthError('reportes-precios GET', 'No session found');
     }
 
     const { searchParams } = new URL(request.url)
@@ -102,11 +100,22 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error fetching reportes:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return createErrorResponse(
+        'reportes-precios GET validation',
+        error,
+        400,
+        'Parámetros inválidos'
+      );
+    }
+
+    return createErrorResponse(
+      'reportes-precios GET',
+      error,
+      500,
+      'Error al obtener reportes'
+    );
   }
 }
 
@@ -117,10 +126,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      )
+      return handleAuthError('reportes-precios POST', 'No session found');
     }
 
     const body = await request.json()
@@ -134,10 +140,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (station.length === 0) {
-      return NextResponse.json(
-        { error: 'Estación no encontrada' },
-        { status: 404 }
-      )
+      return handleNotFoundError('reportes-precios POST', 'Estación');
     }
 
     // Create new report(s)
@@ -208,24 +211,28 @@ export async function POST(request: NextRequest) {
         })
       }
     } catch (emailError) {
-      console.error('Error sending thank you email:', emailError)
+      safeLog('⚠️ Error sending thank you email, continuing with flow')
       // Continue with the flow even if email fails
     }
 
     return NextResponse.json(newReports[0], { status: 201 })
 
   } catch (error) {
+    // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return createErrorResponse(
+        'reportes-precios POST validation',
+        error,
+        400,
+        'Datos del reporte inválidos'
+      );
     }
 
-    console.error('Error creating report:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return createErrorResponse(
+      'reportes-precios POST',
+      error,
+      500,
+      'Error al crear reporte de precio'
+    );
   }
 }

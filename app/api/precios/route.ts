@@ -4,6 +4,7 @@ import postgres from 'postgres'
 import { precios, estaciones } from '@/drizzle/schema'
 import { eq, and, desc, asc, gte, lte, sql } from 'drizzle-orm'
 import { z } from 'zod'
+import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
 
 // Create connection with error handling
 function createDbConnection() {
@@ -41,16 +42,14 @@ export async function GET(request: NextRequest) {
   let db: ReturnType<typeof createDbConnection> | null = null
   
   try {
-    console.log('🔍 Starting precios API request')
+    safeLog('🔍 Starting precios API request')
     
     // Create database connection
     db = createDbConnection()
-    console.log('✅ Database connection created')
+    safeLog('✅ Database connection created')
     
     const { searchParams } = new URL(request.url)
     const params = searchParamsSchema.parse(Object.fromEntries(searchParams))
-    
-    console.log('📊 Search params:', params)
 
     const limit = params.limit ? parseInt(params.limit) : 50
     const offset = params.offset ? parseInt(params.offset) : 0
@@ -148,19 +147,27 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Error fetching precios:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      databaseUrl: process.env.DATABASE_URL ? 'Set' : 'Not set'
-    })
-    
-    return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return createErrorResponse(
+        'precios API validation',
+        error,
+        400,
+        'Parámetros de búsqueda inválidos'
+      );
+    }
+
+    // Handle database connection errors
+    if (error instanceof Error && error.message.includes('DATABASE_URL')) {
+      return handleDatabaseError('precios API', error);
+    }
+
+    // Generic error handling
+    return createErrorResponse(
+      'precios API',
+      error,
+      500,
+      'Error al obtener precios'
+    );
   }
 }
