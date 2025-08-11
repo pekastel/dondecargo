@@ -41,8 +41,9 @@ export default function ContactoPage() {
 
       toast.success('Mensaje enviado, gracias por contactarte')
       reset()
-    } catch (e: any) {
-      toast.error(e.message || 'Ocurrió un error inesperado')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ocurrió un error inesperado'
+      toast.error(message)
     } finally {
       setLoading(false)
     }
