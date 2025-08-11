@@ -3,9 +3,9 @@
 import SignIn from "@/components/sign-in";
 import { authClient } from "@/lib/authClient";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const searchParams = useSearchParams();
@@ -59,4 +59,21 @@ export default function LoginPage() {
 
   // This return should never execute due to the useEffect, but it's necessary for TypeScript
   return null;
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+          <div className="text-center space-y-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary mx-auto" />
+            <p className="text-muted-foreground">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
+  );
 }
