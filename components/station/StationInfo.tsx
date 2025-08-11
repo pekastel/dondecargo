@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ExternalLink, Phone, Clock, Building, Wrench, Star, Calendar } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
+import { formatDate } from '@/lib/date'
 
 interface StationInfoProps {
   station: StationFull
@@ -47,14 +48,7 @@ export function StationInfo({ station }: StationInfoProps) {
     }
   }
 
-  const formatDate = (date: Date | string | number) => {
-    const dateObj = date instanceof Date ? date : new Date(date)
-    return dateObj.toLocaleDateString('es-AR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  
 
   const getCompanyColor = (empresa: string) => {
     const colors: Record<string, string> = {

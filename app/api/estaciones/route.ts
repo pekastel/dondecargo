@@ -177,6 +177,7 @@ export async function GET(request: NextRequest) {
             tipoCombustible: precios.tipoCombustible,
             precio: precios.precio,
             horario: precios.horario,
+            fechaVigencia: precios.fechaVigencia,
             fechaReporte: precios.fechaReporte,
             fuente: precios.fuente,
             esValidado: precios.esValidado,

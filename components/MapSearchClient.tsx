@@ -238,7 +238,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       const data = await response.json()
       
       // Transform API response to match our Station interface
-      const transformedStations: Station[] = data.data.map((station: { id: string; nombre: string; empresa: string; direccion: string; localidad: string; provincia: string; latitud: number; longitud: number; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; fechaVigencia: string; [key: string]: unknown }>; [key: string]: unknown }) => ({
+      const transformedStations: Station[] = data.data.map((station: { id: string; nombre: string; empresa: string; direccion: string; localidad: string; provincia: string; latitud: number; longitud: number; fechaActualizacion?: string | number | Date; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; [key: string]: unknown }>; [key: string]: unknown }) => ({
         id: station.id,
         nombre: station.nombre,
         empresa: station.empresa,
@@ -247,11 +247,16 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         provincia: station.provincia,
         latitud: station.latitud,
         longitud: station.longitud,
-        precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia: string; [key: string]: unknown }) => ({
+        precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; [key: string]: unknown }) => ({
           tipoCombustible: precio.tipoCombustible,
           precio: parseFloat(precio.precio.toString()),
           horario: precio.horario,
-          fechaActualizacion: new Date(precio.fechaVigencia)
+          fechaActualizacion: new Date(
+            (precio.fechaVigencia as string | number | Date | undefined) ??
+            (precio.fechaReporte as string | number | Date | undefined) ??
+            (station.fechaActualizacion as string | number | Date | undefined) ??
+            Date.now()
+          )
         }))
       }))
       
