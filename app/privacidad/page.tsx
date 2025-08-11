@@ -15,7 +15,7 @@ export default function PoliticaDePrivacidad() {
         <div className="prose prose-blue max-w-none">
           <h2>1. Introducción y Alcance</h2>
           <p>
-            Esta Política de Privacidad describe cómo DondeCargo ("la Plataforma") recolecta, utiliza,
+            Esta Política de Privacidad describe cómo DondeCargo (&quot;la Plataforma&quot;) recolecta, utiliza,
             almacena y protege los datos personales de las personas usuarias. Al utilizar la Plataforma,
             usted acepta las prácticas aquí descriptas y los
             {' '}
