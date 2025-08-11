@@ -5,6 +5,7 @@ import { Station } from '@/components/MapSearchClient'
 import { FuelType, FUEL_LABELS } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
+import { formatDateShort } from '@/lib/date'
 import { authClient } from '@/lib/authClient'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -467,6 +468,14 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                           <div class="flex items-center justify-between mt-0.5">
                             <span class="text-xs text-orange-600">Prom.</span>
                             <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
+                          </div>
+                        ` : ''
+                      })()}
+                      ${(() => {
+                        const txt = formatDateShort(precio.fechaActualizacion)
+                        return txt ? `
+                          <div class="flex items-center justify-between mt-0.5">
+                            <span class="text-[10px] text-gray-400">${txt}</span>
                           </div>
                         ` : ''
                       })()}

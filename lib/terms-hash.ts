@@ -4,6 +4,7 @@
 import { readFileSync } from 'fs';
 import { createHash } from 'crypto';
 import path from 'path';
+import { safeLog } from './utils/errors';
 
 // Interfaces
 interface TermsMetadata {
@@ -34,7 +35,7 @@ function loadTermsMetadata(): TermsMetadata {
     return cachedTermsMetadata!;
   } catch (error) {
     // Fallback: generate hash from HTML file (development scenario)
-    console.warn('Generated terms hash not found, generating from HTML file...');
+    safeLog('⚠️ Generated terms hash not found, generating from HTML file...');
     return generateHashFromHtmlFile();
   }
 }

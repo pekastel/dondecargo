@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { estaciones, precios, preciosHistorico } from '@/drizzle/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { createErrorResponse, handleDatabaseError, handleNotFoundError, safeLog } from '@/lib/utils/errors'
 
 // Create connection with error handling
 function createDbConnection() {
@@ -29,16 +30,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params
   
   try {
-
-    console.log(`🔍 Starting station detail API request for ID: ${id}`)
+    safeLog(`🔍 Starting station detail API request for ID: ${id}`)
     
     // Create database connection
     db = createDbConnection()
-    console.log('✅ Database connection created')
-    
+    safeLog('✅ Database connection created')
 
     // Get station details
-    console.log(`🔍 Fetching station: ${id}`)
+    safeLog(`🔍 Fetching station: ${id}`)
     const station = await db
       .select()
       .from(estaciones)
@@ -46,10 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .limit(1)
 
     if (station.length === 0) {
-      return NextResponse.json(
-        { error: 'Estación no encontrada' },
-        { status: 404 }
-      )
+      return handleNotFoundError('station details', 'Estación');
     }
 
     // Get current prices for this station
@@ -84,20 +80,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(result)
 
   } catch (error) {
-    console.error('❌ Error fetching station details:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      stationId: id,
-      databaseUrl: process.env.DATABASE_URL ? 'Set' : 'Not set'
-    })
-    
-    return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    // Handle database connection errors
+    if (error instanceof Error && error.message.includes('DATABASE_URL')) {
+      return handleDatabaseError('station details', error);
+    }
+
+    // Generic error handling
+    return createErrorResponse(
+      'station details',
+      error,
+      500,
+      'Error al obtener detalles de la estación',
+      { stationId: id }
+    );
   }
 }

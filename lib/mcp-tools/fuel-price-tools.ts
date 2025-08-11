@@ -9,8 +9,8 @@ export const searchStationsTool = {
   name: "search_stations",
   description: "Search gas stations by location, company, fuel type, and price range. Returns stations with current fuel prices.",
   schema: {
-    lat: z.number().optional().describe("Latitude for location-based search"),
-    lng: z.number().optional().describe("Longitude for location-based search"),
+    lat: z.number().describe("Latitude for location-based search"),
+    lng: z.number().describe("Longitude for location-based search"),
     radius: z.number().min(1).max(50).optional().default(10).describe("Search radius in kilometers (max 50km)"),
     empresa: z.string().optional().describe("Company name to filter by (can be comma-separated list)"),
     provincia: z.string().optional().describe("Province name to filter by"),

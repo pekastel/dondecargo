@@ -7,8 +7,8 @@ export const FUEL_TYPES = ['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium',
 export const FUEL_LABELS: Record<FuelType, string> = {
   nafta: 'Nafta',
   nafta_premium: 'Nafta Premium',
-  gasoil: 'Gasoil', 
-  gasoil_premium: 'Gasoil Premium',
+  gasoil: 'Diesel', 
+  gasoil_premium: 'Diesel Premium',
   gnc: 'GNC'
 }
 
