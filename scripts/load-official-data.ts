@@ -342,6 +342,7 @@ class OfficialDataLoader {
           console.warn('⚠️  Error in stations bulk insert chunk:', error)
         }
       }
+
       console.timeEnd('stations_bulk_insert')
 
       // 4) Update only changed rows (per-row updates, but far fewer)
@@ -459,11 +460,31 @@ class OfficialDataLoader {
         }
       }
 
+      // Deduplicate within this command to avoid: ON CONFLICT DO UPDATE command cannot affect row a second time
+      // Keep the most recent by fechaVigencia per (estacionId, tipoCombustible, horario, fuente)
+      const upsertByKey = new Map<string, ProcessedPrice>()
+      for (const p of toInsertOrUpdate) {
+        const k = keyOf({ estacionId: p.estacionId, tipoCombustible: p.tipoCombustible, horario: p.horario, fuente: 'oficial' })
+        const prev = upsertByKey.get(k)
+        if (!prev || (p.fechaVigencia > prev.fechaVigencia)) {
+          upsertByKey.set(k, p)
+        }
+      }
+      const dedupedUpserts = Array.from(upsertByKey.values())
+
+      const changedKeys = new Set(
+        changedForHistory.map(p => keyOf({ estacionId: p.estacionId, tipoCombustible: p.tipoCombustible, horario: p.horario, fuente: 'oficial' }))
+      )
+      const dedupedHistory = dedupedUpserts.filter(p => changedKeys.has(keyOf({ estacionId: p.estacionId, tipoCombustible: p.tipoCombustible, horario: p.horario, fuente: 'oficial' })))
+      if (dedupedUpserts.length !== toInsertOrUpdate.length) {
+        console.log(`  • Dedup upserts: ${toInsertOrUpdate.length} -> ${dedupedUpserts.length}`)
+      }
+
       // Upsert in chunks using the unique constraint (estacionId, tipoCombustible, horario, fuente)
       const upsertChunkSize = 1000
       console.time('prices_bulk_upsert')
-      for (let i = 0; i < toInsertOrUpdate.length; i += upsertChunkSize) {
-        const chunk = toInsertOrUpdate.slice(i, i + upsertChunkSize)
+      for (let i = 0; i < dedupedUpserts.length; i += upsertChunkSize) {
+        const chunk = dedupedUpserts.slice(i, i + upsertChunkSize)
         if (chunk.length === 0) continue
         try {
           await this.db
@@ -489,7 +510,7 @@ class OfficialDataLoader {
               where: sql`${precios.precio} IS DISTINCT FROM excluded.precio`
             })
           if ((i / upsertChunkSize) % 5 === 0) {
-            console.log(`  • Prices upserted ${Math.min(i + chunk.length, toInsertOrUpdate.length)}/${toInsertOrUpdate.length}`)
+            console.log(`  • Prices upserted ${Math.min(i + chunk.length, dedupedUpserts.length)}/${dedupedUpserts.length}`)
           }
         } catch (error) {
           console.warn('⚠️  Error in prices bulk upsert chunk:', error)
@@ -499,8 +520,8 @@ class OfficialDataLoader {
 
       // Insert history only for changed rows (same chunks)
       console.time('prices_history_insert')
-      for (let i = 0; i < changedForHistory.length; i += upsertChunkSize) {
-        const chunk = changedForHistory.slice(i, i + upsertChunkSize)
+      for (let i = 0; i < dedupedHistory.length; i += upsertChunkSize) {
+        const chunk = dedupedHistory.slice(i, i + upsertChunkSize)
         if (chunk.length === 0) continue
         try {
           await this.db.insert(preciosHistorico).values(chunk.map(p => ({
