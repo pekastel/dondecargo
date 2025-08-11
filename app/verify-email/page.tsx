@@ -9,12 +9,16 @@ import {
 import { Mail, CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function VerifyEmailPage({
+interface PageProps {
+  searchParams: Promise<{
+    email?: string
+  }>
+}
+
+export default async function VerifyEmailPage({
   searchParams,
-}: {
-  searchParams: { email?: string };
-}) {
-  const email = searchParams?.email;
+}: PageProps) {
+  const email = (await searchParams)?.email;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
