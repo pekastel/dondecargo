@@ -33,7 +33,6 @@ DondeCargo ofrece una arquitectura centrada en la web, incorporando MCP como una
 - **Contribuciones usuarios**: Sistema validado de reportes
 - **Validación cruzada**: Verificación entre fuentes oficiales y usuarios
 
-
 ### Pre-requisitos
 - Node.js 18+ and pnpm
 - PostgreSQL database (local o cloud)
