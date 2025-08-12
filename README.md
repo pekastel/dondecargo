@@ -28,17 +28,6 @@ DondeCargo ofrece una arquitectura centrada en la web, incorporando MCP como una
 2. **Integración de datos en tiempo real**: Conexión directa con APIs oficiales del gobierno argentino
 3. **Gestión colaborativa de datos**: Usuarios autenticados pueden proponer actualizaciones
 
-### Arquitectura Técnica
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Frontend      │    │     Backend      │    │     Datos       │
-│   Next.js 15    │◄──►│   API Routes     │◄──►│ PostgreSQL +    │
-│   React 19      │    │   tRPC          │    │   Drizzle ORM   │
-│   TypeScript    │    │   Edge Runtime  │    │   Redis Cache   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
 ### Fuentes de Datos
 - **Datos oficiales**: CSV diario desde http://datos.energia.gob.ar/
 - **Contribuciones usuarios**: Sistema validado de reportes
