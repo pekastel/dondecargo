@@ -6,7 +6,7 @@ import { mcp } from "better-auth/plugins";
 import { getBaseUrl } from "./utils/url";
 import { getAllowedOrigins } from "./utils/cors";
 import { admin } from "better-auth/plugins";
-import { sendVerificationEmail } from "./email";
+import { sendVerificationEmail, sendWelcomeEmail } from "./email";
 import { env } from "@/lib/env";
 import { getCurrentTermsHash } from "./terms-hash";
 
@@ -100,6 +100,16 @@ export const auth = betterAuth({
     emailVerification: {
       sendVerificationEmail: async (data) => {
         await sendVerificationEmail(data);
+      },
+      afterEmailVerification: async (user, request) => {
+        // Send welcome email when user's email is verified
+        await sendWelcomeEmail({
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name
+          }
+        });
       },
     },
   }),
