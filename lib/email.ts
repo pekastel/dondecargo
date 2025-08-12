@@ -19,6 +19,8 @@ const EMAIL_VERIFICATION_TEMPLATE_ID = env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID;
 const REPORT_PRICE_TEMPLATE_ID = env.LOOPS_REPORT_PRICE_TEMPLATE_ID;
 const CONTACT_TEMPLATE_ID = env.LOOPS_CONTACT_TEMPLATE_ID;
 const WELCOME_TEMPLATE_ID = env.LOOPS_WELCOME_TEMPLATE_ID;
+const NEWS_TEMPLATE_ID = env.LOOPS_NEWS_TEMPLATE_ID;
+const NEWS_EMAIL_TO = env.NEWS_EMAIL_TO;
 
 export interface VerificationEmailData {
   user: {
@@ -106,6 +108,16 @@ export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): 
         address: address
       }
     });
+
+    if (NEWS_TEMPLATE_ID && NEWS_EMAIL_TO) {
+      await loops.sendTransactionalEmail({
+        transactionalId: NEWS_TEMPLATE_ID,
+        email: NEWS_EMAIL_TO,
+        dataVariables: {
+          message: `El usuario ${user.name} con email ${user.email} ha reportado el precio ${price} de ${fuelType} en ${stationName}`,
+        }
+      });
+    }
     
     console.log(`Report price thank you email sent to ${user.email}`);
   } catch (error) {
@@ -145,6 +157,16 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
         email: user.email
       }
     });
+
+    if (NEWS_TEMPLATE_ID && NEWS_EMAIL_TO) {
+      await loops.sendTransactionalEmail({
+        transactionalId: NEWS_TEMPLATE_ID,
+        email: NEWS_EMAIL_TO,
+        dataVariables: {
+          message: `El usuario ${user.name} con email ${user.email} se ha registrado`,
+        }
+      });
+    }
     
     console.log(`Welcome email sent to ${user.email}`);
   } catch (error) {

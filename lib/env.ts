@@ -46,6 +46,16 @@ export const env = createEnv({
       .optional()
       .describe("Transactional template ID for contact form via Loops.js"),
 
+    NEWS_EMAIL_TO: z
+      .string()
+      .optional()
+      .describe("Destination email for news via Loops.js"),
+
+    LOOPS_NEWS_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Transactional template ID for news via Loops.js"),
+
     CONTACT_TO_EMAIL: z
       .string()
       .email("CONTACT_TO_EMAIL must be a valid email")
@@ -125,6 +135,8 @@ export const env = createEnv({
     LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
     LOOPS_WELCOME_TEMPLATE_ID: process.env.LOOPS_WELCOME_TEMPLATE_ID,
     LOOPS_CONTACT_TEMPLATE_ID: process.env.LOOPS_CONTACT_TEMPLATE_ID,
+    LOOPS_NEWS_TEMPLATE_ID: process.env.LOOPS_NEWS_TEMPLATE_ID,
+    NEWS_EMAIL_TO: process.env.NEWS_EMAIL_TO,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
     REDIS_URL: process.env.REDIS_URL,
