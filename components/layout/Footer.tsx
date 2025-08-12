@@ -19,7 +19,7 @@ export function Footer() {
     ],
     developers: [
       { name: 'GitHub', href: 'https://github.com/pekastel/dondecargo', external: true },
-      { name: 'Configuración MCP', href: '/mcp-help' },
+      // { name: 'Configuración MCP', href: '/mcp-help' },
     ]
   }
 

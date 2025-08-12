@@ -18,6 +18,7 @@ const EMAIL_VERIFICATION_TEMPLATE_ID = env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID;
 
 const REPORT_PRICE_TEMPLATE_ID = env.LOOPS_REPORT_PRICE_TEMPLATE_ID;
 const CONTACT_TEMPLATE_ID = env.LOOPS_CONTACT_TEMPLATE_ID;
+const WELCOME_TEMPLATE_ID = env.LOOPS_WELCOME_TEMPLATE_ID;
 
 export interface VerificationEmailData {
   user: {
@@ -46,6 +47,14 @@ export interface ReportPriceEmailData {
   fuelType: string;
   price: string;
   address: string;
+}
+
+export interface WelcomeEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
@@ -109,6 +118,39 @@ export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): 
 export async function sendPasswordResetEmail(data: { user: { email: string; name: string }, url: string }): Promise<void> {
   // Implementation for password reset emails using Loops
   // This would use a different transactional template
+}
+
+export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
+  const baseURL = getBaseUrl();
+  const { user } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    safeLog('⚠️ Email service not configured - skipping welcome email send');
+    return; // Don't throw error for welcome emails, just skip silently
+  }
+
+  if (!WELCOME_TEMPLATE_ID) {
+    safeLog('⚠️ Welcome email template not configured - skipping welcome email send');
+    return; // Don't throw error, just skip silently
+  }
+  
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: WELCOME_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name,
+        homeurl: baseURL,
+        email: user.email
+      }
+    });
+    
+    console.log(`Welcome email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    // Don't throw error for welcome emails, just log it
+  }
 }
 
 export async function sendContactMessageEmail(data: ContactEmailData): Promise<void> {

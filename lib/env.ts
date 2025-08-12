@@ -34,6 +34,11 @@ export const env = createEnv({
       .optional()
       .default("cmd7ideu22tzlzg0jlw2hb99b")
       .describe("Custom report price template ID for Loops.js"),
+
+    LOOPS_WELCOME_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Welcome email template ID for Loops.js"),
     
     // Contact Form (Optional)
     LOOPS_CONTACT_TEMPLATE_ID: z
@@ -118,6 +123,7 @@ export const env = createEnv({
     LOOPS_API_KEY: process.env.LOOPS_API_KEY,
     LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID: process.env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,
     LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
+    LOOPS_WELCOME_TEMPLATE_ID: process.env.LOOPS_WELCOME_TEMPLATE_ID,
     LOOPS_CONTACT_TEMPLATE_ID: process.env.LOOPS_CONTACT_TEMPLATE_ID,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
