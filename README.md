@@ -2,7 +2,7 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**DondeCargo** es una plataforma conversacional para visualización y gestión de precios de combustibles en Argentina. Combina datos oficiales del gobierno con contribuciones de usuarios validados para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional y un mapa interactivo.
+**DondeCargo** es una plataforma visualización y gestión de precios de combustibles en Argentina. Combina datos oficiales del gobierno con contribuciones de usuarios para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional (MCP en desarrollo) y un mapa interactivo.
 
 ## Características Principales
 
@@ -30,8 +30,7 @@ DondeCargo ofrece una arquitectura centrada en la web, incorporando MCP como una
 
 ### Fuentes de Datos
 - **Datos oficiales**: CSV diario desde http://datos.energia.gob.ar/
-- **Contribuciones usuarios**: Sistema validado de reportes
-- **Validación cruzada**: Verificación entre fuentes oficiales y usuarios
+- **Contribuciones usuarios**: Sistema de reportes
 
 ### Pre-requisitos
 - Node.js 18+ and pnpm
