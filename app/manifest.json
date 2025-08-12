@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "DondeCargo",
+  "short_name": "DondeCargo",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
