@@ -77,14 +77,7 @@ pnpm db:seed
 # Start development server
 pnpm dev
 ```
-Open `http://localhost:3000` and start using DondeCargo through conversation.
-
-## One-Click Vercel Deploy
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpekastel%2Fdondecargo&env=BETTER_AUTH_SECRET,REDIS_URL,DATABASE_URL,LOOPS_API_KEY,LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,LOOPS_REPORT_PRICE_TEMPLATE_ID,LOOPS_CONTACT_TEMPLATE_ID,CONTACT_TO_EMAIL,ENABLE_EMAIL_VERIFICATION,NODE_ENV,BASE_URL)
-
-1. Click the button above.
-2. Populate the same env vars shown in the table.
-3. Hit **Deploy**. Vercel will build the Next.js project and expose your MCP server.
+Open `http://localhost:3000` para ver DondeCargo.
 
 ## Stack Tecnológico
 
