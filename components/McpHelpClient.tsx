@@ -174,25 +174,17 @@ export default function McpHelpClient() {
                           <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                           <div className="space-y-2">
                             <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                              Important: Replace with Your URL
+                              Importante: URL del servidor DondeCargo
                             </h4>
                             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                              The URL shown in the image (<code className="bg-yellow-100 dark:bg-yellow-800 px-1 py-0.5 rounded text-xs">https://dondecargo-mcp.lumile.com.ar/</code>) is just an example. 
-                              You must replace it with your actual deployment URL.
+                              La URL que se ve en la imagen (<code className="bg-yellow-100 dark:bg-yellow-800 px-1 py-0.5 rounded text-xs">https://dondecargo-mcp.lumile.com.ar/</code>) es solo un ejemplo. 
+                              Para conectarte usá la URL oficial de producción:
                             </p>
                             <div className="space-y-1 text-sm">
-                              <p className="font-medium text-yellow-800 dark:text-yellow-200">URL Pattern:</p>
+                              <p className="font-medium text-yellow-800 dark:text-yellow-200">Usá esta URL:</p>
                               <code className="bg-yellow-100 dark:bg-yellow-800 px-2 py-1 rounded text-xs block">
-                                https://[your-domain]/api/mcp
+                                https://www.dondecargo.com.ar/api/mcp
                               </code>
-                            </div>
-                            <div className="space-y-1 text-sm">
-                              <p className="font-medium text-yellow-800 dark:text-yellow-200">Examples:</p>
-                              <ul className="list-disc list-inside space-y-1 text-yellow-700 dark:text-yellow-300">
-                                <li><code className="bg-yellow-100 dark:bg-yellow-800 px-1 py-0.5 rounded text-xs">https://my-timetracker.vercel.app/api/mcp</code></li>
-                                <li><code className="bg-yellow-100 dark:bg-yellow-800 px-1 py-0.5 rounded text-xs">https://timetracker.mycompany.com/api/mcp</code></li>
-                                <li><code className="bg-yellow-100 dark:bg-yellow-800 px-1 py-0.5 rounded text-xs">https://my-app-name.onrender.com/api/mcp</code></li>
-                              </ul>
                             </div>
                           </div>
                         </div>
@@ -224,16 +216,11 @@ export default function McpHelpClient() {
                           <Sparkles className="h-5 w-5 text-green-600 mt-0.5" />
                           <div className="space-y-2">
                             <h4 className="font-semibold text-green-800 dark:text-green-200">
-                              Available Tools
+                              Herramientas disponibles
                             </h4>
-                            <p className="text-sm text-green-700 dark:text-green-300 mb-2">
-                              Once connected, you&apos;ll have access to all time tracking tools:
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Por ahora, las herramientas permiten consultar los datos de los combustibles.
                             </p>
-                            <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
-                              <li>• <strong>Client Management:</strong> create, list, update clients</li>
-                              <li>• <strong>Project Management:</strong> create, list, update projects</li>
-                              <li>• <strong>Reporting:</strong> get summaries, calculate earnings</li>
-                            </ul>
                           </div>
                         </div>
                       </div>
