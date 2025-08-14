@@ -143,9 +143,13 @@ export function StationComments({ estacionId }: StationCommentsProps) {
     }
   }
 
-  const formatTimeAgo = (date: Date) => {
+  // Normaliza entradas tipo Date o string ISO a un objeto Date
+  const toDate = (d: Date | string) => (d instanceof Date ? d : new Date(d))
+
+  const formatTimeAgo = (date: Date | string) => {
     const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const d = toDate(date)
+    const diffInHours = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60))
     
     if (diffInHours < 1) return 'Hace menos de 1 hora'
     if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`
@@ -153,7 +157,7 @@ export function StationComments({ estacionId }: StationCommentsProps) {
     const diffInDays = Math.floor(diffInHours / 24)
     if (diffInDays < 7) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`
     
-    return new Date(date).toLocaleDateString('es-AR')
+    return d.toLocaleDateString('es-AR')
   }
 
   const userComment = comentarios.find(c => c.usuarioId === session?.user?.id)
@@ -270,7 +274,7 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                     <span className="text-xs text-muted-foreground">
                       {formatTimeAgo(comentario.fechaCreacion)}
                     </span>
-                    {comentario.fechaActualizacion.getTime() !== comentario.fechaCreacion.getTime() && (
+                    {toDate(comentario.fechaActualizacion).getTime() !== toDate(comentario.fechaCreacion).getTime() && (
                       <span className="text-xs text-muted-foreground">(editado)</span>
                     )}
                   </div>
