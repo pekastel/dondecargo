@@ -210,12 +210,12 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                 placeholder="Escribe tu comentario sobre esta estación..."
                 value={nuevoComentario}
                 onChange={(e) => setNuevoComentario(e.target.value)}
-                maxLength={500}
+                maxLength={144}
                 rows={3}
               />
               <div className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">
-                  {nuevoComentario.length}/500 caracteres
+                  {nuevoComentario.length}/144 caracteres
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -265,7 +265,7 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                 image={comentario.usuario.image || undefined}
                 size="md"
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
@@ -309,12 +309,12 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                     <Textarea
                       value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
-                      maxLength={500}
+                      maxLength={144}
                       rows={3}
                     />
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-muted-foreground">
-                        {editingText.length}/500 caracteres
+                        {editingText.length}/144 caracteres
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -340,7 +340,7 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                  <p className="text-sm text-foreground whitespace-pre-wrap break-words break-all">
                     {comentario.comentario}
                   </p>
                 )}

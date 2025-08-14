@@ -7,7 +7,10 @@ import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 
 const updateComentarioSchema = z.object({
-  comentario: z.string().min(1, 'Comentario requerido').max(500, 'Comentario demasiado largo (máximo 500 caracteres)'),
+  comentario: z
+    .string()
+    .min(1, 'Comentario requerido')
+    .max(144, 'Comentario demasiado largo (máximo 144 caracteres)'),
 });
 
 export async function PUT(

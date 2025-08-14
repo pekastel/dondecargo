@@ -8,7 +8,10 @@ import { eq, and, desc } from 'drizzle-orm';
 
 const createComentarioSchema = z.object({
   estacionId: z.string().min(1, 'ID de estación requerido'),
-  comentario: z.string().min(1, 'Comentario requerido').max(500, 'Comentario demasiado largo (máximo 500 caracteres)'),
+  comentario: z
+    .string()
+    .min(1, 'Comentario requerido')
+    .max(144, 'Comentario demasiado largo (máximo 144 caracteres)'),
 });
 
 export async function POST(request: Request) {

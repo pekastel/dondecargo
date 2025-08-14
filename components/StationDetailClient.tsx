@@ -705,9 +705,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
               </Card>
             )}
 
-            {/* Comments Section */}
-            <StationComments estacionId={station.id} />
-
             {/* Price History */}
             {/* <PriceHistory 
               stationId={station.id}
@@ -720,6 +717,8 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
           {/* Sidebar */}
           <div className="space-y-6">
             <StationDetail station={station} />
+            {/* Comments Section */}
+            <StationComments estacionId={station.id} />
           </div>
         </div>
       </main>
