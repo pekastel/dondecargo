@@ -117,12 +117,30 @@ export const favoritos = pgTable('favoritos', {
   usuarioEstacionIdx: index('favoritos_usuario_estacion_idx').on(table.usuarioId, table.estacionId),
 }));
 
+// Comentarios de usuarios en estaciones
+export const comentarios = pgTable('comentarios', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull(),
+  comentario: text('comentario').notNull(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+  fechaActualizacion: timestamp('fecha_actualizacion').defaultNow().notNull(),
+}, (table) => ({
+  usuarioEstacionIdx: index('comentarios_usuario_estacion_idx').on(table.usuarioId, table.estacionId),
+  estacionIdx: index('comentarios_estacion_idx').on(table.estacionId),
+  fechaCreacionIdx: index('comentarios_fecha_creacion_idx').on(table.fechaCreacion),
+  // Unique constraint: solo un comentario por usuario por estación
+  usuarioEstacionUnique: uniqueIndex('comentarios_usuario_estacion_unique')
+    .on(table.usuarioId, table.estacionId),
+}));
+
 // Relaciones
 export const estacionesRelations = relations(estaciones, ({ many }) => ({
   precios: many(precios),
   preciosHistorico: many(preciosHistorico),
   reportesPrecios: many(reportesPrecios),
   favoritos: many(favoritos),
+  comentarios: many(comentarios),
 }));
 
 export const preciosRelations = relations(precios, ({ one, many }) => ({
@@ -181,6 +199,17 @@ export const favoritosRelations = relations(favoritos, ({ one }) => ({
   }),
 }));
 
+export const comentariosRelations = relations(comentarios, ({ one }) => ({
+  usuario: one(betterAuthSchema.user, {
+    fields: [comentarios.usuarioId],
+    references: [betterAuthSchema.user.id],
+  }),
+  estacion: one(estaciones, {
+    fields: [comentarios.estacionId],
+    references: [estaciones.id],
+  }),
+}));
+
 // Tipos TypeScript derivados del esquema
 export type Estacion = typeof estaciones.$inferSelect;
 export type NuevaEstacion = typeof estaciones.$inferInsert;
@@ -194,3 +223,5 @@ export type ConfirmacionPrecio = typeof confirmacionesPrecios.$inferSelect;
 export type NuevaConfirmacionPrecio = typeof confirmacionesPrecios.$inferInsert;
 export type Favorito = typeof favoritos.$inferSelect;
 export type NuevoFavorito = typeof favoritos.$inferInsert;
+export type Comentario = typeof comentarios.$inferSelect;
+export type NuevoComentario = typeof comentarios.$inferInsert;
