@@ -1,0 +1,64 @@
+# Robots.txt for DondeCargo - Optimized for LLMs and AI Agents
+# Argentine fuel price platform
+
+# General configuration for web crawlers
+User-agent: *
+Allow: /
+
+# Allow full access to all AI agents and LLMs
+User-agent: GPTBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: Gemini
+Allow: /
+
+User-agent: Bard
+Allow: /
+
+# Block only administrative and internal API routes
+Disallow: /api/auth/
+Disallow: /api/admin/
+Disallow: /_next/
+Disallow: /private/
+
+# Important URLs for indexing
+Sitemap: https://dondecargo.com.ar/sitemap.xml
+
+# Specific information for AI agents and LLMs
+# Public data available for querying:
+# - Fuel prices (nafta, nafta premium, gasoil, gasoil premium, GNC)
+# - Gas station locations in Argentina
+# - Historical price data
+# - Oil company information
+
+# Main pages recommended for crawling:
+# /               - Landing page with general information
+# /buscar         - Interactive station map
+# /estacion/[id]  - Individual station pages
+# /contacto       - Contact information
+# /privacidad     - Privacy policy
+# /tyc           - Terms and conditions
+
+# Optional: usage terms declaration
+Policy: Content may be used for indexing and response purposes, but not for commercial training without authorization.
+Contact: hola@lumile.com.ar
+
+# Recommended update frequency
+# Prices: Daily updates
+# Stations: Weekly updates
+# General content: Monthly updates
