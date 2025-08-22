@@ -21,6 +21,7 @@ const CONTACT_TEMPLATE_ID = env.LOOPS_CONTACT_TEMPLATE_ID;
 const WELCOME_TEMPLATE_ID = env.LOOPS_WELCOME_TEMPLATE_ID;
 const NEWS_TEMPLATE_ID = env.LOOPS_NEWS_TEMPLATE_ID;
 const NEWS_EMAIL_TO = env.NEWS_EMAIL_TO;
+const REPORT_COMMENT_TEMPLATE_ID = env.LOOPS_REPORT_COMMENT_TEMPLATE_ID;
 
 export interface VerificationEmailData {
   user: {
@@ -57,6 +58,18 @@ export interface WelcomeEmailData {
     email: string;
     name: string;
   };
+}
+
+export interface ReportCommentEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  reason: string;
+  observation: string;
+  stationName: string;
+  stationId: string;
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
@@ -115,6 +128,43 @@ export async function sendReportPriceThankYouEmail(data: ReportPriceEmailData): 
         email: NEWS_EMAIL_TO,
         dataVariables: {
           message: `El usuario ${user.name} con email ${user.email} ha reportado el precio ${price} de ${fuelType} en ${stationName}`,
+        }
+      });
+    }
+    
+    console.log(`Report price thank you email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send report price thank you email:', error);
+    throw new Error('Failed to send report price thank you email');
+  }
+}
+
+export async function sendReportCommentThankYouEmail(data: ReportCommentEmailData): Promise<void> {
+  const { user, reason, observation, stationName, stationId } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    safeLog('⚠️ Email service not configured - skipping email send');
+    throw new Error('Email service not configured');
+  }
+  
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: REPORT_COMMENT_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name,
+        reason: reason,
+        observations: observation,
+      }
+    });
+
+    if (NEWS_TEMPLATE_ID && NEWS_EMAIL_TO) {
+      await loops.sendTransactionalEmail({
+        transactionalId: NEWS_TEMPLATE_ID,
+        email: NEWS_EMAIL_TO,
+        dataVariables: {
+          message: `El usuario ${user.name} con email ${user.email} ha denunciado un comentario con motivo ${reason} y observación ${observation} sobre la estación ${stationName} con ID ${stationId}`,
         }
       });
     }

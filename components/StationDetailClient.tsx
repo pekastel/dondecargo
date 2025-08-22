@@ -13,6 +13,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { authClient } from '@/lib/authClient'
 import { toast } from 'sonner'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
+import { StationComments } from '@/components/station/StationComments'
 
 export interface StationPrice {
   id: string
@@ -716,6 +717,8 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
           {/* Sidebar */}
           <div className="space-y-6">
             <StationDetail station={station} />
+            {/* Comments Section */}
+            <StationComments estacionId={station.id} />
           </div>
         </div>
       </main>

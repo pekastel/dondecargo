@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MapPin, Phone, ExternalLink } from 'lucide-react'
+import { MapPin, Phone, ExternalLink, Map } from 'lucide-react'
 import { StationFull } from '@/components/StationDetailClient'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
+import { useRouter } from 'next/navigation'
 
 interface StationDetailProps {
   station: StationFull
@@ -39,6 +40,7 @@ export function StationDetail({ station }: StationDetailProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const router = useRouter()
 
   // getCompanyLogoPath now imported from '@/lib/companyLogos'
 
@@ -165,6 +167,16 @@ export function StationDetail({ station }: StationDetailProps) {
     }
   }
 
+  const handleViewNearbyStations = () => {
+    // Navigate to the map centered on this station with a 5km radius
+    const searchParams = new URLSearchParams({
+      lat: station.latitud.toString(),
+      lng: station.longitud.toString(),
+      radius: '5'
+    })
+    router.push(`/buscar?${searchParams.toString()}`)
+  }
+
   if (!mapLoaded) {
     return (
       <div className="space-y-6">
@@ -217,7 +229,15 @@ export function StationDetail({ station }: StationDetailProps) {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button size="sm" onClick={handleDirections} className="flex-1 sm:flex-initial">
+            <Button 
+              size="sm" 
+              onClick={handleViewNearbyStations}
+              className="flex-1 sm:flex-initial"
+            >
+              <Map className="h-4 w-4 mr-2" />
+              Ver cercanas
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDirections} className="flex-1 sm:flex-initial">
               <ExternalLink className="h-4 w-4 mr-2" />
               Direcciones
             </Button>

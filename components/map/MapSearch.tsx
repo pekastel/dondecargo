@@ -84,6 +84,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // User reports are now managed directly in DOM, keeping minimal state for cache management
   const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
   const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
+  
+  // Comments count state to persist through DOM regenerations
+  const [commentsCount, setCommentsCount] = useState<Record<string, number>>({})
   const { data: session } = authClient.useSession()
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [favLoading, setFavLoading] = useState<Set<string>>(new Set())
@@ -220,6 +223,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // Simple in-memory cache for user reports (client-side only)
   const reportCache = useRef<Map<string, { data: UserPriceReport[], expires: number }>>(new Map())
 
+  // Cache for comments count (client-side only)
+  const commentsCountCache = useRef<Map<string, { count: number, expires: number }>>(new Map())
+
   // Function to get user report for specific fuel type from current data
   const getUserReport = (stationId: string, fuelType: string): UserPriceReport | null => {
     const reports = userReports[stationId] || []
@@ -234,6 +240,44 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // Function to check if station is currently loading
   const isStationLoading = (stationId: string): boolean => {
     return loadingReports.has(stationId)
+  }
+
+  // Fetch comments count for a station with simple cache
+  const fetchCommentsCount = async (stationId: string) => {
+    // Check if we already have the count in state
+    if (commentsCount[stationId] !== undefined) {
+      return commentsCount[stationId]
+    }
+
+    // Check cache first
+    const cacheKey = `comments_count:${stationId}`
+    const cachedItem = commentsCountCache.current.get(cacheKey)
+    if (cachedItem && cachedItem.expires > Date.now()) {
+      setCommentsCount(prev => ({ ...prev, [stationId]: cachedItem.count }))
+      return cachedItem.count
+    }
+
+    try {
+      const response = await fetch(`/api/estaciones/${stationId}/comentarios-count`)
+      if (response.ok) {
+        const data = await response.json()
+        const count = data.count || 0
+        
+        // Cache the data for 10 minutes
+        const expires = Date.now() + (10 * 60 * 1000)
+        commentsCountCache.current.set(cacheKey, { count, expires })
+        
+        // Update the state - this will trigger marker regeneration
+        setCommentsCount(prev => ({ ...prev, [stationId]: count }))
+        return count
+      }
+    } catch (error) {
+      console.error('Error fetching comments count:', error)
+    }
+    
+    // Set to 0 if failed to avoid infinite retries
+    setCommentsCount(prev => ({ ...prev, [stationId]: 0 }))
+    return 0
   }
 
   // Fetch user reports for a station with simple cache
@@ -412,7 +456,9 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                 />
               </div>
               <div class="flex-grow min-w-0">
-                <h3 class="text-sm font-medium text-gray-900 truncate">${station.nombre}</h3>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="text-sm font-medium text-gray-900 truncate">${station.nombre}</h3>
+                </div>
                 <p class="text-xs text-gray-500 truncate">${station.empresa}</p>
               </div>
               <div class="flex items-center gap-1">
@@ -490,12 +536,26 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
             <div class="flex gap-2">
               <button class="flex-1 text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all shadow-sm flex items-center justify-center gap-1"
                       onclick="window.location.href='/estacion/${station.id}'" title="Ver detalles de la estación">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <circle cx="12" cy="16" r="1"></circle>
-                </svg>
-                <span>Detalles</span>
+                ${(() => {
+                    const count = commentsCount[station.id] || 0;
+                    return count > 0 ? `
+                      <div class="flex items-center gap-0.5 bg-blue-100 text-blue-700
+                        px-1.5 py-0.5 rounded text-xs font-medium" title="${count} comentarios">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4
+                        4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                        </svg>
+                        <span>${count}</span>
+                      </div>
+                    ` : `
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <circle cx="12" cy="16" r="1"></circle>
+                      </svg>
+                    `;
+                  })()}
+                <span>Ver más</span>
               </button>
               <button class="flex-1 text-xs px-2.5 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all shadow-sm flex items-center justify-center gap-1"
                       onclick="window.location.href='/reportar-precio/${station.id}'" title="Reportar precio">
@@ -542,15 +602,16 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         icon: customIcon
       }).addTo(leafletMapRef.current!)
 
-      // Add click handler with user reports fetching
+      // Add click handler with user reports and comments count fetching
       marker.on('click', () => {
         setSelectedStations(prev => {
           const isAlreadySelected = prev.some(s => s.id === station.id)
           if (isAlreadySelected) {
             return prev.filter(s => s.id !== station.id)
           } else {
-            // Fetch user reports when station is selected
+            // Fetch user reports and comments count when station is selected
             fetchUserReports(station.id)
+            fetchCommentsCount(station.id)
             return [...prev, station]
           }
         })
@@ -577,7 +638,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, mapLoaded, fetchUserReports, loading])
+  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, commentsCount, mapLoaded, fetchUserReports, loading])
 
   const handleFavoriteToggle = async (stationId: string) => {
     if (!session?.user) {
