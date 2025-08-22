@@ -9,6 +9,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { authClient } from '@/lib/authClient'
 import { toast } from 'sonner'
 import { Comentario } from '@/drizzle/schema'
+import { CommentActions } from './CommentActions'
 
 interface ComentarioWithUser extends Comentario {
   usuario: {
@@ -16,6 +17,9 @@ interface ComentarioWithUser extends Comentario {
     name: string | null
     image: string | null
   }
+  voteCount: number
+  userVoted: boolean
+  userReported: boolean
 }
 
 interface StationCommentsProps {
@@ -161,6 +165,16 @@ export function StationComments({ estacionId }: StationCommentsProps) {
   }
 
   const userComment = comentarios.find(c => c.usuarioId === session?.user?.id)
+
+  const handleVoteChange = (comentarioId: string, newVoteCount: number, userVoted: boolean) => {
+    setComentarios(prev =>
+      prev.map(comentario =>
+        comentario.id === comentarioId
+          ? { ...comentario, voteCount: newVoteCount, userVoted }
+          : comentario
+      )
+    )
+  }
 
   if (loading) {
     return (
@@ -340,9 +354,21 @@ export function StationComments({ estacionId }: StationCommentsProps) {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-foreground whitespace-pre-wrap break-words break-all">
-                    {comentario.comentario}
-                  </p>
+                  <>
+                    <p className="text-sm text-foreground whitespace-pre-wrap break-words break-all">
+                      {comentario.comentario}
+                    </p>
+                    <CommentActions
+                      comentarioId={comentario.id}
+                      voteCount={comentario.voteCount}
+                      userVoted={comentario.userVoted}
+                      userReported={comentario.userReported}
+                      isOwnComment={session?.user?.id === comentario.usuarioId}
+                      onVoteChange={(newVoteCount, userVoted) => 
+                        handleVoteChange(comentario.id, newVoteCount, userVoted)
+                      }
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -354,7 +380,10 @@ export function StationComments({ estacionId }: StationCommentsProps) {
       {!session?.user && (
         <div className="mt-4 p-3 border rounded-lg bg-muted/20 text-center">
           <p className="text-sm text-muted-foreground">
-            <a href="/login" className="text-primary hover:underline">
+            <a 
+              href={`/login?returnTo=${encodeURIComponent(window.location.pathname)}`}
+              className="text-primary hover:underline"
+            >
               Inicia sesión
             </a>{' '}
             para agregar tu comentario sobre esta estación.

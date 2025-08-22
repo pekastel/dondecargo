@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/drizzle/connection';
-import { comentarios } from '@/drizzle/schema';
+import { comentarios, reportesComentarios, votosComentarios } from '@/drizzle/schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { z } from 'zod';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 
 const createComentarioSchema = z.object({
   estacionId: z.string().min(1, 'ID de estación requerido'),
@@ -84,22 +84,63 @@ export async function GET(request: Request) {
       );
     }
 
-    // Obtener comentarios de la estación con información del usuario
-    const comentariosEstacion = await db.query.comentarios.findMany({
-      where: eq(comentarios.estacionId, estacionId),
-      with: {
-        usuario: {
-          columns: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: [desc(comentarios.fechaCreacion)],
+    // Obtener información de sesión para verificar votos del usuario actual
+    const session = await auth.api.getSession({
+      headers: await headers(),
     });
+    const currentUserId = session?.user?.id;
 
-    return NextResponse.json(comentariosEstacion);
+    // Obtener comentarios con conteo de votos y ordenarlos por utilidad
+    const comentariosConVotos = await db
+      .select({
+        id: comentarios.id,
+        usuarioId: comentarios.usuarioId,
+        estacionId: comentarios.estacionId,
+        comentario: comentarios.comentario,
+        fechaCreacion: comentarios.fechaCreacion,
+        fechaActualizacion: comentarios.fechaActualizacion,
+        usuario: {
+          id: sql`"usuario"."id"`.mapWith(String),
+          name: sql`"usuario"."name"`.mapWith(String),
+          image: sql`"usuario"."image"`.mapWith(String),
+        },
+        voteCount: count(votosComentarios.id).as('vote_count'),
+        userVoted: currentUserId ? 
+          sql`CASE WHEN EXISTS(
+            SELECT 1 FROM ${votosComentarios} 
+            WHERE ${votosComentarios.comentarioId} = ${comentarios.id} 
+            AND ${votosComentarios.usuarioId} = ${currentUserId}
+          ) THEN true ELSE false END`.mapWith(Boolean) : 
+          sql`false`.mapWith(Boolean),
+        userReported: currentUserId ?
+          sql`CASE WHEN EXISTS(
+            SELECT 1 FROM ${reportesComentarios} 
+            WHERE ${reportesComentarios.comentarioId} = ${comentarios.id} 
+            AND ${reportesComentarios.usuarioId} = ${currentUserId}
+          ) THEN true ELSE false END`.mapWith(Boolean) :
+          sql`false`.mapWith(Boolean),
+      })
+      .from(comentarios)
+      .leftJoin(sql`"user" as "usuario"`, sql`"usuario"."id" = ${comentarios.usuarioId}`)
+      .leftJoin(votosComentarios, eq(votosComentarios.comentarioId, comentarios.id))
+      .where(eq(comentarios.estacionId, estacionId))
+      .groupBy(
+        comentarios.id, 
+        comentarios.usuarioId, 
+        comentarios.estacionId,
+        comentarios.comentario, 
+        comentarios.fechaCreacion, 
+        comentarios.fechaActualizacion,
+        sql`"usuario"."id"`,
+        sql`"usuario"."name"`,
+        sql`"usuario"."image"`
+      )
+      .orderBy(
+        desc(count(votosComentarios.id)), // Más votos primero
+        desc(comentarios.fechaCreacion)   // Luego por fecha más reciente
+      );
+
+    return NextResponse.json(comentariosConVotos);
   } catch (error) {
     console.error('Error al obtener comentarios:', error);
     return NextResponse.json(

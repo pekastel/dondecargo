@@ -134,6 +134,41 @@ export const comentarios = pgTable('comentarios', {
     .on(table.usuarioId, table.estacionId),
 }));
 
+// Votos de comentarios (sistema de "es útil")
+export const votosComentarios = pgTable('votos_comentarios', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  comentarioId: text('comentario_id').references(() => comentarios.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+}, (table) => ({
+  comentarioUsuarioIdx: index('votos_comentarios_comentario_usuario_idx').on(table.comentarioId, table.usuarioId),
+  comentarioIdx: index('votos_comentarios_comentario_idx').on(table.comentarioId),
+  usuarioIdx: index('votos_comentarios_usuario_idx').on(table.usuarioId),
+  // Unique constraint: un voto por usuario por comentario
+  comentarioUsuarioUnique: uniqueIndex('votos_comentarios_comentario_usuario_unique')
+    .on(table.comentarioId, table.usuarioId),
+}));
+
+// Reportes de comentarios (denuncias)
+export const reportesComentarios = pgTable('reportes_comentarios', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  comentarioId: text('comentario_id').references(() => comentarios.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  motivo: text('motivo', { 
+    enum: ['spam', 'contenido_inapropiado', 'informacion_falsa', 'otro'] 
+  }).notNull(),
+  observaciones: text('observaciones'),
+  estado: text('estado', { 
+    enum: ['pendiente', 'revisado', 'resuelto'] 
+  }).default('pendiente').notNull(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+}, (table) => ({
+  comentarioIdx: index('reportes_comentarios_comentario_idx').on(table.comentarioId),
+  usuarioIdx: index('reportes_comentarios_usuario_idx').on(table.usuarioId),
+  estadoIdx: index('reportes_comentarios_estado_idx').on(table.estado),
+  fechaCreacionIdx: index('reportes_comentarios_fecha_creacion_idx').on(table.fechaCreacion),
+}));
+
 // Relaciones
 export const estacionesRelations = relations(estaciones, ({ many }) => ({
   precios: many(precios),
@@ -199,7 +234,7 @@ export const favoritosRelations = relations(favoritos, ({ one }) => ({
   }),
 }));
 
-export const comentariosRelations = relations(comentarios, ({ one }) => ({
+export const comentariosRelations = relations(comentarios, ({ one, many }) => ({
   usuario: one(betterAuthSchema.user, {
     fields: [comentarios.usuarioId],
     references: [betterAuthSchema.user.id],
@@ -207,6 +242,30 @@ export const comentariosRelations = relations(comentarios, ({ one }) => ({
   estacion: one(estaciones, {
     fields: [comentarios.estacionId],
     references: [estaciones.id],
+  }),
+  votos: many(votosComentarios),
+  reportes: many(reportesComentarios),
+}));
+
+export const votosComentariosRelations = relations(votosComentarios, ({ one }) => ({
+  comentario: one(comentarios, {
+    fields: [votosComentarios.comentarioId],
+    references: [comentarios.id],
+  }),
+  usuario: one(betterAuthSchema.user, {
+    fields: [votosComentarios.usuarioId],
+    references: [betterAuthSchema.user.id],
+  }),
+}));
+
+export const reportesComentariosRelations = relations(reportesComentarios, ({ one }) => ({
+  comentario: one(comentarios, {
+    fields: [reportesComentarios.comentarioId],
+    references: [comentarios.id],
+  }),
+  usuario: one(betterAuthSchema.user, {
+    fields: [reportesComentarios.usuarioId],
+    references: [betterAuthSchema.user.id],
   }),
 }));
 
@@ -225,3 +284,7 @@ export type Favorito = typeof favoritos.$inferSelect;
 export type NuevoFavorito = typeof favoritos.$inferInsert;
 export type Comentario = typeof comentarios.$inferSelect;
 export type NuevoComentario = typeof comentarios.$inferInsert;
+export type VotoComentario = typeof votosComentarios.$inferSelect;
+export type NuevoVotoComentario = typeof votosComentarios.$inferInsert;
+export type ReporteComentario = typeof reportesComentarios.$inferSelect;
+export type NuevoReporteComentario = typeof reportesComentarios.$inferInsert;
