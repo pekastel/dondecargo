@@ -3,6 +3,15 @@ import { getPrimaryAllowedOrigin } from "./lib/utils/cors";
 
 const nextConfig: NextConfig = {
 	/* config options here */
+	async redirects() {
+		return [
+			{
+				source: '/combustible/:path*',
+				destination: '/buscar',
+				permanent: true,
+			},
+		];
+	},
 	async headers() {
 		const allowedOrigin = getPrimaryAllowedOrigin();
 		
