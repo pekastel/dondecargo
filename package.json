@@ -1,14 +1,14 @@
 {
-  "name": "dondecargo-v2",
-  "version": "0.1.2",
-  "description": "DondeCargo v2",
+  "name": "dondecargo",
+  "version": "0.1.3",
+  "description": "DondeCargo",
   "license": "MIT",
   "author": "Lumile Argentina S.A. - https://lumile.com.ar",
   "homepage": "https://www.dondecargo.com.ar/",
-  "bugs": "https://github.com/lumile/dondecargo-v2/issues",
+  "bugs": "https://github.com/pekastel/dondecargo/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lumile/dondecargo-v2.git"
+    "url": "git+https://github.com/pekastel/dondecargo.git"
   },
   "private": true,
   "scripts": {
