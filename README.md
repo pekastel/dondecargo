@@ -2,40 +2,40 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**DondeCargo** es una plataforma visualización y gestión de precios de combustibles en Argentina. Combina datos oficiales del gobierno con contribuciones de usuarios para proporcionar información precisa y actualizada sobre precios de combustibles a través de una interfaz conversacional (MCP en desarrollo) y un mapa interactivo.
+**DondeCargo** is a platform for visualizing and managing fuel prices in Argentina. It combines official government data with user contributions to provide accurate and up-to-date fuel price information through a conversational interface (MCP in development) and an interactive map.
 
-## Características Principales
+## Key Features
 
-### Gestión de Datos
-- **Datos en tiempo real** - Precios actualizados diariamente desde fuentes oficiales del gobierno argentino
-- **5 tipos de combustibles** - Nafta, Nafta Premium, Diesel, Diesel Premium, y GNC
-- **Variaciones horarias** - Soporte para precios diurnos y nocturnos
-- **Histórico completo** - Preservación de todos los cambios de precios con timestamps
+### Data Management
+- **Real-time data** - Daily updated prices from official Argentine government sources
+- **5 fuel types** - Gasoline, Premium Gasoline, Diesel, Premium Diesel, and CNG
+- **Time variations** - Support for daytime and nighttime prices
+- **Full history** - Preservation of all price changes with timestamps
 
-### Interfaz y Experiencia
-- **Mapa interactivo** - Visualización geográfica con marcadores personalizados
-- **Interfaz conversacional** - Interacción por comandos naturales vía MCP (En desarrollo)
-- **Diseño responsive** - Experiencia optimizada para desktop y mobile
-- **Favoritos** - Marcá estaciones para acceso rápido y seguimiento
+### Interface and Experience
+- **Interactive map** - Geographic visualization with custom markers
+- **Conversational interface** - Natural command interaction via MCP (In development)
+- **Responsive design** - Optimized experience for desktop and mobile
+- **Favorites** - Mark stations for quick access and tracking
 
-## Arquitectura General
+## Overall Architecture
 
-DondeCargo ofrece una arquitectura centrada en la web, incorporando MCP como una forma adicional y opcional de interactuar mediante lenguaje natural. El sistema admite consultas conversacionales a través de MCP y, al mismo tiempo, proporciona visualizaciones ricas en la interfaz web.
+DondeCargo offers a web-centered architecture, incorporating MCP as an additional and optional way to interact via natural language. The system supports conversational queries through MCP while also providing rich visualizations in the web interface.
 
-### Principios Arquitectónicos
+### Architectural Principles
 
-1. **MCP como interfaz adicional**: Interacción por comandos naturales como alternativa a la UI web
-2. **Integración de datos en tiempo real**: Conexión directa con APIs oficiales del gobierno argentino
-3. **Gestión colaborativa de datos**: Usuarios autenticados pueden proponer actualizaciones
+1. **MCP as an additional interface**: Natural command interaction as an alternative to the web UI
+2. **Real-time data integration**: Direct connection with official Argentine government APIs
+3. **Collaborative data management**: Authenticated users can propose updates
 
-### Fuentes de Datos
-- **Datos oficiales**: CSV diario desde http://datos.energia.gob.ar/
-- **Contribuciones usuarios**: Sistema de reportes
+### Data Sources
+- **Official data**: Daily CSV from http://datos.energia.gob.ar/
+- **User contributions**: Reporting system
 
-### Pre-requisitos
+### Prerequisites
 - Node.js 18+ and pnpm
-- PostgreSQL database (local o cloud)
-- Redis instance (opcional, recomendado en producción)
+- PostgreSQL database (local or cloud)
+- Redis instance (optional, recommended in production)
 
 ### Setup Steps
 ```bash
@@ -76,23 +76,24 @@ pnpm db:seed
 # Start development server
 pnpm dev
 ```
-Open `http://localhost:3000` para ver DondeCargo.
+Open `http://localhost:3000` to see DondeCargo.
 
-## Stack Tecnológico
+## Tech Stack
 
-DondeCargo está construido con tecnologías modernas para rendimiento, escalabilidad y experiencia de desarrollador:
+DondeCargo is built with modern technologies for performance, scalability, and developer experience:
 - **Next.js 15** App Router & TypeScript
-- **shadcn/ui** para componentes primitivos
+- **shadcn/ui** for primitive components
 - **PostgreSQL** + **Drizzle ORM**
-- **Redis (Optional)** para cache de sesión y conversación
-- **Better Auth** para OIDC & PKCE flows
-- **Vercel MCP Adapter** para MCP server creation
-- **Argentine Government Data API** para integración
-- **Interactive Maps** con OpenStreetMap/Leaflet para visualización
-- **Nominatim** para geocoding
+- **Redis (Optional)** for session and conversation cache
+- **Better Auth** for OIDC & PKCE flows
+- **Vercel MCP Adapter** for MCP server creation
+- **Argentine Government Data API** for integration
+- **Interactive Maps** with OpenStreetMap/Leaflet for visualization
+- **Nominatim** for geocoding
 
-## Licencia
+## License
 [`MIT`](LICENSE)
 
 ---
-Hecho con ❤️ por [Lumile Argentina](https://www.lumile.com.ar)
+
+Made with ❤️ by [Lumile Argentina](https://www.lumile.com.ar)
