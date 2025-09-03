@@ -448,8 +448,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       ${(() => {
                         const preferUser = !!pa?.usandoPrecioUsuario
                         const fecha = preferUser
-                          ? (pa?.fechaReporte || precio?.fechaReporte)
-                          : (pa?.fechaVigencia || precio?.fechaVigencia || precio?.fechaActualizacion)
+                          ? (pa?.fechaUltimoReporteUsuario || pa?.fechaReporte || precio?.fechaUltimoReporteUsuario || precio?.fechaReporte)
+                          : (pa?.fechaVigencia || precio?.fechaVigencia || pa?.fechaActualizacion || precio?.fechaActualizacion)
                         const txt = formatDateShort(fecha)
                         return txt ? `
                           <div class="flex items-center justify-between mt-0.5">
