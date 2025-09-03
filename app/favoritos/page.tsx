@@ -132,22 +132,6 @@ export default function FavoritosPage() {
     }
   }, [])
 
-  const getDisplayPrice = useCallback((s: Station): { price: number | null; label: string } => {
-    const precios = s.precios || []
-    if (selectedFuelType) {
-      const candidates = precios.filter((p) => p.tipoCombustible === selectedFuelType)
-      if (candidates.length) {
-        const min = candidates.reduce((acc, cur) => (cur.precio < acc ? cur.precio : acc), candidates[0].precio)
-        return { price: min, label: FUEL_LABELS[selectedFuelType] }
-      }
-      return { price: null, label: FUEL_LABELS[selectedFuelType] }
-    }
-    const candidates = precios
-    if (!candidates.length) return { price: null, label: 'Menor' }
-    const minCandidate = candidates.reduce((min, cur) => (cur.precio < min.precio ? cur : min), candidates[0])
-    return { price: minCandidate.precio, label: FUEL_LABELS[minCandidate.tipoCombustible] }
-  }, [selectedFuelType])
-
   const mapCenterAndRadius = useMemo(() => {
     const coords = items
       .map(i => ({ lat: i.latitud, lng: i.longitud }))
