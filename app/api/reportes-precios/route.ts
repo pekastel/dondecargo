@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { reportesPrecios, estaciones, precios } from '@/drizzle/schema'
@@ -214,6 +215,23 @@ export async function POST(request: NextRequest) {
       safeLog('⚠️ Error sending thank you email, continuing with flow')
       // Continue with the flow even if email fails
     }
+
+    // Revalidate caches for station user reports summary and estaciones listing
+    try {
+      const stationId = validatedData.estacionId
+      // User reports cache
+      revalidateTag(`station:${stationId}:user-reports`)
+      // Estaciones search/list caches share these tags (see app/api/estaciones/route.ts)
+      revalidateTag('estaciones')
+      revalidateTag(`estacion:${stationId}`)
+      revalidateTag(`combustible:${validatedData.tipoCombustible}`)
+      if (validatedData.horario === 'ambos') {
+        revalidateTag('horario:diurno')
+        revalidateTag('horario:nocturno')
+      } else {
+        revalidateTag(`horario:${validatedData.horario}`)
+      }
+    } catch {}
 
     return NextResponse.json(newReports[0], { status: 201 })
 

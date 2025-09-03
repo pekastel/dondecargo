@@ -10,13 +10,8 @@ import { authClient } from '@/lib/authClient'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
-interface UserPriceReport {
-  tipoCombustible: string
-  horario: string
-  precioPromedio: number
-  cantidadReportes: number
-  ultimoReporte: Date
-}
+// User price reports are now aggregated on the server and returned
+// as adjusted price fields on each station price item.
 
 interface MapSearchProps {
   stations: Station[]
@@ -81,9 +76,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   const [selectedStations, setSelectedStations] = useState<Station[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapInitialized, setMapInitialized] = useState(false)
-  // User reports are now managed directly in DOM, keeping minimal state for cache management
-  const [userReports, setUserReports] = useState<Record<string, UserPriceReport[]>>({})
-  const [loadingReports, setLoadingReports] = useState<Set<string>>(new Set())
+  // User reports are handled server-side; no client-side report state needed
   
   // Comments count state to persist through DOM regenerations
   const [commentsCount, setCommentsCount] = useState<Record<string, number>>({})
@@ -220,27 +213,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     }
   }, [center])
 
-  // Simple in-memory cache for user reports (client-side only)
-  const reportCache = useRef<Map<string, { data: UserPriceReport[], expires: number }>>(new Map())
-
   // Cache for comments count (client-side only)
   const commentsCountCache = useRef<Map<string, { count: number, expires: number }>>(new Map())
 
-  // Function to get user report for specific fuel type from current data
-  const getUserReport = (stationId: string, fuelType: string): UserPriceReport | null => {
-    const reports = userReports[stationId] || []
-    return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
-  }
-
-  // Function to check if we have user reports for a station
-  const hasUserReports = (stationId: string, fuelType: string): boolean => {
-    return getUserReport(stationId, fuelType) !== null
-  }
-
-  // Function to check if station is currently loading
-  const isStationLoading = (stationId: string): boolean => {
-    return loadingReports.has(stationId)
-  }
+  // Client no longer needs report presence/loading helpers
 
   // Fetch comments count for a station with simple cache
   const fetchCommentsCount = async (stationId: string) => {
@@ -280,50 +256,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     return 0
   }
 
-  // Fetch user reports for a station with simple cache
-  const fetchUserReports = async (stationId: string) => {
-    if (loadingReports.has(stationId)) return
-    
-    // Check cache first
-    const cacheKey = `user_reports:${stationId}:5:diurno`
-    const cachedItem = reportCache.current.get(cacheKey)
-    if (cachedItem && cachedItem.expires > Date.now()) {
-      setUserReports(prev => ({
-        ...prev,
-        [stationId]: cachedItem.data
-      }))
-      return
-    }
-
-    setLoadingReports(prev => new Set(prev).add(stationId))
-    
-    try {
-      const response = await fetch(`/api/estaciones/${stationId}/reportes-precios?dias=5&horario=diurno`)
-      if (response.ok) {
-        const data = await response.json()
-        const reportData = data.resumen || []
-        
-        // Cache the data for 5 minutes
-        const expires = Date.now() + (5 * 60 * 1000) // 5 minutes
-        reportCache.current.set(cacheKey, { data: reportData, expires })
-        
-        setUserReports(prev => ({
-          ...prev,
-          [stationId]: reportData
-        }))
-        
-        // Markers will be re-generated automatically via useEffect
-      }
-    } catch (error) {
-      console.error('Error fetching user reports:', error)
-    } finally {
-      setLoadingReports(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(stationId)
-        return newSet
-      })
-    }
-  }
+  // Removed fetchUserReports - handled server-side in estaciones API
 
   // This function is kept for potential future use
   // const getUserReport = (stationId: string, fuelType: FuelType): UserPriceReport | null => {
@@ -331,38 +264,38 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   //   return reports.find(r => r.tipoCombustible === fuelType && r.horario === 'diurno') || null
   // }
 
-  // Helper function to get display price based on selected fuel type and horario
-  const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
+  // No longer needed in client; staleness is calculated on server
+  const isOlderThanDays = (_dateValue: unknown, _days: number): boolean => false
+
+  // Shared helper: find the primary official price record to show (selected fuel or lowest), and whether it's stale
+  const getPrimaryPriceRecord = (station: Station): { record: any | null; isStale: boolean } => {
     const preciosFiltrados = Array.isArray(station.precios)
       ? (selectedTimeOfDay ? station.precios.filter(p => p.horario === selectedTimeOfDay) : station.precios)
       : []
+    if (!preciosFiltrados || preciosFiltrados.length === 0) return { record: null, isStale: false }
+
     if (selectedFuelType) {
-      const fuelPrice = preciosFiltrados.find(p => p.tipoCombustible === selectedFuelType)
-      if (fuelPrice) {
-        return { price: fuelPrice.precio, label: getFuelLabel(selectedFuelType) }
-      } else {
-        return { price: null, label: getFuelLabel(selectedFuelType) }
-      }
-    } else {
-      // Show lowest price - check if prices array exists and has items
-      if (!preciosFiltrados || preciosFiltrados.length === 0) {
-        return { price: null, label: 'Sin precios' }
-      }
-      
-      const validPrices = preciosFiltrados
-        .map(p => p.precio)
-        .filter(price => price != null && !isNaN(price) && isFinite(price))
-      
-      if (validPrices.length === 0) {
-        return { price: null, label: 'Sin precios' }
-      }
-      
-      const lowestPrice = Math.min(...validPrices)
-      return { price: lowestPrice, label: 'Menor' }
+      const fuelPrice = preciosFiltrados.find(p => p.tipoCombustible === selectedFuelType) || null
+      if (!fuelPrice) return { record: null, isStale: false }
+      return { record: fuelPrice, isStale: false }
     }
+
+    const validRecords = preciosFiltrados.filter(p => p.precio != null && !isNaN(p.precio) && isFinite(p.precio))
+    if (validRecords.length === 0) return { record: null, isStale: false }
+    const lowestRecord = validRecords.reduce((min, p) => (p.precio < min.precio ? p : min), validRecords[0])
+    return { record: lowestRecord, isStale: false }
   }
 
-  // getCompanyLogoPath now imported from '@/lib/companyLogos'
+  // Helper function to get display price based on selected fuel type and horario
+  const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
+    const { record, isStale } = getPrimaryPriceRecord(station)
+    if (!record) {
+      return { price: null, label: selectedFuelType ? getFuelLabel(selectedFuelType) : 'Sin precios' }
+    }
+    const ra: any = record as any
+    const priceToShow: number | null = (typeof ra?.precioAjustado === 'number' ? ra.precioAjustado : record.precio)
+    return { price: priceToShow, label: selectedFuelType ? getFuelLabel(selectedFuelType) : 'Menor' }
+  }
 
   // Clear existing markers
   const clearMarkers = () => {
@@ -421,6 +354,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
     clearMarkers()
     
     stations.forEach((station) => {
+      // Reports are resolved on server; no prefetch
+
       const displayPrice = getDisplayPrice(station)
       const logoPath = getCompanyLogoPath(station.empresa)
       const isSelected = selectedStations.some(s => s.id === station.id)
@@ -484,6 +419,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               ` : (
                 preciosToShow.length > 0
                   ? preciosToShow.map(precio => {
+                    const pa: any = precio as any
                     return `
                     <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
                          onclick="window.location.href='/estacion/${station.id}'"
@@ -493,32 +429,28 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       <div class="flex items-center justify-between mb-1">
                         <div class="flex items-center gap-1">
                           <span class="text-xs font-medium">${getFuelLabel(precio.tipoCombustible)}</span>
-                          ${isStationLoading(station.id) ? '<span class="flex items-center gap-0.5"><div class="w-3 h-3 border border-orange-400 border-t-transparent rounded-full animate-spin"></div><span class="text-xs text-orange-600 font-medium">.</span></span>' : hasUserReports(station.id, precio.tipoCombustible) ? '<span class="flex items-center gap-0.5"><svg class="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg></span>' : ''}
+                          ${pa?.usandoPrecioUsuario ? `
+                            <span class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-100 text-orange-700" title="Precio de la comunidad" aria-label="Precio de la comunidad">
+                              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h10v-2.5C11 14.17 6.33 13 4 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h8v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                              </svg>
+                            </span>
+                          ` : ''}
                         </div>
-                        ${(() => {
-                          const userReport = getUserReport(station.id, precio.tipoCombustible)
-                          return userReport && userReport.cantidadReportes >= 3 ? `<span class="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-medium">${userReport.cantidadReportes}</span>` : ''
-                        })()}
+                        
                       </div>
                       
-                      <!-- Official Price -->
+                      <!-- Adjusted Price -->
                       <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-800 font-medium">Oficial</span>
-                        <span class="text-sm font-semibold">$${Math.round(precio.precio)}</span>
+                        <span class="text-xs text-gray-800 font-medium">${pa?.usandoPrecioUsuario ? 'Prom.' : 'Oficial'}</span>
+                        <span class="text-sm font-semibold">$${Math.round(typeof pa?.precioAjustado === 'number' ? pa.precioAjustado : precio.precio)}</span>
                       </div>
-                      
-                      <!-- User Average Price (if available and sufficient reports) -->
                       ${(() => {
-                        const userReport = getUserReport(station.id, precio.tipoCombustible)
-                        return userReport && userReport.cantidadReportes >= 1 ? `
-                          <div class="flex items-center justify-between mt-0.5">
-                            <span class="text-xs text-orange-600">Prom.</span>
-                            <span class="text-sm font-semibold text-orange-700">$${Math.round(userReport.precioPromedio)}</span>
-                          </div>
-                        ` : ''
-                      })()}
-                      ${(() => {
-                        const txt = formatDateShort(precio.fechaActualizacion)
+                        const preferUser = !!pa?.usandoPrecioUsuario
+                        const fecha = preferUser
+                          ? (pa?.fechaReporte || (precio as any)?.fechaReporte)
+                          : (pa?.fechaVigencia || (precio as any)?.fechaVigencia || (precio as any)?.fechaActualizacion)
+                        const txt = formatDateShort(fecha)
                         return txt ? `
                           <div class="flex items-center justify-between mt-0.5">
                             <span class="text-[10px] text-gray-400">${txt}</span>
@@ -602,15 +534,14 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
         icon: customIcon
       }).addTo(leafletMapRef.current!)
 
-      // Add click handler with user reports and comments count fetching
+      // Add click handler with comments count fetching
       marker.on('click', () => {
         setSelectedStations(prev => {
           const isAlreadySelected = prev.some(s => s.id === station.id)
           if (isAlreadySelected) {
             return prev.filter(s => s.id !== station.id)
           } else {
-            // Fetch user reports and comments count when station is selected
-            fetchUserReports(station.id)
+            // Fetch comments count when station is selected
             fetchCommentsCount(station.id)
             return [...prev, station]
           }
@@ -638,7 +569,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
       // Store marker reference
       markersRef.current.push(marker)
     })
-  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, userReports, loadingReports, favoriteIds, commentsCount, mapLoaded, fetchUserReports, loading])
+  }, [stations, selectedStations, selectedFuelType, selectedTimeOfDay, favoriteIds, commentsCount, mapLoaded, loading])
 
   const handleFavoriteToggle = async (stationId: string) => {
     if (!session?.user) {

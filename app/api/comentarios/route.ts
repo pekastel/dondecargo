@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { db } from '@/drizzle/connection';
 import { comentarios, reportesComentarios, votosComentarios } from '@/drizzle/schema';
 import { auth } from '@/lib/auth';
@@ -53,6 +54,11 @@ export async function POST(request: Request) {
         comentario: validatedData.comentario,
       })
       .returning();
+
+    // Revalidate cached comments count for the station
+    try {
+      revalidateTag(`station:${validatedData.estacionId}:comments-count`)
+    } catch {}
 
     return NextResponse.json(nuevoComentario[0], { status: 201 });
   } catch (error) {
