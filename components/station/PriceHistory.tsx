@@ -107,7 +107,6 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
 
   const trend = calculateTrend()
   const latestPrice = history.length > 0 ? history[history.length - 1].precio : 0
-  const oldestPrice = history.length > 0 ? history[0].precio : 0
 
   const maxPrice = Math.max(...history.map(h => h.precio), 0)
   const minPrice = Math.min(...history.map(h => h.precio), 0)

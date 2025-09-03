@@ -104,7 +104,7 @@ interface ConsolidatedPriceReport {
 
 export function StationDetailClient({ station }: StationDetailClientProps) {
   const router = useRouter()
-  const [selectedFuelType, setSelectedFuelType] = useState<FuelType>('nafta')
+  // const [selectedFuelType, setSelectedFuelType] = useState<FuelType>('nafta')
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [userReports, setUserReports] = useState<UserPriceReport[]>([])
@@ -154,23 +154,23 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
     loadFavorite()
   }, [session?.user, station.id])
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${station.nombre} - DondeCargo`,
-          text: `Precios de combustibles en ${station.nombre}, ${station.direccion}`,
-          url: window.location.href,
-        })
-      } catch (error) {
-        console.log('Error sharing:', error)
-      }
-    } else {
-      // Fallback to copying URL
-      navigator.clipboard.writeText(window.location.href)
-      // TODO: Show toast notification
-    }
-  }
+  // const handleShare = async () => {
+  //   if (navigator.share) {
+  //     try {
+  //       await navigator.share({
+  //         title: `${station.nombre} - DondeCargo`,
+  //         text: `Precios de combustibles en ${station.nombre}, ${station.direccion}`,
+  //         url: window.location.href,
+  //       })
+  //     } catch (error) {
+  //       console.log('Error sharing:', error)
+  //     }
+  //   } else {
+  //     // Fallback to copying URL
+  //     navigator.clipboard.writeText(window.location.href)
+  //     // TODO: Show toast notification
+  //   }
+  // }
 
   // Removed unused handlers - handleCall and handleDirections
 
@@ -371,7 +371,6 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
   }
 
   const currentPrices = station.precios.filter(p => p.horario === 'diurno')
-  const lowestPrice = Math.min(...currentPrices.map(p => p.precio))
 
   return (
     <div className="min-h-screen bg-background">

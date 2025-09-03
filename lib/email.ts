@@ -177,10 +177,10 @@ export async function sendReportCommentThankYouEmail(data: ReportCommentEmailDat
 }
 
 // You can add other email functions here as needed
-export async function sendPasswordResetEmail(data: { user: { email: string; name: string }, url: string }): Promise<void> {
-  // Implementation for password reset emails using Loops
-  // This would use a different transactional template
-}
+// export async function sendPasswordResetEmail(data: { user: { email: string; name: string }, url: string }): Promise<void> {
+//   // Implementation for password reset emails using Loops
+//   // This would use a different transactional template
+// }
 
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
   const baseURL = getBaseUrl();
