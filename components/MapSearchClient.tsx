@@ -36,6 +36,14 @@ export interface Station {
     precio: number
     horario: 'diurno' | 'nocturno'
     fechaActualizacion: Date
+    // Optional fields coming from API when adjusted with user reports
+    precioAjustado?: number
+    precioAjustadoFuente?: 'usuario' | 'oficial'
+    usandoPrecioUsuario?: boolean
+    // Keep original server date if available
+    fechaVigencia?: Date
+    // Report date from user aggregated price (if applicable)
+    fechaReporte?: Date
   }[]
 }
 
@@ -238,7 +246,7 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       const data = await response.json()
       
       // Transform API response to match our Station interface
-      const transformedStations: Station[] = data.data.map((station: { id: string; nombre: string; empresa: string; direccion: string; localidad: string; provincia: string; latitud: number; longitud: number; fechaActualizacion?: string | number | Date; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; [key: string]: unknown }>; [key: string]: unknown }) => ({
+      const transformedStations: Station[] = data.data.map((station: { id: string; nombre: string; empresa: string; direccion: string; localidad: string; provincia: string; latitud: number; longitud: number; fechaActualizacion?: string | number | Date; precios?: Array<{ tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; precioAjustado?: number; precioAjustadoFuente?: 'usuario' | 'oficial'; usandoPrecioUsuario?: boolean; [key: string]: unknown }>; [key: string]: unknown }) => ({
         id: station.id,
         nombre: station.nombre,
         empresa: station.empresa,
@@ -247,10 +255,17 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         provincia: station.provincia,
         latitud: station.latitud,
         longitud: station.longitud,
-        precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; [key: string]: unknown }) => ({
+        precios: (station.precios || []).map((precio: { tipoCombustible: string; precio: string | number; horario: string; fechaVigencia?: string; fechaReporte?: string; precioAjustado?: number; precioAjustadoFuente?: 'usuario' | 'oficial'; usandoPrecioUsuario?: boolean; [key: string]: unknown }) => ({
           tipoCombustible: precio.tipoCombustible,
           precio: parseFloat(precio.precio.toString()),
           horario: precio.horario,
+          // Preserve adjusted fields from API if present
+          precioAjustado: typeof precio.precioAjustado === 'number' ? precio.precioAjustado : undefined,
+          precioAjustadoFuente: (precio.precioAjustadoFuente as 'usuario' | 'oficial' | undefined),
+          usandoPrecioUsuario: typeof precio.usandoPrecioUsuario === 'boolean' ? precio.usandoPrecioUsuario : undefined,
+          // Keep server-provided date fields for downstream UI
+          fechaVigencia: precio.fechaVigencia ? new Date(precio.fechaVigencia) : undefined,
+          fechaReporte: precio.fechaReporte ? new Date(precio.fechaReporte) : undefined,
           fechaActualizacion: new Date(
             (precio.fechaVigencia as string | number | Date | undefined) ??
             (precio.fechaReporte as string | number | Date | undefined) ??

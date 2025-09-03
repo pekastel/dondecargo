@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unstable_cache } from 'next/cache'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { estaciones, precios } from '@/drizzle/schema'
-import { eq, and, sql, desc, asc, inArray } from 'drizzle-orm'
+import { estaciones, precios, reportesPrecios } from '@/drizzle/schema'
+import { eq, and, sql, desc, asc, inArray, gte } from 'drizzle-orm'
 import { z } from 'zod'
 import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
 
@@ -150,67 +151,134 @@ export async function GET(request: NextRequest) {
           .offset(offset)
     safeLog(`📊 Found ${result.length} stations`)
 
-    // Get current prices for each station (simplified query)
+    // Get current prices for each station with caching
     let stationsWithPrices = result
-    
     if (result.length > 0) {
-      try {
-        const stationIds = result.map(s => s.id)
-        safeLog(`🔍 Fetching prices for ${stationIds.length} stations`)
-        
-        const priceConditions = [
-          inArray(precios.estacionId, stationIds),
-          eq(precios.horario, params.horario || 'diurno')
-        ]
-        
-        // Add price range filter
-        if (precioMin !== undefined) {
-          priceConditions.push(sql`${precios.precio} >= ${precioMin}`)
-        }
-        if (precioMax !== undefined) {
-          priceConditions.push(sql`${precios.precio} <= ${precioMax}`)
-        }
-        
-        const currentPrices = await db
-          .select({
-            estacionId: precios.estacionId,
-            tipoCombustible: precios.tipoCombustible,
-            precio: precios.precio,
-            horario: precios.horario,
-            fechaVigencia: precios.fechaVigencia,
-            fechaReporte: precios.fechaReporte,
-            fuente: precios.fuente,
-            esValidado: precios.esValidado,
-          })
-          .from(precios)
-          .where(and(...priceConditions))
-          .orderBy(desc(precios.fechaVigencia))
-          .limit(500) // Reasonable limit
-        
-        safeLog(`📊 Found ${currentPrices.length} prices`)
-        
-        // Group prices by station
-        const pricesByStation = currentPrices.reduce((acc, price) => {
-          if (!acc[price.estacionId]) {
-            acc[price.estacionId] = []
-          }
-          acc[price.estacionId].push(price)
-          return acc
-        }, {} as Record<string, typeof currentPrices>)
+      const stationIds = result.map(s => s.id)
+      const horarioSel = params.horario || 'diurno'
+      const combustibleSel = params.combustible || 'all'
+      const cacheKey = [
+        'estaciones',
+        `horario:${horarioSel}`,
+        `combustible:${combustibleSel}`,
+        `precioMin:${precioMin ?? 'none'}`,
+        `precioMax:${precioMax ?? 'none'}`,
+        `ids:${stationIds.join(',')}`,
+      ]
+      const tags = [
+        'estaciones',
+        `horario:${horarioSel}`,
+        `combustible:${combustibleSel}`,
+        ...stationIds.map(id => `estacion:${id}`),
+      ]
 
-        // Combine stations with their prices
-        stationsWithPrices = result.map(station => ({
-          ...station,
-          precios: pricesByStation[station.id] || []
-        }))
-        
-      } catch (priceError) {
-        safeLog('⚠️  Error fetching prices, returning stations only')
-        stationsWithPrices = result.map(station => ({
-          ...station,
-          precios: []
-        }))
-      }
+      const fetchWithCache = unstable_cache(async () => {
+        try {
+          safeLog(`🔍 Fetching prices for ${stationIds.length} stations`)
+
+          const priceConditions = [
+            inArray(precios.estacionId, stationIds),
+            eq(precios.horario, horarioSel)
+          ]
+
+          if (precioMin !== undefined) priceConditions.push(sql`${precios.precio} >= ${precioMin}`)
+          if (precioMax !== undefined) priceConditions.push(sql`${precios.precio} <= ${precioMax}`)
+
+          const currentPrices = await db!
+            .select({
+              estacionId: precios.estacionId,
+              tipoCombustible: precios.tipoCombustible,
+              precio: precios.precio,
+              horario: precios.horario,
+              fechaVigencia: precios.fechaVigencia,
+              fechaReporte: precios.fechaReporte,
+              fuente: precios.fuente,
+              esValidado: precios.esValidado,
+            })
+            .from(precios)
+            .where(and(...priceConditions))
+            .orderBy(desc(precios.fechaVigencia))
+            .limit(500)
+
+          safeLog(`📊 Found ${currentPrices.length} prices`)
+
+          // Aggregate recent user reports per station + fuel + horario (last 5 days)
+          const fechaLimite = new Date()
+          fechaLimite.setDate(fechaLimite.getDate() - 5)
+
+          const reportsAgg = await db!
+            .select({
+              estacionId: reportesPrecios.estacionId,
+              tipoCombustible: reportesPrecios.tipoCombustible,
+              horario: reportesPrecios.horario,
+              precioPromedio: sql<number>`ROUND(AVG(CAST(${reportesPrecios.precio} AS NUMERIC)), 2)`,
+              cantidadReportes: sql<number>`COUNT(*)`,
+              ultimoReporte: sql<Date>`MAX(${reportesPrecios.fechaCreacion})`,
+            })
+            .from(reportesPrecios)
+            .where(and(
+              inArray(reportesPrecios.estacionId, stationIds),
+              eq(reportesPrecios.horario, horarioSel),
+              gte(reportesPrecios.fechaCreacion, fechaLimite),
+            ))
+            .groupBy(
+              reportesPrecios.estacionId,
+              reportesPrecios.tipoCombustible,
+              reportesPrecios.horario,
+            )
+
+          const reportsByStationFuel: Record<string, { precioPromedio: number; cantidadReportes: number }> = {}
+          for (const r of reportsAgg) {
+            reportsByStationFuel[`${r.estacionId}::${r.tipoCombustible}`] = {
+              precioPromedio: Number(r.precioPromedio),
+              cantidadReportes: Number(r.cantidadReportes),
+            }
+          }
+
+          const pricesByStation = currentPrices.reduce((acc, price) => {
+            if (!acc[price.estacionId]) acc[price.estacionId] = []
+            acc[price.estacionId].push(price)
+            return acc
+          }, {} as Record<string, typeof currentPrices>)
+
+          const isOlderThanDays = (d: Date | string | null | undefined, days: number) => {
+            if (!d) return false
+            const date = new Date(d as unknown as Date)
+            if (Number.isNaN(date.getTime())) return false
+            return (Date.now() - date.getTime()) > (days * 24 * 60 * 60 * 1000)
+          }
+
+          const stationsAugmented = result.map(station => ({
+            ...station,
+            precios: (pricesByStation[station.id] || []).map(p => {
+              const key = `${station.id}::${p.tipoCombustible}`
+              const agg = reportsByStationFuel[key]
+              const stale = isOlderThanDays(p.fechaVigencia as unknown as Date, 30)
+              if (stale && agg && agg.cantidadReportes > 0 && p.horario === horarioSel) {
+                return {
+                  ...p,
+                  precioAjustado: agg.precioPromedio,
+                  precioAjustadoFuente: 'usuario',
+                  usandoPrecioUsuario: true,
+                }
+              }
+              return {
+                ...p,
+                precioAjustado: p.precio,
+                precioAjustadoFuente: 'oficial',
+                usandoPrecioUsuario: false,
+              }
+            })
+          }))
+
+          return stationsAugmented
+        } catch (e) {
+          safeLog('⚠️  Error fetching prices, returning stations only')
+          return result.map(station => ({ ...station, precios: [] }))
+        }
+      }, cacheKey, { tags, revalidate: 3600 })
+
+      stationsWithPrices = await fetchWithCache()
     }
 
     return NextResponse.json({
