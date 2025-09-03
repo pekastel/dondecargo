@@ -227,11 +227,12 @@ export async function GET(request: NextRequest) {
               reportesPrecios.horario,
             )
 
-          const reportsByStationFuel: Record<string, { precioPromedio: number; cantidadReportes: number }> = {}
+          const reportsByStationFuel: Record<string, { precioPromedio: number; cantidadReportes: number; ultimoReporte: Date | null }> = {}
           for (const r of reportsAgg) {
             reportsByStationFuel[`${r.estacionId}::${r.tipoCombustible}`] = {
               precioPromedio: Number(r.precioPromedio),
               cantidadReportes: Number(r.cantidadReportes),
+              ultimoReporte: (r.ultimoReporte ?? null) as Date | null,
             }
           }
 
@@ -260,6 +261,7 @@ export async function GET(request: NextRequest) {
                   precioAjustado: agg.precioPromedio,
                   precioAjustadoFuente: 'usuario',
                   usandoPrecioUsuario: true,
+                  fechaUltimoReporteUsuario: agg.ultimoReporte,
                 }
               }
               return {
