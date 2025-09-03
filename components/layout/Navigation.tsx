@@ -15,7 +15,6 @@ import {
   HelpCircle,
   BarChart3,
   Users,
-  Database
 } from 'lucide-react'
 
 interface NavigationItem {

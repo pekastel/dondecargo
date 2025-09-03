@@ -19,11 +19,6 @@ export function StationInfo({ station }: StationInfoProps) {
     }
   }
 
-  const handleDirections = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitud},${station.longitud}`
-    window.open(url, '_blank')
-  }
-
   const handleCompanyWebsite = (empresa: string) => {
     const websites: Record<string, string> = {
       'YPF': 'https://www.ypf.com',
@@ -233,18 +228,4 @@ function getServiceIcon(servicio: string): string {
     'Agua': '💧'
   }
   return icons[servicio] || '🔧'
-}
-
-function getPaymentIcon(pago: string): string {
-  const icons: Record<string, string> = {
-    'Efectivo': '💵',
-    'Tarjetas': '💳',
-    'Transferencia': '📱',
-    'QR': '📱',
-    'Débito': '💳',
-    'Crédito': '💳',
-    'Mercado Pago': '📱',
-    'Billetera Virtual': '📱'
-  }
-  return icons[pago] || '💳'
 }

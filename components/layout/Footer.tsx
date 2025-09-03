@@ -2,9 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Github, Mail, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 
 export function Footer() {

@@ -74,17 +74,6 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
     }
   }
 
-  const getBasePriceForFuel = (fuel: FuelType): number => {
-    const basePrices: Record<FuelType, number> = {
-      nafta: 890,
-      nafta_premium: 925,
-      gasoil: 845,
-      gasoil_premium: 872,
-      gnc: 485
-    }
-    return basePrices[fuel]
-  }
-
   const calculateTrend = () => {
     if (history.length < 2) return { trend: 'stable', change: 0, percentage: 0 }
     
@@ -119,8 +108,6 @@ export function PriceHistory({ stationId, fuelType, onFuelTypeChange }: PriceHis
   const trend = calculateTrend()
   const latestPrice = history.length > 0 ? history[history.length - 1].precio : 0
   const oldestPrice = history.length > 0 ? history[0].precio : 0
-  const totalChange = latestPrice - oldestPrice
-  const totalPercentage = oldestPrice > 0 ? (totalChange / oldestPrice) * 100 : 0
 
   const maxPrice = Math.max(...history.map(h => h.precio), 0)
   const minPrice = Math.min(...history.map(h => h.precio), 0)

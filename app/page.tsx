@@ -13,7 +13,7 @@ import {
 
 export default function Home() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { isPending } = authClient.useSession();
 
   // Show loading state while checking authentication
   if (isPending) {

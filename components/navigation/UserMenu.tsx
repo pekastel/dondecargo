@@ -16,14 +16,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   User, 
-  Settings, 
   LogOut, 
   Shield,
   Search,
   Home,
-  BookOpen,
   FileText,
-  TrendingUp,
   Star,
 } from 'lucide-react';
 

@@ -39,7 +39,7 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
-  const { data: session, isPending: isSessionLoading } = authClient.useSession()
+  const { data: session } = authClient.useSession()
 
   const {
     register,
@@ -87,6 +87,7 @@ export function PriceReportPage({ station }: PriceReportPageProps) {
       setTimeout(() => {
         router.push(`/estacion/${station.id}`)
       }, 2000)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error) {
       setSubmitError('Error al enviar el reporte. Por favor, intenta nuevamente.')
     } finally {

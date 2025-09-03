@@ -18,24 +18,6 @@ interface LeafletMap {
   removeLayer: (layer: unknown) => void
 }
 
-interface LeafletMarker {
-  addTo: (map: LeafletMap) => LeafletMarker
-  bindPopup: (content: string) => LeafletMarker
-}
-
-interface LeafletTileLayer {
-  addTo: (map: LeafletMap) => void
-}
-
-interface Leaflet {
-  map: (element: HTMLElement) => LeafletMap
-  tileLayer: (url: string, options?: Record<string, unknown>) => LeafletTileLayer
-  marker: (latlng: [number, number], options?: Record<string, unknown>) => LeafletMarker
-  divIcon: (options: Record<string, unknown>) => unknown
-  icon: (options: Record<string, unknown>) => unknown
-}
-
-
 export function StationDetail({ station }: StationDetailProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { SearchFilters } from '@/components/MapSearchClient'
-import { FuelType, FUEL_LABELS } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,15 +27,6 @@ interface NominatimResult {
   lon: string
   boundingbox: [string, string, string, string]
 }
-
-const FUEL_TYPES: { id: FuelType; label: string }[] = [
-  { id: 'nafta', label: FUEL_LABELS.nafta },
-  { id: 'nafta_premium', label: FUEL_LABELS.nafta_premium },
-  { id: 'gasoil', label: FUEL_LABELS.gasoil },
-  { id: 'gasoil_premium', label: FUEL_LABELS.gasoil_premium },
-  { id: 'gnc', label: FUEL_LABELS.gnc }
-]
-
 const COMPANIES = [
   'YPF', 'Shell', 'Axion', 'Puma', 'Trafigura', 'Petrobras', 'VOY', 'Sin Bandera', 'OIL', 'Refinor', 'Gulf', 'Blanca', 'Dapsa'
 ]
@@ -151,13 +141,6 @@ export function MapFilters({ filters, onFiltersChange }: MapFiltersProps) {
       }
     }
   }, [])
-
-  const toggleFuelType = (fuelType: FuelType) => {
-    const newFuelTypes = filters.fuelTypes.includes(fuelType)
-      ? filters.fuelTypes.filter(f => f !== fuelType)
-      : [...filters.fuelTypes, fuelType]
-    updateFilters({ fuelTypes: newFuelTypes })
-  }
 
   const toggleCompany = (company: string) => {
     const newCompanies = filters.companies.includes(company)

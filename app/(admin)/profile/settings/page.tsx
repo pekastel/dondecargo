@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Key, 
   Shield, 
-  ArrowLeft,
   Save,
   CheckCircle,
   AlertCircle,
@@ -19,7 +18,6 @@ import {
 } from 'lucide-react';
 
 export default function ProfileSettings() {
-  const router = useRouter();
   const { data: session } = authClient.useSession();
   
   const [isLoading, setIsLoading] = useState(false);

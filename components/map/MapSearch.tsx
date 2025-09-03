@@ -67,7 +67,7 @@ declare global {
   }
 }
 
-export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect, fitToStations = false, selectedTimeOfDay = null }: MapSearchProps) {
+export function MapSearch({ stations, center, radius, loading, visible = true, selectedFuelType, currentLocation, onStationSelect: _onStationSelect, fitToStations = false, selectedTimeOfDay = null }: MapSearchProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const leafletMapRef = useRef<LeafletMap | null>(null)
   const radiusCircleRef = useRef<LeafletCircle | null>(null)
@@ -152,6 +152,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   }, [])
 
   // Initialize map (only once when Leaflet is loaded)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
 
@@ -265,10 +266,10 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
   // }
 
   // No longer needed in client; staleness is calculated on server
-  const isOlderThanDays = (_dateValue: unknown, _days: number): boolean => false
 
   // Shared helper: find the primary official price record to show (selected fuel or lowest), and whether it's stale
-  const getPrimaryPriceRecord = (station: Station): { record: any | null; isStale: boolean } => {
+  type StationPrice = Station['precios'][number]
+  const getPrimaryPriceRecord = (station: Station): { record: StationPrice | null; isStale: boolean } => {
     const preciosFiltrados = Array.isArray(station.precios)
       ? (selectedTimeOfDay ? station.precios.filter(p => p.horario === selectedTimeOfDay) : station.precios)
       : []
@@ -288,12 +289,11 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
 
   // Helper function to get display price based on selected fuel type and horario
   const getDisplayPrice = (station: Station): { price: number | null; label: string } => {
-    const { record, isStale } = getPrimaryPriceRecord(station)
+    const { record } = getPrimaryPriceRecord(station)
     if (!record) {
       return { price: null, label: selectedFuelType ? getFuelLabel(selectedFuelType) : 'Sin precios' }
     }
-    const ra: any = record as any
-    const priceToShow: number | null = (typeof ra?.precioAjustado === 'number' ? ra.precioAjustado : record.precio)
+    const priceToShow: number | null = (typeof record?.precioAjustado === 'number' ? record.precioAjustado! : record.precio)
     return { price: priceToShow, label: selectedFuelType ? getFuelLabel(selectedFuelType) : 'Menor' }
   }
 
@@ -419,7 +419,7 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
               ` : (
                 preciosToShow.length > 0
                   ? preciosToShow.map(precio => {
-                    const pa: any = precio as any
+                    const pa: StationPrice = precio as StationPrice
                     return `
                     <div class="relative flex flex-col rounded-md border ${selectedFuelType === precio.tipoCombustible ? 'border-blue-300 ring-1 ring-blue-300 bg-blue-50/70' : 'border-gray-200 bg-white'} px-2.5 py-2 cursor-pointer transition-all hover:shadow-sm hover:border-blue-300"
                          onclick="window.location.href='/estacion/${station.id}'"
@@ -448,8 +448,8 @@ export function MapSearch({ stations, center, radius, loading, visible = true, s
                       ${(() => {
                         const preferUser = !!pa?.usandoPrecioUsuario
                         const fecha = preferUser
-                          ? (pa?.fechaReporte || (precio as any)?.fechaReporte)
-                          : (pa?.fechaVigencia || (precio as any)?.fechaVigencia || (precio as any)?.fechaActualizacion)
+                          ? (pa?.fechaReporte || precio?.fechaReporte)
+                          : (pa?.fechaVigencia || precio?.fechaVigencia || precio?.fechaActualizacion)
                         const txt = formatDateShort(fecha)
                         return txt ? `
                           <div class="flex items-center justify-between mt-0.5">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { precios, estaciones } from '@/drizzle/schema'
-import { eq, and, desc, asc, gte, lte, sql } from 'drizzle-orm'
+import { eq, and, desc, asc, gte, lte } from 'drizzle-orm'
 import { z } from 'zod'
 import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
 
