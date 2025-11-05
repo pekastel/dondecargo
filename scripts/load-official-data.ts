@@ -7,8 +7,14 @@ import { eq, and, inArray, sql } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 // Load environment variables
-config({ path: join(process.cwd(), '.env.local') })
-config({ path: join(process.cwd(), '.env') })
+if (process.env.NODE_ENV === 'production') {
+  // In production, load production-specific env
+  config({ path: join(process.cwd(), '.env.production') })
+} else {
+  // Default logic: local overrides then base
+  config({ path: join(process.cwd(), '.env.local') })
+  config({ path: join(process.cwd(), '.env') })
+}
 
 // Types for CSV data structure based on actual CSV
 interface CSVRow {

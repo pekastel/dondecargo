@@ -40,7 +40,18 @@ export default function RootLayout({
 						<Footer />
 					</div>
 				</ThemeProvider>
-				<Toaster />
+				<a
+					href="https://cafecito.app/dondecargo"
+					rel="noopener"
+					target="_blank"
+					className="fixed left-3 bottom-24 md:left-4 md:bottom-30 lg:left-4 lg:bottom-8 z-9000"
+				>
+					<img
+						srcSet="https://cdn.cafecito.app/imgs/buttons/button_1.png 1x, https://cdn.cafecito.app/imgs/buttons/button_1_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_1_3.75x.png 3.75x"
+						src="https://cdn.cafecito.app/imgs/buttons/button_1.png"
+						alt="Invitame un café en cafecito.app"
+					/>
+				</a>
 				<Analytics />
 				<SpeedInsights />
 			</body>
