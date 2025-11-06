@@ -22,6 +22,7 @@ const WELCOME_TEMPLATE_ID = env.LOOPS_WELCOME_TEMPLATE_ID;
 const NEWS_TEMPLATE_ID = env.LOOPS_NEWS_TEMPLATE_ID;
 const NEWS_EMAIL_TO = env.NEWS_EMAIL_TO;
 const REPORT_COMMENT_TEMPLATE_ID = env.LOOPS_REPORT_COMMENT_TEMPLATE_ID;
+const CREATE_STATION_TEMPLATE_ID = env.LOOPS_CREATE_STATION_TEMPLATE_ID;
 
 export interface VerificationEmailData {
   user: {
@@ -70,6 +71,17 @@ export interface ReportCommentEmailData {
   observation: string;
   stationName: string;
   stationId: string;
+}
+
+export interface StationCreatedEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  stationName: string;
+  address: string;
+  status: 'pendiente' | 'aprobado';
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
@@ -259,5 +271,54 @@ export async function sendContactMessageEmail(data: ContactEmailData): Promise<v
   } catch (error) {
     console.error('Failed to send contact message email:', error);
     throw new Error('Failed to send contact message');
+  }
+}
+
+export async function sendStationCreatedEmail(data: StationCreatedEmailData): Promise<void> {
+  const baseURL = getBaseUrl();
+  const { user, stationName, address, status } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    safeLog('⚠️ Email service not configured - skipping email send');
+    throw new Error('Email service not configured');
+  }
+  
+  if (!CREATE_STATION_TEMPLATE_ID) {
+    safeLog('⚠️ Create station email template not configured - skipping email send');
+    throw new Error('Create station email template not configured');
+  }
+  
+  try {
+    const statusText = status === 'pendiente' 
+      ? 'está pendiente de aprobación por nuestro equipo' 
+      : 'ha sido aprobada y ya está visible en el mapa';
+    
+    await loops.sendTransactionalEmail({
+      transactionalId: CREATE_STATION_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name,
+        homeurl: baseURL,
+        stationName: stationName,
+        address: address,
+        status: statusText,
+      }
+    });
+
+    if (NEWS_TEMPLATE_ID && NEWS_EMAIL_TO) {
+      await loops.sendTransactionalEmail({
+        transactionalId: NEWS_TEMPLATE_ID,
+        email: NEWS_EMAIL_TO,
+        dataVariables: {
+          message: `El usuario ${user.name} con email ${user.email} ha dado de alta una nueva estación: ${stationName} (${address}). Estado: ${status}`,
+        }
+      });
+    }
+    
+    console.log(`Station created email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send station created email:', error);
+    throw new Error('Failed to send station created email');
   }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { unstable_cache } from 'next/cache'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { estaciones, precios, reportesPrecios } from '@/drizzle/schema'
+import { estaciones, precios, reportesPrecios, estacionesDatosAdicionales } from '@/drizzle/schema'
 import { eq, and, sql, desc, asc, inArray, gte } from 'drizzle-orm'
 import { z } from 'zod'
 import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
@@ -73,6 +73,9 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     const conditions = []
+    
+    // IMPORTANTE: Solo mostrar estaciones aprobadas en búsquedas públicas
+    conditions.push(eq(estaciones.estado, 'aprobado'))
 
     if (params.empresa) {
       const empresas = params.empresa.split(',')
@@ -111,7 +114,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build the base query
+    // Build the base query con LEFT JOIN para datos adicionales
     const baseQuery = db
       .select({
         id: estaciones.id,
@@ -123,6 +126,12 @@ export async function GET(request: NextRequest) {
         latitud: estaciones.latitud,
         longitud: estaciones.longitud,
         fechaActualizacion: estaciones.fechaActualizacion,
+        fuente: estaciones.fuente,
+        googleMapsUrl: estaciones.googleMapsUrl,
+        // Datos adicionales (si existen)
+        horarios: estacionesDatosAdicionales.horarios,
+        telefono: estacionesDatosAdicionales.telefono,
+        servicios: estacionesDatosAdicionales.servicios,
         // Calculate distance if lat/lng provided
         distancia: lat && lng 
           ? sql<number>`
@@ -137,6 +146,10 @@ export async function GET(request: NextRequest) {
           : sql<null>`null`.as('distancia')
       })
       .from(estaciones)
+      .leftJoin(
+        estacionesDatosAdicionales,
+        eq(estaciones.id, estacionesDatosAdicionales.estacionId)
+      )
 
     // Apply conditional where, ordering, and pagination
     const result = conditions.length > 0

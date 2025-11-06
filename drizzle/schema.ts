@@ -21,6 +21,10 @@ export const estaciones = pgTable('estaciones', {
   latitud: doublePrecision('latitud').notNull(),
   longitud: doublePrecision('longitud').notNull(),
   geojson: json('geojson'),
+  fuente: text('fuente', { enum: ['oficial', 'usuario'] }).notNull().default('oficial'),
+  estado: text('estado', { enum: ['pendiente', 'aprobado', 'rechazado'] }).notNull().default('aprobado'),
+  usuarioCreadorId: text('usuario_creador_id').references(() => betterAuthSchema.user.id, { onDelete: 'set null' }),
+  googleMapsUrl: text('google_maps_url'),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
   fechaActualizacion: timestamp('fecha_actualizacion').defaultNow().notNull(),
 }, (table) => ({
@@ -29,6 +33,29 @@ export const estaciones = pgTable('estaciones', {
   empresaIdx: index('estaciones_empresa_idx').on(table.empresa),
   cuitIdx: index('estaciones_cuit_idx').on(table.cuit),
   idempresaIdx: index('estaciones_idempresa_idx').on(table.idempresa),
+  fuenteIdx: index('estaciones_fuente_idx').on(table.fuente),
+  estadoIdx: index('estaciones_estado_idx').on(table.estado),
+  usuarioCreadorIdx: index('estaciones_usuario_creador_idx').on(table.usuarioCreadorId),
+}));
+
+// Datos adicionales de estaciones (horarios, teléfono, servicios)
+export const estacionesDatosAdicionales = pgTable('estaciones_datos_adicionales', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull().unique(),
+  horarios: json('horarios').$type<Record<string, string>>(),
+  telefono: text('telefono'),
+  servicios: json('servicios').$type<{
+    tienda?: boolean;
+    banios?: boolean;
+    lavadero?: boolean;
+    wifi?: boolean;
+    restaurante?: boolean;
+    estacionamiento?: boolean;
+  }>(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+  fechaActualizacion: timestamp('fecha_actualizacion').defaultNow().notNull(),
+}, (table) => ({
+  estacionIdx: index('estaciones_datos_adicionales_estacion_idx').on(table.estacionId),
 }));
 
 // Precios de combustibles
@@ -170,12 +197,27 @@ export const reportesComentarios = pgTable('reportes_comentarios', {
 }));
 
 // Relaciones
-export const estacionesRelations = relations(estaciones, ({ many }) => ({
+export const estacionesRelations = relations(estaciones, ({ one, many }) => ({
   precios: many(precios),
   preciosHistorico: many(preciosHistorico),
   reportesPrecios: many(reportesPrecios),
   favoritos: many(favoritos),
   comentarios: many(comentarios),
+  datosAdicionales: one(estacionesDatosAdicionales, {
+    fields: [estaciones.id],
+    references: [estacionesDatosAdicionales.estacionId],
+  }),
+  usuarioCreador: one(betterAuthSchema.user, {
+    fields: [estaciones.usuarioCreadorId],
+    references: [betterAuthSchema.user.id],
+  }),
+}));
+
+export const estacionesDatosAdicionalesRelations = relations(estacionesDatosAdicionales, ({ one }) => ({
+  estacion: one(estaciones, {
+    fields: [estacionesDatosAdicionales.estacionId],
+    references: [estaciones.id],
+  }),
 }));
 
 export const preciosRelations = relations(precios, ({ one, many }) => ({
@@ -272,6 +314,8 @@ export const reportesComentariosRelations = relations(reportesComentarios, ({ on
 // Tipos TypeScript derivados del esquema
 export type Estacion = typeof estaciones.$inferSelect;
 export type NuevaEstacion = typeof estaciones.$inferInsert;
+export type EstacionDatosAdicionales = typeof estacionesDatosAdicionales.$inferSelect;
+export type NuevaEstacionDatosAdicionales = typeof estacionesDatosAdicionales.$inferInsert;
 export type Precio = typeof precios.$inferSelect;
 export type NuevoPrecio = typeof precios.$inferInsert;
 export type PrecioHistorico = typeof preciosHistorico.$inferSelect;

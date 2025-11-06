@@ -9,6 +9,7 @@ import {
   Users,
   Search,
   Heart,
+  PlusCircle,
 } from "lucide-react";
 
 export default function Home() {
@@ -60,7 +61,7 @@ export default function Home() {
 
       {/* Features Grid */}
       <section className="container mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
               <Search className="h-12 w-12 text-blue-600 mb-4" />
@@ -81,6 +82,23 @@ export default function Home() {
             <CardContent>
               <p className="text-muted-foreground">
                 Sumate reportando precios y ayudá a mantener la información actualizada y confiable para todos.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <PlusCircle className="h-12 w-12 text-purple-600 mb-4" />
+              <CardTitle className="flex items-center gap-2">
+                Agregá tu estación
+                <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 px-2 py-1 rounded-full">
+                  Nuevo
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                ¿Tenés una estación de servicio? Registrate y dala de alta en el mapa con validación automática de Google Maps.
               </p>
             </CardContent>
           </Card>

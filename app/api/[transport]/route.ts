@@ -8,6 +8,7 @@ import {
 	findCheapestFuelTool,
 	getPriceHistoryTool,
 	getRegionalSummaryTool,
+	createStationTool,
 } from "@/lib/mcp-tools/fuel-price-tools";
 
 const handler = withMcpAuth(auth, (req, session) => {
@@ -54,6 +55,13 @@ const handler = withMcpAuth(auth, (req, session) => {
 				getRegionalSummaryTool.schema,
 				async (params) => getRegionalSummaryTool.handler(params)
 			);
+			
+			server.tool(
+				createStationTool.name,
+				createStationTool.description,
+				createStationTool.schema,
+				async (params) => createStationTool.handler(params)
+			);
 		},
 		{
 			capabilities: {
@@ -63,6 +71,7 @@ const handler = withMcpAuth(auth, (req, session) => {
 					find_cheapest_fuel: {},
 					get_price_history: {},
 					get_regional_summary: {},
+					create_station: {},
 				},
 			},
 		},

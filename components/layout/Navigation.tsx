@@ -15,6 +15,8 @@ import {
   HelpCircle,
   BarChart3,
   Users,
+  PlusCircle,
+  CheckCircle,
 } from 'lucide-react'
 
 interface NavigationItem {
@@ -48,6 +50,13 @@ export const mainNavigation: NavigationItem[] = [
 
 export const toolsNavigation: NavigationItem[] = [
   {
+    name: 'Agregar Estación',
+    href: '/crear-estacion',
+    icon: <PlusCircle className="h-4 w-4" />,
+    description: 'Da de alta tu estación',
+    badge: 'Nuevo'
+  },
+  {
     name: 'Reportar Precios',
     href: '/reportar',
     icon: <DollarSign className="h-4 w-4" />,
@@ -68,6 +77,12 @@ export const toolsNavigation: NavigationItem[] = [
 ]
 
 const adminNavigation: NavigationItem[] = [
+  {
+    name: 'Estaciones Pendientes',
+    href: '/estaciones-pendientes',
+    icon: <CheckCircle className="h-4 w-4" />,
+    description: 'Aprobar/rechazar estaciones'
+  },
   {
     name: 'Usuarios',
     href: '/usuarios',

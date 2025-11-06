@@ -130,6 +130,11 @@ export function Header() {
                         Mi perfil
                       </Link>
                     </Button>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href="/crear-estacion" onClick={() => setMobileMenuOpen(false)}>
+                        Agregar estación
+                      </Link>
+                    </Button>
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

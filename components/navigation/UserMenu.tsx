@@ -22,6 +22,7 @@ import {
   Home,
   FileText,
   Star,
+  PlusCircle,
 } from 'lucide-react';
 
 export default function UserMenu() {
@@ -119,6 +120,14 @@ export default function UserMenu() {
           <DropdownMenuItem onClick={() => router.push('/favoritos')}>
             <Star className="mr-2 h-4 w-4" />
             <span>Favoritos</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem onClick={() => router.push('/crear-estacion')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span>Agregar estación</span>
+            <Badge variant="secondary" className="ml-auto text-xs">Nuevo</Badge>
           </DropdownMenuItem>
           
           {/* <DropdownMenuItem onClick={() => router.push('/mcp-help')}>
