@@ -47,6 +47,16 @@ export const env = createEnv({
       .default("cmd7ideu22tzlzg0jlw2hb99b")
       .describe("Create station template ID for Loops.js"),
 
+    LOOPS_STATION_APPROVED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station approved template ID for Loops.js"),
+
+    LOOPS_STATION_REJECTED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station rejected template ID for Loops.js"),
+
     LOOPS_WELCOME_TEMPLATE_ID: z
       .string()
       .optional()

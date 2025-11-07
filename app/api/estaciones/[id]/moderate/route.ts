@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { estaciones } from '@/drizzle/schema'
+import { estaciones, moderacionesEstaciones, user } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
+import { sendStationApprovedEmail, sendStationRejectedEmail } from '@/lib/email'
 
 // Create connection with error handling
 function createDbConnection() {
@@ -121,6 +122,60 @@ export async function PATCH(
       .returning()
     
     safeLog(`✅ Station ${id} ${nuevoEstado}: ${updated[0].nombre}`)
+    
+    // Guardar en historial de moderaciones
+    await db.insert(moderacionesEstaciones).values({
+      estacionId: id,
+      moderadorId: session.user.id,
+      accion: validatedData.action,
+      motivo: validatedData.motivo || null,
+    })
+    
+    safeLog(`✅ Moderation history saved`)
+    
+    // Obtener datos del usuario creador para enviar email
+    if (station.usuarioCreadorId) {
+      const usuarioCreador = await db
+        .select()
+        .from(user)
+        .where(eq(user.id, station.usuarioCreadorId))
+        .limit(1)
+      
+      if (usuarioCreador.length > 0) {
+        const usuario = usuarioCreador[0]
+        
+        try {
+          if (validatedData.action === 'aprobar') {
+            await sendStationApprovedEmail({
+              user: {
+                id: usuario.id,
+                email: usuario.email,
+                name: usuario.name || 'Usuario',
+              },
+              stationName: updated[0].nombre,
+              address: updated[0].direccion,
+            })
+            safeLog(`✅ Approval email sent to ${usuario.email}`)
+          } else {
+            await sendStationRejectedEmail({
+              user: {
+                id: usuario.id,
+                email: usuario.email,
+                name: usuario.name || 'Usuario',
+              },
+              stationName: updated[0].nombre,
+              address: updated[0].direccion,
+              motivo: validatedData.motivo,
+            })
+            safeLog(`✅ Rejection email sent to ${usuario.email}`)
+          }
+        } catch (emailError) {
+          // Email is non-critical, log but don't fail the moderation
+          console.error('Failed to send moderation email:', emailError)
+          safeLog('⚠️ Email send failed, but moderation was successful')
+        }
+      }
+    }
     
     return NextResponse.json({
       success: true,

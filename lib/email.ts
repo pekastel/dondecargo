@@ -23,6 +23,8 @@ const NEWS_TEMPLATE_ID = env.LOOPS_NEWS_TEMPLATE_ID;
 const NEWS_EMAIL_TO = env.NEWS_EMAIL_TO;
 const REPORT_COMMENT_TEMPLATE_ID = env.LOOPS_REPORT_COMMENT_TEMPLATE_ID;
 const CREATE_STATION_TEMPLATE_ID = env.LOOPS_CREATE_STATION_TEMPLATE_ID;
+const STATION_APPROVED_TEMPLATE_ID = env.LOOPS_STATION_APPROVED_TEMPLATE_ID;
+const STATION_REJECTED_TEMPLATE_ID = env.LOOPS_STATION_REJECTED_TEMPLATE_ID;
 
 export interface VerificationEmailData {
   user: {
@@ -82,6 +84,27 @@ export interface StationCreatedEmailData {
   stationName: string;
   address: string;
   status: 'pendiente' | 'aprobado';
+}
+
+export interface StationApprovedEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  stationName: string;
+  address: string;
+}
+
+export interface StationRejectedEmailData {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  stationName: string;
+  address: string;
+  motivo?: string;
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData): Promise<void> {
@@ -320,5 +343,76 @@ export async function sendStationCreatedEmail(data: StationCreatedEmailData): Pr
   } catch (error) {
     console.error('Failed to send station created email:', error);
     throw new Error('Failed to send station created email');
+  }
+}
+
+export async function sendStationApprovedEmail(data: StationApprovedEmailData): Promise<void> {
+  const baseURL = getBaseUrl();
+  const { user, stationName, address } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    safeLog('⚠️ Email service not configured - skipping email send');
+    return; // Non-critical, don't throw
+  }
+  
+  if (!STATION_APPROVED_TEMPLATE_ID) {
+    safeLog('⚠️ Station approved email template not configured - skipping email send');
+    return; // Non-critical, don't throw
+  }
+  
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: STATION_APPROVED_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name,
+        homeurl: baseURL,
+        dashboardurl: `${baseURL}/mis-estaciones`,
+        stationName: stationName,
+        address: address,
+      }
+    });
+    
+    console.log(`Station approved email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send station approved email:', error);
+    // Non-critical, don't throw
+  }
+}
+
+export async function sendStationRejectedEmail(data: StationRejectedEmailData): Promise<void> {
+  const baseURL = getBaseUrl();
+  const { user, stationName, address, motivo } = data;
+  
+  // Check if Loops.js is configured
+  if (!loops) {
+    safeLog('⚠️ Email service not configured - skipping email send');
+    return; // Non-critical, don't throw
+  }
+  
+  if (!STATION_REJECTED_TEMPLATE_ID) {
+    safeLog('⚠️ Station rejected email template not configured - skipping email send');
+    return; // Non-critical, don't throw
+  }
+  
+  try {
+    await loops.sendTransactionalEmail({
+      transactionalId: STATION_REJECTED_TEMPLATE_ID,
+      email: user.email,
+      dataVariables: {
+        name: user.name,
+        homeurl: baseURL,
+        dashboardurl: `${baseURL}/mis-estaciones`,
+        stationName: stationName,
+        address: address,
+        motivo: motivo || 'No se proporcionó un motivo específico',
+      }
+    });
+    
+    console.log(`Station rejected email sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send station rejected email:', error);
+    // Non-critical, don't throw
   }
 }

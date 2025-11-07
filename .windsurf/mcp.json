@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "better-auth": {
+      "type": "http",
+      "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp"
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    }
+  }
+}

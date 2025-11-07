@@ -99,6 +99,12 @@ const adminNavigation: NavigationItem[] = [
     description: 'Aprobar/rechazar estaciones'
   },
   {
+    name: 'Usuarios con Estaciones',
+    href: '/usuarios-estaciones',
+    icon: <Users className="h-4 w-4" />,
+    description: 'Estadísticas de usuarios'
+  },
+  {
     name: 'Usuarios',
     href: '/usuarios',
     icon: <Users className="h-4 w-4" />,

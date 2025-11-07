@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/drizzle/connection'
-import { estaciones, estacionesDatosAdicionales, precios } from '@/drizzle/schema'
+import { estaciones, estacionesDatosAdicionales, precios, moderacionesEstaciones } from '@/drizzle/schema'
 import { eq, and, desc } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
       where: eq(estaciones.usuarioCreadorId, session.user.id),
       with: {
         datosAdicionales: true,
+        moderaciones: {
+          orderBy: [desc(moderacionesEstaciones.fechaModeracion)],
+          limit: 1, // Solo la última moderación
+        },
       },
       orderBy: [desc(estaciones.fechaCreacion)],
     })
@@ -55,6 +59,7 @@ export async function GET(request: NextRequest) {
             horario: p.horario,
             fechaVigencia: p.fechaVigencia,
           })),
+          ultimaModeracion: estacion.moderaciones?.[0] || null,
         }
       })
     )

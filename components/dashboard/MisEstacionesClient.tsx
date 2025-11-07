@@ -31,6 +31,11 @@ interface EstacionDashboard {
     horario: 'diurno' | 'nocturno'
     fechaVigencia: Date
   }>
+  ultimaModeracion?: {
+    accion: 'aprobar' | 'rechazar'
+    motivo: string | null
+    fechaModeracion: Date
+  } | null
   fechaCreacion: Date
   fechaActualizacion: Date
 }

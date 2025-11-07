@@ -7,7 +7,7 @@ import { ModeToggle } from '@/components/mode-toggle'
 import UserMenu from '@/components/navigation/UserMenu'
 import { authClient } from '@/lib/authClient'
 import { useUserStations } from '@/lib/hooks/useUserStations'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
@@ -132,15 +132,24 @@ export function Header() {
                         Mi perfil
                       </Link>
                     </Button>
-                    {!loading && (
+                    {session.user.role === 'admin' ? (
                       <Button variant="ghost" className="w-full justify-start" asChild>
-                        <Link 
-                          href={hasStations ? '/mis-estaciones' : '/crear-estacion'}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          {hasStations ? 'Mis estaciones' : 'Agregar mi estación'}
+                        <Link href="/estaciones-pendientes" onClick={() => setMobileMenuOpen(false)}>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Administrar Estaciones
                         </Link>
                       </Button>
+                    ) : (
+                      !loading && (
+                        <Button variant="ghost" className="w-full justify-start" asChild>
+                          <Link 
+                            href={hasStations ? '/mis-estaciones' : '/crear-estacion'}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {hasStations ? 'Mis estaciones' : 'Agregar mi estación'}
+                          </Link>
+                        </Button>
+                      )
                     )}
                     <Button 
                       variant="ghost" 

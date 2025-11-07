@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, DollarSign, Edit, Clock, Phone, Navigation } from 'lucide-react'
+import { MapPin, DollarSign, Edit, Clock, Phone, Navigation, Send } from 'lucide-react'
 import FormularioPrecioInline from './FormularioPrecioInline'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 interface EstacionProps {
   id: string
@@ -30,6 +31,11 @@ interface EstacionProps {
     horario: 'diurno' | 'nocturno'
     fechaVigencia: Date
   }>
+  ultimaModeracion?: {
+    accion: 'aprobar' | 'rechazar'
+    motivo: string | null
+    fechaModeracion: Date
+  } | null
   fechaCreacion: Date
 }
 
@@ -67,6 +73,7 @@ const COMBUSTIBLE_LABELS: Record<string, string> = {
 
 export default function StationCard({ estacion, onPrecioCreado, onEstacionEditada }: StationCardProps) {
   const [mostrarFormPrecio, setMostrarFormPrecio] = useState(false)
+  const [reenviando, setReenviando] = useState(false)
   const estadoConfig = ESTADO_CONFIG[estacion.estado]
 
   const formatPrice = (price: number) => {
@@ -165,10 +172,62 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
         )}
 
         {estacion.estado === 'rechazado' && (
-          <div className="border-t pt-4">
-            <p className="text-sm text-red-700 dark:text-red-300">
-              Esta estación fue rechazada durante la moderación. Contacta a soporte si crees que es un error.
-            </p>
+          <div className="border-t pt-4 space-y-3">
+            <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                Esta estación fue rechazada durante la moderación
+              </p>
+              {estacion.ultimaModeracion?.motivo && (
+                <div className="mt-2 p-3 bg-white dark:bg-red-900/50 rounded border border-red-200 dark:border-red-700">
+                  <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">
+                    Motivo del rechazo:
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {estacion.ultimaModeracion.motivo}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Button 
+              variant="default" 
+              size="sm"
+              className="w-full"
+              onClick={async () => {
+                if (!confirm('¿Ya corregiste los datos de la estación y deseas re-enviarla para moderación?')) {
+                  return
+                }
+                
+                setReenviando(true)
+                try {
+                  const response = await fetch(`/api/estaciones/${estacion.id}/reenviar`, {
+                    method: 'PATCH',
+                  })
+                  
+                  if (!response.ok) {
+                    const error = await response.json()
+                    throw new Error(error.error || 'Error al re-enviar')
+                  }
+                  
+                  toast.success('Estación re-enviada para moderación')
+                  onEstacionEditada() // Refrescar lista
+                } catch (error) {
+                  console.error('Error al re-enviar:', error)
+                  toast.error(error instanceof Error ? error.message : 'Error al re-enviar')
+                } finally {
+                  setReenviando(false)
+                }
+              }}
+              disabled={reenviando}
+            >
+              {reenviando ? (
+                <>Enviando...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Re-enviar para Moderación
+                </>
+              )}
+            </Button>
           </div>
         )}
 
