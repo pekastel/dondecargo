@@ -162,13 +162,23 @@ URL corta → [Extraer] → Selector aparece:
 4. Click en "Crear"
 5. Espera a que se cree el proyecto y selecciónalo
 
-## Paso 3: Habilitar Places API
+## Paso 3: Habilitar Places API (New)
+
+**IMPORTANTE**: Debes habilitar **Places API (New)**, no la versión legacy.
 
 1. En el menú lateral, ve a: **APIs y servicios > Biblioteca**
-2. Busca: `Places API`
-3. Click en **Places API** (no "Places API (New)")
+2. Busca: `Places API (New)`
+3. Click en **Places API (New)** 
+   - ⚠️ NO selecciones "Places API" sin "(New)" - esa es la legacy
 4. Click en botón **"Habilitar"**
 5. Espera unos segundos a que se habilite
+
+### Verificación
+
+Para confirmar que habilitaste la correcta:
+- ✅ Debe decir: "Places API (New)" 
+- ✅ URL debe incluir: `/marketplace/product/google/places-backend.googleapis.com`
+- ❌ Si dice solo "Places API" → Habilitaste la legacy (no funcionará)
 
 ## Paso 4: Crear una API Key
 
@@ -195,7 +205,8 @@ URL corta → [Extraer] → Selector aparece:
 ### 5.2 Restricciones de API
 
 1. En "Restricciones de API", selecciona: **Restringir clave**
-2. En el menú desplegable, busca y selecciona: **Places API**
+2. En el menú desplegable, busca y selecciona: **Places API (New)**
+   - ⚠️ Asegúrate que sea "Places API (New)", no la legacy
 3. Click en **"Guardar"**
 
 ## Paso 6: Configurar variable de entorno

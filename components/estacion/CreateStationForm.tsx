@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { extractCompanyFromName } from '@/lib/services/google-maps-service'
 
 const PROVINCIAS = [
   'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes',
@@ -30,6 +31,16 @@ const PROVINCIAS = [
 ]
 
 const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+
+const DIAS_SEMANA_DISPLAY = [
+  { key: 'lunes', label: 'Lunes' },
+  { key: 'martes', label: 'Martes' },
+  { key: 'miércoles', label: 'Miércoles' },
+  { key: 'jueves', label: 'Jueves' },
+  { key: 'viernes', label: 'Viernes' },
+  { key: 'sábado', label: 'Sábado' },
+  { key: 'domingo', label: 'Domingo' },
+]
 
 const TIPOS_COMBUSTIBLE = [
   { value: 'nafta', label: 'Nafta' },
@@ -87,6 +98,8 @@ export function CreateStationForm() {
   const [nearbyStations, setNearbyStations] = useState<NearbyStation[]>([])
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
   const [enrichingSelection, setEnrichingSelection] = useState(false)
+  const [selectedProvincia, setSelectedProvincia] = useState('')
+  const [horarioMode, setHorarioMode] = useState<'auto' | '24h' | 'mismo' | 'semana' | 'personalizado'>('auto')
   
   const {register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(formSchema) as any,
@@ -104,29 +117,89 @@ export function CreateStationForm() {
 
   // Función auxiliar para auto-completar campos
   async function autoCompleteFields(enrichedData: any) {
-    // Campos básicos
-    setValue('nombre', enrichedData.name)
-    setValue('direccion', enrichedData.address)
+    let autoCompletedFields: string[] = []
     
-    // Componentes de dirección
-    if (enrichedData.addressComponents) {
-      if (enrichedData.addressComponents.locality) {
-        setValue('localidad', enrichedData.addressComponents.locality)
-      }
-      if (enrichedData.addressComponents.province) {
-        setValue('provincia', enrichedData.addressComponents.province)
-      }
+    // DEBUG: Log completo de enrichedData
+    console.log('🔍 DEBUG enrichedData completo:', JSON.stringify(enrichedData, null, 2))
+    console.log('🔍 DEBUG addressComponents:', enrichedData.addressComponents)
+    
+    // 1. Nombre (directo de Google)
+    if (enrichedData.name) {
+      setValue('nombre', enrichedData.name)
+      autoCompletedFields.push('nombre')
     }
     
-    // Teléfono
+    // 2. Empresa (extraída del nombre)
+    const extractedCompany = extractCompanyFromName(enrichedData.name)
+    if (extractedCompany) {
+      setValue('empresa', extractedCompany)
+      autoCompletedFields.push('empresa')
+      console.log(`🏢 Empresa detectada: ${extractedCompany}`)
+    } else {
+      console.log(`⚠️ No se pudo detectar empresa automáticamente. Por favor ingrésala manualmente.`)
+    }
+    
+    // 3. Dirección (directa de Google)
+    if (enrichedData.address) {
+      setValue('direccion', enrichedData.address)
+      autoCompletedFields.push('dirección')
+    }
+    
+    // 4. Localidad (parseada correctamente)
+    if (enrichedData.addressComponents?.locality) {
+      setValue('localidad', enrichedData.addressComponents.locality)
+      autoCompletedFields.push('localidad')
+      console.log(`📍 Localidad: ${enrichedData.addressComponents.locality}`)
+    } else {
+      console.log(`⚠️ Localidad no detectada, por favor ingrésala manualmente`)
+    }
+    
+    // 5. Provincia (parseada correctamente)
+    if (enrichedData.addressComponents?.province) {
+      const provinciaValue = enrichedData.addressComponents.province
+      setSelectedProvincia(provinciaValue)
+      setValue('provincia', provinciaValue, { 
+        shouldValidate: true,
+        shouldDirty: true 
+      })
+      autoCompletedFields.push('provincia')
+      console.log(`📍 Provincia: ${provinciaValue}`)
+    } else {
+      console.log(`⚠️ Provincia no detectada, por favor selecciónala manualmente`)
+    }
+    
+    // 6. Teléfono (si existe)
     if (enrichedData.phone) {
       setValue('telefono', enrichedData.phone)
+      autoCompletedFields.push('teléfono')
     }
     
-    // Horarios
+    // 7. Horarios (si existen)
     if (enrichedData.hours) {
       setHorarios(enrichedData.hours)
+      autoCompletedFields.push('horarios')
     }
+    
+    // Log resumen de campos auto-completados
+    console.log(`✅ Campos auto-completados (${autoCompletedFields.length}): ${autoCompletedFields.join(', ')}`)
+    
+    // Warnings específicos si faltan campos críticos
+    const warnings = []
+    if (!enrichedData.addressComponents?.locality) {
+      warnings.push('Localidad no detectada - completá manualmente')
+    }
+    if (!enrichedData.addressComponents?.province) {
+      warnings.push('Provincia no detectada - seleccioná manualmente')
+    }
+    if (!extractedCompany) {
+      warnings.push('Empresa no detectada - ingresá la marca')
+    }
+    
+    if (warnings.length > 0) {
+      console.log(`⚠️ Campos que necesitan atención:`, warnings)
+    }
+    
+    return { completedFields: autoCompletedFields, warnings }
   }
 
   async function extractGoogleMapsData() {
@@ -193,8 +266,26 @@ export function CreateStationForm() {
       
       // Auto-completar campos si hay datos enriquecidos
       if (data.enrichedData) {
-        await autoCompleteFields(data.enrichedData)
-        toast.success('¡Datos auto-completados desde Google Maps!')
+        const result = await autoCompleteFields(data.enrichedData)
+        
+        if (result.completedFields.length > 0) {
+          toast.success(`¡Auto-completados ${result.completedFields.length} campos desde Google Maps!`, {
+            description: result.warnings.length > 0 
+              ? `Atención: ${result.warnings.join(', ')}`
+              : `Revisá los datos y completá lo que falta (CUIT, servicios)`
+          })
+          
+          // Mostrar warnings adicionales si hay campos críticos faltantes
+          if (result.warnings.length > 0) {
+            setTimeout(() => {
+              toast.warning('Algunos campos necesitan tu atención', {
+                description: result.warnings.join(' • ')
+              })
+            }, 1500)
+          }
+        } else {
+          toast.warning('No se pudieron auto-completar campos automáticamente')
+        }
       } else if (data.placeData?.nombre) {
         setValue('nombre', data.placeData.nombre)
         toast.success('Coordenadas extraídas')
@@ -242,7 +333,7 @@ export function CreateStationForm() {
       const data = await response.json()
       
       // Auto-completar campos
-      await autoCompleteFields(data.enrichedData)
+      const result = await autoCompleteFields(data.enrichedData)
       
       // Actualizar coordenadas con las precisas del lugar seleccionado
       if (data.enrichedData.coordinates) {
@@ -259,7 +350,24 @@ export function CreateStationForm() {
         message: '✓ Estación de servicio verificada y datos auto-completados'
       })
       
-      toast.success('¡Datos auto-completados desde Google Maps!')
+      if (result.completedFields.length > 0) {
+        toast.success(`¡Auto-completados ${result.completedFields.length} campos!`, {
+          description: result.warnings.length > 0
+            ? `Atención: ${result.warnings.join(', ')}`
+            : 'Revisá los datos y completá lo que falta (CUIT, servicios)'
+        })
+        
+        // Mostrar warnings adicionales si hay
+        if (result.warnings.length > 0) {
+          setTimeout(() => {
+            toast.warning('Algunos campos necesitan tu atención', {
+              description: result.warnings.join(' • ')
+            })
+          }, 1500)
+        }
+      } else {
+        toast.warning('Estación seleccionada, pero algunos campos deben completarse manualmente')
+      }
     } catch (error) {
       console.error('Error enriching selection:', error)
       toast.error(error instanceof Error ? error.message : 'Error al obtener datos de la estación')
@@ -584,7 +692,16 @@ export function CreateStationForm() {
 
             <div className="space-y-2">
               <Label htmlFor="provincia">Provincia *</Label>
-              <Select onValueChange={(value) => setValue('provincia', value)}>
+              <Select 
+                value={selectedProvincia} 
+                onValueChange={(value) => {
+                  setSelectedProvincia(value)
+                  setValue('provincia', value, {
+                    shouldValidate: true,
+                    shouldDirty: true
+                  })
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una provincia" />
                 </SelectTrigger>
@@ -621,6 +738,178 @@ export function CreateStationForm() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Horarios de Atención */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Horarios de Atención
+          </CardTitle>
+          <CardDescription>Configura los horarios de tu estación (opcional)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Si hay horarios auto-completados de Google */}
+          {horarioMode === 'auto' && Object.keys(horarios).length > 0 && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-start justify-between mb-3">
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  ✓ Horarios obtenidos de Google Maps
+                </p>
+                <Button 
+                  type="button"
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => {
+                    setHorarioMode('personalizado')
+                    setHorarios({})
+                  }}
+                  className="h-auto py-1 px-2 text-xs"
+                >
+                  Editar
+                </Button>
+              </div>
+              <div className="grid gap-1.5 text-sm">
+                {Object.entries(horarios).map(([dia, horario]) => (
+                  <div key={dia} className="flex justify-between items-center py-1 border-b border-blue-100 dark:border-blue-900 last:border-0">
+                    <span className="capitalize font-medium text-blue-900 dark:text-blue-300">{dia}:</span>
+                    <span className="text-blue-700 dark:text-blue-400">{horario}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Opciones rápidas */}
+          {horarioMode !== 'auto' && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button 
+                  type="button"
+                  variant={horarioMode === '24h' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setHorarioMode('24h')
+                    const horarios24h: Record<string, string> = {}
+                    DIAS_SEMANA.forEach(dia => { horarios24h[dia] = '24 horas' })
+                    setHorarios(horarios24h)
+                  }}
+                  className="h-auto py-3 flex flex-col gap-1"
+                >
+                  <span className="text-sm font-semibold">24 Horas</span>
+                  <span className="text-xs opacity-80">Todos los días</span>
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant={horarioMode === 'mismo' ? 'default' : 'outline'}
+                  onClick={() => setHorarioMode('mismo')}
+                  className="h-auto py-3 flex flex-col gap-1"
+                >
+                  <span className="text-sm font-semibold">Mismo Horario</span>
+                  <span className="text-xs opacity-80">Todos los días</span>
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant={horarioMode === 'semana' ? 'default' : 'outline'}
+                  onClick={() => setHorarioMode('semana')}
+                  className="h-auto py-3 flex flex-col gap-1"
+                >
+                  <span className="text-sm font-semibold">Lun-Vie + Sáb-Dom</span>
+                  <span className="text-xs opacity-80">2 horarios</span>
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant={horarioMode === 'personalizado' ? 'default' : 'outline'}
+                  onClick={() => setHorarioMode('personalizado')}
+                  className="h-auto py-3 flex flex-col gap-1"
+                >
+                  <span className="text-sm font-semibold">Personalizado</span>
+                  <span className="text-xs opacity-80">Día por día</span>
+                </Button>
+              </div>
+
+              {/* Mismo horario para todos los días */}
+              {horarioMode === 'mismo' && (
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                  <Label>Horario para todos los días</Label>
+                  <Input
+                    placeholder="ej: 08:00-20:00"
+                    onChange={(e) => {
+                      const horarioUnificado: Record<string, string> = {}
+                      DIAS_SEMANA.forEach(dia => { horarioUnificado[dia] = e.target.value })
+                      setHorarios(horarioUnificado)
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Este horario se aplicará de lunes a domingo
+                  </p>
+                </div>
+              )}
+
+              {/* Horario semana + fin de semana */}
+              {horarioMode === 'semana' && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Lunes a Viernes</Label>
+                    <Input
+                      placeholder="ej: 08:00-20:00"
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setHorarios(prev => ({
+                          ...prev,
+                          lunes: value,
+                          martes: value,
+                          miércoles: value,
+                          jueves: value,
+                          viernes: value
+                        }))
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sábado y Domingo</Label>
+                    <Input
+                      placeholder="ej: 09:00-18:00 o Cerrado"
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setHorarios(prev => ({
+                          ...prev,
+                          sábado: value,
+                          domingo: value
+                        }))
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Personalizado día por día */}
+              {horarioMode === 'personalizado' && (
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Ingresa el horario para cada día
+                  </p>
+                  {DIAS_SEMANA_DISPLAY.map((dia) => (
+                    <div key={dia.key} className="flex items-center gap-3">
+                      <Label className="w-24 text-right">{dia.label}</Label>
+                      <Input
+                        placeholder="ej: 08:00-20:00"
+                        value={horarios[dia.key] || ''}
+                        onChange={(e) => setHorarios({
+                          ...horarios,
+                          [dia.key]: e.target.value
+                        })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

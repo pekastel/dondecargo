@@ -34,6 +34,36 @@ export interface OpeningHours {
   weekday_text?: string[];
 }
 
+// Tipos para Places API (New)
+export interface PlaceDetailsNew {
+  id: string;
+  displayName: {
+    text: string;
+    languageCode: string;
+  };
+  formattedAddress: string;
+  addressComponents: AddressComponent[];
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  types: string[];
+  nationalPhoneNumber?: string;
+  internationalPhoneNumber?: string;
+  regularOpeningHours?: {
+    openNow?: boolean;
+    periods?: Array<{
+      open: { day: number; hour: number; minute: number };
+      close?: { day: number; hour: number; minute: number };
+    }>;
+    weekdayDescriptions?: string[];
+  };
+  websiteUri?: string;
+  rating?: number;
+  userRatingCount?: number;
+}
+
+// Mantener compatibilidad con formato legacy para código existente
 export interface PlaceDetails {
   name: string;
   formatted_address: string;
@@ -339,61 +369,99 @@ export function validateIsGasStation(types: string[]): boolean {
 }
 
 /**
- * Obtiene detalles de un lugar desde Google Places API
+ * Obtiene detalles de un lugar desde Google Places API (New)
  */
 export async function getPlaceDetails(
   placeId: string,
   apiKey: string
 ): Promise<PlaceDetails> {
-  safeLog(`🔍 Getting Place Details for ID: ${placeId}`)
+  safeLog(`🔍 [NEW API] Getting Place Details for ID: ${placeId}`)
   
-  const fields = [
-    'name',
-    'formatted_address',
-    'address_components',
-    'geometry',
+  // Places API (New) usa un endpoint diferente con el Place ID en la ruta
+  const url = `https://places.googleapis.com/v1/places/${placeId}`;
+
+  // Lista de campos a solicitar (usando FieldMask)
+  const fieldMask = [
+    'id',
+    'displayName',
+    'formattedAddress',
+    'addressComponents',
+    'location',
     'types',
-    'formatted_phone_number',
-    'international_phone_number',
-    'opening_hours',
-    'website',
+    'nationalPhoneNumber',
+    'internationalPhoneNumber',
+    'regularOpeningHours',
+    'websiteUri',
     'rating',
-    'user_ratings_total',
-    'place_id',
+    'userRatingCount',
   ].join(',');
 
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&key=${apiKey}&language=es`;
+  safeLog(`📤 [NEW API] Place Details URL: ${url}`)
+  safeLog(`📤 [NEW API] Field Mask: ${fieldMask}`)
+  safeLog(`📤 [NEW API] API Key (primeros 10 chars): ${apiKey.substring(0, 10)}...`)
 
-  safeLog(`📤 Place Details URL: ${url.replace(apiKey, 'API_KEY_HIDDEN')}`)
-
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': fieldMask,
+    },
+  });
   
-  safeLog(`📥 Place Details Response Status: ${response.status} ${response.statusText}`)
+  safeLog(`📥 [NEW API] Response Status: ${response.status} ${response.statusText}`)
+  safeLog(`📥 [NEW API] Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`)
 
   const responseText = await response.text();
+  safeLog(`📥 [NEW API] Response Body (primeros 1000 chars): ${responseText.substring(0, 1000)}...`)
   
   if (!response.ok) {
-    safeLog(`❌ Place Details HTTP Error: ${response.status}`)
-    safeLog(`❌ Response Body: ${responseText}`)
-    throw new Error(`Google Places API error: ${response.status}`);
+    safeLog(`❌ [NEW API] HTTP Error: ${response.status}`)
+    let errorDetails = responseText;
+    try {
+      const errorData = JSON.parse(responseText);
+      errorDetails = JSON.stringify(errorData, null, 2);
+      safeLog(`❌ Error details: ${errorDetails}`)
+    } catch (e) {
+      safeLog(`❌ Error response (not JSON): ${responseText}`)
+    }
+    throw new Error(`Places API (New) error: ${response.status} - ${errorDetails}`);
   }
 
-  const data = JSON.parse(responseText);
-  safeLog(`📥 Place Details Response Status Field: ${data.status}`)
+  const data: PlaceDetailsNew = JSON.parse(responseText);
+  safeLog(`✅ [NEW API] Place Details retrieved: ${data.displayName?.text || 'Unknown'}`)
 
-  if (data.status !== 'OK') {
-    safeLog(`❌ Places API Error: ${data.status}`)
-    safeLog(`❌ Error message: ${data.error_message || 'No error message'}`)
-    safeLog(`❌ Full response: ${JSON.stringify(data, null, 2)}`)
-    throw new Error(`Google Places API returned status: ${data.status} - ${data.error_message || 'Unknown error'}`);
-  }
+  // Convertir respuesta de New API a formato legacy para compatibilidad
+  const legacyFormat: PlaceDetails = {
+    name: data.displayName?.text || '',
+    formatted_address: data.formattedAddress || '',
+    address_components: data.addressComponents || [],
+    geometry: {
+      location: {
+        lat: data.location?.latitude || 0,
+        lng: data.location?.longitude || 0,
+      },
+    },
+    types: data.types || [],
+    formatted_phone_number: data.nationalPhoneNumber,
+    international_phone_number: data.internationalPhoneNumber,
+    opening_hours: data.regularOpeningHours ? {
+      open_now: data.regularOpeningHours.openNow,
+      weekday_text: data.regularOpeningHours.weekdayDescriptions,
+    } : undefined,
+    website: data.websiteUri,
+    rating: data.rating,
+    user_ratings_total: data.userRatingCount,
+    place_id: data.id,
+  };
 
-  safeLog(`✅ Place Details retrieved successfully: ${data.result.name}`)
-  return data.result as PlaceDetails;
+  safeLog(`✅ [NEW API] Converted to legacy format successfully`)
+  return legacyFormat;
 }
 
 /**
  * Parsea los address_components para extraer información estructurada
+ * Optimizado para direcciones en Argentina
  */
 function parseAddressComponents(components: AddressComponent[]): {
   street: string;
@@ -403,6 +471,11 @@ function parseAddressComponents(components: AddressComponent[]): {
   postalCode: string;
   country: string;
 } {
+  safeLog(`🔍 Parsing ${components.length} address components:`)
+  components.forEach(c => {
+    safeLog(`  📍 ${c.long_name}: [${c.types.join(', ')}]`)
+  })
+
   const result = {
     street: '',
     streetNumber: '',
@@ -412,25 +485,118 @@ function parseAddressComponents(components: AddressComponent[]): {
     country: '',
   };
 
+  // Buscar locality con prioridades específicas para Argentina
+  let localityComponent = null
+  
+  // Prioridad 1: locality exacto (más común y confiable)
+  localityComponent = components.find(c => c.types.includes('locality'))
+  if (localityComponent) {
+    result.locality = localityComponent.long_name
+    safeLog(`  ✅ Locality found (priority 1): ${result.locality}`)
+  } else {
+    // Prioridad 2: sublocality_level_1 (barrios o zonas)
+    localityComponent = components.find(c => c.types.includes('sublocality_level_1') || c.types.includes('sublocality'))
+    if (localityComponent) {
+      result.locality = localityComponent.long_name
+      safeLog(`  ✅ Locality found (priority 2 - sublocality): ${result.locality}`)
+    } else {
+      // Prioridad 3: postal_town (ciudades pequeñas)
+      localityComponent = components.find(c => c.types.includes('postal_town'))
+      if (localityComponent) {
+        result.locality = localityComponent.long_name
+        safeLog(`  ✅ Locality found (priority 3 - postal_town): ${result.locality}`)
+      } else {
+        safeLog(`  ⚠️ Locality not found in address components`)
+      }
+    }
+  }
+
+  // Provincia: SOLO administrative_area_level_1 (NO usar level_2 que es departamento)
+  const provinceComponent = components.find(c => c.types.includes('administrative_area_level_1'))
+  if (provinceComponent) {
+    result.province = provinceComponent.long_name
+    safeLog(`  ✅ Province found: ${result.province}`)
+  } else {
+    safeLog(`  ⚠️ Province not found in address components`)
+  }
+
+  // Otros campos
   for (const component of components) {
     const types = component.types;
 
-    if (types.includes('route')) {
+    if (types.includes('route') && !result.street) {
       result.street = component.long_name;
-    } else if (types.includes('street_number')) {
+    } else if (types.includes('street_number') && !result.streetNumber) {
       result.streetNumber = component.long_name;
-    } else if (types.includes('locality') || types.includes('administrative_area_level_2')) {
-      result.locality = component.long_name;
-    } else if (types.includes('administrative_area_level_1')) {
-      result.province = component.long_name;
-    } else if (types.includes('postal_code')) {
+    } else if (types.includes('postal_code') && !result.postalCode) {
       result.postalCode = component.long_name;
-    } else if (types.includes('country')) {
+    } else if (types.includes('country') && !result.country) {
       result.country = component.long_name;
     }
   }
 
+  safeLog(`  📊 Parsed result: locality="${result.locality}", province="${result.province}"`)
   return result;
+}
+
+/**
+ * Lista de empresas de estaciones de servicio conocidas en Argentina
+ */
+const KNOWN_COMPANIES = [
+  'YPF',
+  'Shell',
+  'Axion',
+  'Puma',
+  'Esso',
+  'Petrobras',
+  'Oil',
+  'Refinor',
+  'Rhasa',
+  'Sol',
+  'Dapsa',
+  'Raizen',
+  'Gulf',
+  'Texaco',
+  'Total',
+]
+
+/**
+ * Extrae la empresa/marca de una estación desde su nombre
+ * Ejemplo: "YPF - Combustibles Barceló" → "YPF"
+ */
+export function extractCompanyFromName(name: string): string | null {
+  if (!name) return null
+  
+  safeLog(`🏢 Extracting company from name: "${name}"`)
+  
+  // Prioridad 1: Buscar al inicio del nombre (case-sensitive primero)
+  for (const company of KNOWN_COMPANIES) {
+    if (name.startsWith(company)) {
+      safeLog(`  ✅ Found company (exact match): ${company}`)
+      return company
+    }
+  }
+  
+  // Prioridad 2: Buscar al inicio (case-insensitive)
+  const nameLower = name.toLowerCase()
+  for (const company of KNOWN_COMPANIES) {
+    if (nameLower.startsWith(company.toLowerCase())) {
+      safeLog(`  ✅ Found company (case-insensitive match): ${company}`)
+      return company
+    }
+  }
+  
+  // Prioridad 3: Buscar palabra completa en cualquier parte (word boundary)
+  for (const company of KNOWN_COMPANIES) {
+    const regex = new RegExp(`\\b${company}\\b`, 'i')
+    if (regex.test(name)) {
+      safeLog(`  ✅ Found company (word boundary match): ${company}`)
+      return company
+    }
+  }
+  
+  safeLog(`  ⚠️ No known company found in name`)
+  return null
 }
 
 /**
@@ -527,7 +693,6 @@ function calculateDistance(
 
 /**
  * Busca estaciones de servicio cercanas usando Google Places API (New)
- * Con fallback automático a API clásica si la nueva no está disponible
  */
 export async function searchNearbyGasStations(
   lat: number,
@@ -535,29 +700,8 @@ export async function searchNearbyGasStations(
   radius: number,
   apiKey: string
 ): Promise<NearbyGasStation[]> {
-  safeLog(`🔍 Starting Nearby Search: lat=${lat}, lng=${lng}, radius=${radius}m`)
+  safeLog(`🔍 [NEW API] Starting Nearby Search: lat=${lat}, lng=${lng}, radius=${radius}m`)
   
-  // Intentar primero con Places API (New)
-  try {
-    return await searchNearbyGasStationsNew(lat, lng, radius, apiKey);
-  } catch (error) {
-    safeLog(`⚠️ Places API (New) failed: ${error instanceof Error ? error.message : 'Unknown'}`)
-    safeLog(`🔄 Falling back to classic Places API...`)
-    
-    // Fallback a API clásica
-    return await searchNearbyGasStationsClassic(lat, lng, radius, apiKey);
-  }
-}
-
-/**
- * Nearby Search usando Places API (New) - Versión más moderna
- */
-async function searchNearbyGasStationsNew(
-  lat: number,
-  lng: number,
-  radius: number,
-  apiKey: string
-): Promise<NearbyGasStation[]> {
   const url = 'https://places.googleapis.com/v1/places:searchNearby';
   
   const requestBody = {
@@ -629,72 +773,7 @@ async function searchNearbyGasStationsNew(
   });
 
   results.sort((a, b) => a.distance - b.distance);
-  return results;
-}
-
-/**
- * Nearby Search usando Places API clásica - Fallback más compatible
- */
-async function searchNearbyGasStationsClassic(
-  lat: number,
-  lng: number,
-  radius: number,
-  apiKey: string
-): Promise<NearbyGasStation[]> {
-  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=gas_station&key=${apiKey}&language=es`;
-
-  safeLog(`📤 [CLASSIC API] Request URL: ${url.replace(apiKey, 'API_KEY_HIDDEN')}`)
-
-  const response = await fetch(url);
-  
-  safeLog(`📥 [CLASSIC API] Response: ${response.status} ${response.statusText}`)
-
-  const responseText = await response.text();
-  safeLog(`📥 [CLASSIC API] Body: ${responseText.substring(0, 500)}...`)
-
-  if (!response.ok) {
-    safeLog(`❌ [CLASSIC API] HTTP Error: ${response.status}`)
-    throw new Error(`Classic Places API error: ${response.status}`);
-  }
-
-  const data = JSON.parse(responseText);
-  safeLog(`📥 [CLASSIC API] Status: ${data.status}`)
-
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    safeLog(`❌ [CLASSIC API] Error: ${data.status} - ${data.error_message || 'No message'}`)
-    throw new Error(`Classic Places API status: ${data.status} - ${data.error_message || 'Unknown error'}`);
-  }
-
-  if (!data.results || data.results.length === 0) {
-    safeLog('ℹ️ [CLASSIC API] No results found')
-    return [];
-  }
-
-  safeLog(`✅ [CLASSIC API] Found ${data.results.length} results`)
-
-  const results: NearbyGasStation[] = data.results.map((place: any) => {
-    const distance = calculateDistance(
-      lat,
-      lng,
-      place.geometry.location.lat,
-      place.geometry.location.lng
-    );
-
-    return {
-      placeId: place.place_id,
-      name: place.name || 'Estación sin nombre',
-      address: place.vicinity || place.formatted_address || 'Dirección no disponible',
-      distance: Math.round(distance),
-      location: {
-        latitude: place.geometry.location.lat,
-        longitude: place.geometry.location.lng,
-      },
-      types: place.types || [],
-    };
-  });
-
-  results.sort((a, b) => a.distance - b.distance);
-  safeLog(`✅ [CLASSIC API] Returning ${results.length} sorted results`)
+  safeLog(`✅ [NEW API] Returning ${results.length} sorted results`)
   return results;
 }
 
