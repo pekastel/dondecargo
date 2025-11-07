@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const crearPrecioRapidoSchema = z.object({
-  estacionId: z.string().uuid(),
+  estacionId: z.string().min(1, 'ID de estación requerido'),
   tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
   precio: z.number().positive(),
   horario: z.enum(['diurno', 'nocturno']),

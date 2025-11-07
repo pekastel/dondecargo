@@ -11,7 +11,10 @@ const editarEstacionSchema = z.object({
   direccion: z.string().min(5).max(300).optional(),
   localidad: z.string().min(2).max(100).optional(),
   provincia: z.string().min(2).max(100).optional(),
-  cuit: z.string().regex(/^\d{2}-\d{8}-\d{1}$/).optional().or(z.literal('')),
+  cuit: z.union([
+    z.string().regex(/^\d{2}-\d{8}-\d{1}$/, 'Formato de CUIT inválido: XX-XXXXXXXX-X'),
+    z.literal('')
+  ]).optional(),
   datosAdicionales: z.object({
     telefono: z.string().optional(),
     horarios: z.record(z.string()).optional(),
@@ -21,7 +24,7 @@ const editarEstacionSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
@@ -36,7 +39,7 @@ export async function PATCH(
       )
     }
 
-    const estacionId = params.id
+    const { id: estacionId } = await params
 
     // Verificar que la estación existe y pertenece al usuario
     const estacion = await db.query.estaciones.findFirst({
@@ -50,7 +53,8 @@ export async function PATCH(
       )
     }
 
-    if (estacion.usuarioCreadorId !== session.user.id) {
+    // Permitir edición si el usuario es admin o es el creador de la estación
+    if (estacion.usuarioCreadorId !== session.user.id && session.user.role !== 'admin') {
       return NextResponse.json(
         { error: 'No tienes permiso para editar esta estación' },
         { status: 403 }
@@ -69,7 +73,10 @@ export async function PATCH(
     if (validatedData.direccion !== undefined) updateData.direccion = validatedData.direccion
     if (validatedData.localidad !== undefined) updateData.localidad = validatedData.localidad
     if (validatedData.provincia !== undefined) updateData.provincia = validatedData.provincia
-    if (validatedData.cuit !== undefined) updateData.cuit = validatedData.cuit || null
+    // Solo actualizar CUIT si se proporciona un valor válido (no vacío)
+    if (validatedData.cuit !== undefined && validatedData.cuit !== '') {
+      updateData.cuit = validatedData.cuit
+    }
 
     // Solo actualizar si hay cambios en estaciones
     if (Object.keys(updateData).length > 0) {

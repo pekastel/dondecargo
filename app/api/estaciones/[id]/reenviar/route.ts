@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
@@ -21,7 +21,7 @@ export async function PATCH(
       )
     }
 
-    const estacionId = params.id
+    const { id: estacionId } = await params
 
     // Verificar que la estación existe y pertenece al usuario
     const estacion = await db.query.estaciones.findFirst({

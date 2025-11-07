@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapPin, DollarSign, Edit, Clock, Phone, Navigation, Send } from 'lucide-react'
 import FormularioPrecioInline from './FormularioPrecioInline'
+import EditStationModal from './EditStationModal'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -73,6 +74,7 @@ const COMBUSTIBLE_LABELS: Record<string, string> = {
 
 export default function StationCard({ estacion, onPrecioCreado, onEstacionEditada }: StationCardProps) {
   const [mostrarFormPrecio, setMostrarFormPrecio] = useState(false)
+  const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false)
   const [reenviando, setReenviando] = useState(false)
   const estadoConfig = ESTADO_CONFIG[estacion.estado]
 
@@ -255,6 +257,14 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
               {mostrarFormPrecio ? 'Cancelar' : 'Cargar Precio'}
             </Button>
           )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setMostrarModalEdicion(true)}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Editar Datos
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/buscar?lat=${estacion.latitud}&lng=${estacion.longitud}&zoom=16&station=${estacion.id}`}>
               <Navigation className="h-4 w-4 mr-1" />
@@ -267,12 +277,18 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
               Google Maps
             </a>
           </Button>
-          {/* TODO: Implementar edición de datos */}
-          {/* <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4 mr-1" />
-            Editar Datos
-          </Button> */}
         </div>
+
+        {/* Modal de edición */}
+        <EditStationModal
+          open={mostrarModalEdicion}
+          onClose={() => setMostrarModalEdicion(false)}
+          onSuccess={() => {
+            setMostrarModalEdicion(false)
+            onEstacionEditada()
+          }}
+          estacion={estacion}
+        />
       </CardContent>
     </Card>
   )
