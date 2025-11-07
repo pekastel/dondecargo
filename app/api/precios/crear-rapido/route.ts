@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/drizzle/connection'
 import { estaciones, precios } from '@/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 
 const crearPrecioRapidoSchema = z.object({
   estacionId: z.string().min(1, 'ID de estación requerido'),
   tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
   precio: z.number().positive(),
-  horario: z.enum(['diurno', 'nocturno']),
+  horario: z.enum(['diurno', 'nocturno', 'ambos']),
 })
 
 export async function POST(request: NextRequest) {
@@ -60,23 +60,128 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear el precio
-    const [nuevoPrecio] = await db.insert(precios).values({
-      estacionId: validatedData.estacionId,
-      tipoCombustible: validatedData.tipoCombustible,
-      precio: validatedData.precio,
-      horario: validatedData.horario,
-      fuente: 'usuario',
-      usuarioId: session.user.id,
-      esValidado: true, // Los precios del dueño de la estación se consideran validados
-      fechaVigencia: new Date(),
-      fechaReporte: new Date(),
-    }).returning()
+    // Verificar precios existentes para evitar duplicados
+    const preciosExistentes = await db.query.precios.findMany({
+      where: and(
+        eq(precios.estacionId, validatedData.estacionId),
+        eq(precios.tipoCombustible, validatedData.tipoCombustible),
+        eq(precios.fuente, 'usuario')
+      ),
+    })
+
+    const tieneDiurno = preciosExistentes.some(p => p.horario === 'diurno')
+    const tieneNocturno = preciosExistentes.some(p => p.horario === 'nocturno')
+
+    // Crear el precio (o precios si es 'ambos')
+    let nuevosPrecios = []
+
+    if (validatedData.horario === 'ambos') {
+      // Crear los horarios que no existan
+      const valoresAInsertar = []
+      
+      if (!tieneDiurno) {
+        valoresAInsertar.push({
+          estacionId: validatedData.estacionId,
+          tipoCombustible: validatedData.tipoCombustible,
+          precio: validatedData.precio,
+          horario: 'diurno' as const,
+          fuente: 'usuario' as const,
+          usuarioId: session.user.id,
+          esValidado: true,
+          fechaVigencia: new Date(),
+          fechaReporte: new Date(),
+        })
+      }
+      
+      if (!tieneNocturno) {
+        valoresAInsertar.push({
+          estacionId: validatedData.estacionId,
+          tipoCombustible: validatedData.tipoCombustible,
+          precio: validatedData.precio,
+          horario: 'nocturno' as const,
+          fuente: 'usuario' as const,
+          usuarioId: session.user.id,
+          esValidado: true,
+          fechaVigencia: new Date(),
+          fechaReporte: new Date(),
+        })
+      }
+
+      if (valoresAInsertar.length > 0) {
+        nuevosPrecios = await db.insert(precios).values(valoresAInsertar).returning()
+      }
+
+      // Si ambos ya existían, actualizar el existente
+      if (tieneDiurno && tieneNocturno) {
+        const precioDiurno = preciosExistentes.find(p => p.horario === 'diurno')
+        const precioNocturno = preciosExistentes.find(p => p.horario === 'nocturno')
+        
+        await db.update(precios)
+          .set({ 
+            precio: validatedData.precio,
+            fechaVigencia: new Date(),
+            fechaReporte: new Date(),
+          })
+          .where(
+            and(
+              eq(precios.estacionId, validatedData.estacionId),
+              eq(precios.tipoCombustible, validatedData.tipoCombustible),
+              eq(precios.fuente, 'usuario')
+            )
+          )
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Precios actualizados para ambos horarios',
+        })
+      }
+    } else {
+      // Verificar si ya existe para este horario específico
+      const yaExiste = validatedData.horario === 'diurno' ? tieneDiurno : tieneNocturno
+
+      if (yaExiste) {
+        // Actualizar el existente
+        await db.update(precios)
+          .set({
+            precio: validatedData.precio,
+            fechaVigencia: new Date(),
+            fechaReporte: new Date(),
+          })
+          .where(
+            and(
+              eq(precios.estacionId, validatedData.estacionId),
+              eq(precios.tipoCombustible, validatedData.tipoCombustible),
+              eq(precios.horario, validatedData.horario),
+              eq(precios.fuente, 'usuario')
+            )
+          )
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Precio actualizado exitosamente',
+        })
+      } else {
+        // Crear nuevo registro
+        nuevosPrecios = await db.insert(precios).values({
+          estacionId: validatedData.estacionId,
+          tipoCombustible: validatedData.tipoCombustible,
+          precio: validatedData.precio,
+          horario: validatedData.horario,
+          fuente: 'usuario',
+          usuarioId: session.user.id,
+          esValidado: true,
+          fechaVigencia: new Date(),
+          fechaReporte: new Date(),
+        }).returning()
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      precio: nuevoPrecio,
-      message: 'Precio cargado exitosamente',
+      precios: nuevosPrecios,
+      message: validatedData.horario === 'ambos' 
+        ? 'Precios cargados para ambos horarios' 
+        : 'Precio cargado exitosamente',
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapPin, DollarSign, Edit, Clock, Phone, Navigation, Send } from 'lucide-react'
-import FormularioPrecioInline from './FormularioPrecioInline'
+import PriceManagementPanelV2 from './PriceManagementPanelV2'
 import EditStationModal from './EditStationModal'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -27,6 +27,7 @@ interface EstacionProps {
     servicios?: Record<string, boolean>
   }
   preciosActuales?: Array<{
+    id?: string
     tipoCombustible: string
     precio: number
     horario: 'diurno' | 'nocturno'
@@ -233,12 +234,12 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
           </div>
         )}
 
-        {/* Formulario inline de precios */}
+        {/* Panel de gestión de precios */}
         {mostrarFormPrecio && estacion.estado === 'aprobado' && (
-          <FormularioPrecioInline
+          <PriceManagementPanelV2
             estacionId={estacion.id}
+            preciosActuales={estacion.preciosActuales || []}
             onSuccess={() => {
-              setMostrarFormPrecio(false)
               onPrecioCreado()
             }}
             onCancel={() => setMostrarFormPrecio(false)}
@@ -254,7 +255,7 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
               onClick={() => setMostrarFormPrecio(!mostrarFormPrecio)}
             >
               <DollarSign className="h-4 w-4 mr-1" />
-              {mostrarFormPrecio ? 'Cancelar' : 'Cargar Precio'}
+              {mostrarFormPrecio ? 'Cerrar' : 'Gestionar Precios'}
             </Button>
           )}
           <Button 

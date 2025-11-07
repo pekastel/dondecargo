@@ -54,8 +54,9 @@ export async function GET(request: NextRequest) {
         return {
           ...estacion,
           preciosActuales: Array.from(preciosMap.values()).map(p => ({
+            id: p.id,
             tipoCombustible: p.tipoCombustible,
-            precio: p.precio,
+            precio: parseFloat(p.precio), // Convert decimal to number
             horario: p.horario,
             fechaVigencia: p.fechaVigencia,
           })),
