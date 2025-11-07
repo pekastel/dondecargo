@@ -85,6 +85,29 @@ export async function POST(request: NextRequest) {
     db = createDbConnection()
     safeLog('✅ Database connection created')
     
+    // Verificar si usuario tiene estaciones pendientes
+    const { eq, and } = await import('drizzle-orm')
+    const pendientes = await db.select().from(estaciones).where(
+      and(
+        eq(estaciones.usuarioCreadorId, userId),
+        eq(estaciones.estado, 'pendiente')
+      )
+    )
+    
+    if (pendientes.length > 0) {
+      safeLog(`⚠️ User has ${pendientes.length} pending station(s), blocking creation`)
+      return NextResponse.json(
+        { 
+          error: 'No puedes crear nuevas estaciones mientras tengas estaciones pendientes de aprobación',
+          pendientes: pendientes.length,
+          redirectTo: '/mis-estaciones',
+        },
+        { status: 403 }
+      )
+    }
+    
+    safeLog('✅ User has no pending stations, proceeding')
+    
     // Parse and validate request body
     const body = await request.json()
     const validatedData = createStationSchema.parse(body)

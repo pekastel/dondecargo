@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/mode-toggle'
 import UserMenu from '@/components/navigation/UserMenu'
 import { authClient } from '@/lib/authClient'
+import { useUserStations } from '@/lib/hooks/useUserStations'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
@@ -16,6 +17,7 @@ export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
+  const { hasStations, loading } = useUserStations()
 
   return (
     <header className="sticky top-0 z-2200 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -130,11 +132,16 @@ export function Header() {
                         Mi perfil
                       </Link>
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start" asChild>
-                      <Link href="/crear-estacion" onClick={() => setMobileMenuOpen(false)}>
-                        Agregar estación
-                      </Link>
-                    </Button>
+                    {!loading && (
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link 
+                          href={hasStations ? '/mis-estaciones' : '/crear-estacion'}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {hasStations ? 'Mis estaciones' : 'Agregar mi estación'}
+                        </Link>
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

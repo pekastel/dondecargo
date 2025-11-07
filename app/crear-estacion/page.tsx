@@ -2,6 +2,11 @@ import { CreateStationForm } from '@/components/estacion/CreateStationForm'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { db } from '@/drizzle/connection'
+import { estaciones } from '@/drizzle/schema'
+import { eq, and } from 'drizzle-orm'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 export const metadata = {
   title: 'Crear Estación de Servicio | DondeCargo',
@@ -15,6 +20,19 @@ export default async function CrearEstacionPage() {
 
   if (!session?.user) {
     redirect('/login?redirect=/crear-estacion')
+  }
+
+  // Verificar si el usuario tiene estaciones pendientes
+  const pendientes = await db.select().from(estaciones).where(
+    and(
+      eq(estaciones.usuarioCreadorId, session.user.id),
+      eq(estaciones.estado, 'pendiente')
+    )
+  )
+
+  // Si tiene pendientes, redirigir a mis-estaciones
+  if (pendientes.length > 0) {
+    redirect('/mis-estaciones')
   }
 
   return (

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient, signOut } from '@/lib/authClient';
+import { useUserStations } from '@/lib/hooks/useUserStations';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,11 +24,13 @@ import {
   FileText,
   Star,
   PlusCircle,
+  MapPin,
 } from 'lucide-react';
 
 export default function UserMenu() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
+  const { hasStations, loading } = useUserStations();
 
   const handleSignOut = async () => {
     await signOut({
@@ -124,11 +127,21 @@ export default function UserMenu() {
 
           <DropdownMenuSeparator />
           
-          <DropdownMenuItem onClick={() => router.push('/crear-estacion')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            <span>Agregar estación</span>
-            <Badge variant="secondary" className="ml-auto text-xs">Nuevo</Badge>
-          </DropdownMenuItem>
+          {!loading && (
+            <DropdownMenuItem onClick={() => router.push(hasStations ? '/mis-estaciones' : '/crear-estacion')}>
+              {hasStations ? (
+                <>
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>Mis estaciones</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <span>Agregar mi estación</span>
+                </>
+              )}
+            </DropdownMenuItem>
+          )}
           
           {/* <DropdownMenuItem onClick={() => router.push('/mcp-help')}>
             <BookOpen className="mr-2 h-4 w-4" />

@@ -452,10 +452,11 @@ export function CreateStationForm() {
       const result = await response.json()
       
       toast.success('¡Estación creada exitosamente! Está pendiente de aprobación.')
+      toast.info('Redirigiendo a tu dashboard...')
       
-      // Redirigir al home después de 2 segundos
+      // Redirigir al dashboard de mis estaciones después de 2 segundos
       setTimeout(() => {
-        router.push('/')
+        router.push('/mis-estaciones')
       }, 2000)
     } catch (error) {
       console.error('Error creating station:', error)

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useUserStations } from '@/lib/hooks/useUserStations'
+import { authClient } from '@/lib/authClient'
 import { 
   MapPin, 
   DollarSign, 
@@ -48,14 +50,27 @@ export const mainNavigation: NavigationItem[] = [
   }
 ]
 
-export const toolsNavigation: NavigationItem[] = [
-  {
-    name: 'Agregar Estación',
-    href: '/crear-estacion',
-    icon: <PlusCircle className="h-4 w-4" />,
-    description: 'Da de alta tu estación',
-    badge: 'Nuevo'
-  },
+// Función para obtener el item de estaciones adaptativo
+export function getStationsNavigationItem(hasStations: boolean): NavigationItem {
+  if (hasStations) {
+    return {
+      name: 'Mis Estaciones',
+      href: '/mis-estaciones',
+      icon: <MapPin className="h-4 w-4" />,
+      description: 'Gestiona tus estaciones',
+    }
+  } else {
+    return {
+      name: 'Agregar mi estación',
+      href: '/crear-estacion',
+      icon: <PlusCircle className="h-4 w-4" />,
+      description: 'Da de alta tu estación',
+    }
+  }
+}
+
+// Items estáticos de herramientas (sin el de estaciones)
+export const staticToolsNavigation: NavigationItem[] = [
   {
     name: 'Reportar Precios',
     href: '/reportar',
@@ -104,6 +119,13 @@ interface NavigationProps {
 
 export function Navigation({ isAdmin = false, className }: NavigationProps) {
   const pathname = usePathname()
+  const { data: session } = authClient.useSession()
+  const { hasStations, loading } = useUserStations()
+
+  // Construir toolsNavigation dinámicamente
+  const toolsNavigation = session?.user && !loading
+    ? [getStationsNavigationItem(hasStations), ...staticToolsNavigation]
+    : staticToolsNavigation
 
   const renderNavigationSection = (items: NavigationItem[], title: string) => (
     <div className="space-y-2">
