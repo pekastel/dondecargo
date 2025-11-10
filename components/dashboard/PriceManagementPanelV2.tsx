@@ -5,10 +5,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit2, Check, X, Trash2, ChevronDown } from 'lucide-react'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Edit2, Check, X, Trash2 } from 'lucide-react'
 
 interface Precio {
   id?: string
@@ -50,15 +48,12 @@ export default function PriceManagementPanelV2({
   const [loading, setLoading] = useState(false)
   
   // Nuevo precio
-  const [comboOpen, setComboOpen] = useState(false)
-  const [horarioOpen, setHorarioOpen] = useState(false)
   const [newTipo, setNewTipo] = useState<string>('')
   const [newPrice, setNewPrice] = useState<string>('')
   const [newHorario, setNewHorario] = useState<'diurno' | 'nocturno' | 'ambos'>('ambos')
   
   const priceInputRef = useRef<HTMLInputElement>(null)
   const newPriceInputRef = useRef<HTMLInputElement>(null)
-  const comboButtonRef = useRef<HTMLButtonElement>(null)
 
   // Calcular combustibles ya cargados
   const combustiblesCargados = new Set(
@@ -197,12 +192,8 @@ export default function PriceManagementPanelV2({
       setNewTipo('')
       setNewPrice('')
       setNewHorario('ambos')
-      setComboOpen(false)
       
       onSuccess()
-      
-      // Focus combo para siguiente carga
-      setTimeout(() => comboButtonRef.current?.focus(), 100)
     } catch (error) {
       console.error('Error:', error)
       toast.error(error instanceof Error ? error.message : 'Error al crear')
@@ -243,11 +234,13 @@ export default function PriceManagementPanelV2({
 
   // Auto-focus precio cuando se selecciona combustible
   useEffect(() => {
-    if (newTipo && !comboOpen) {
-      newPriceInputRef.current?.focus()
-      newPriceInputRef.current?.select()
+    if (newTipo) {
+      setTimeout(() => {
+        newPriceInputRef.current?.focus()
+        newPriceInputRef.current?.select()
+      }, 100)
     }
-  }, [newTipo, comboOpen])
+  }, [newTipo])
 
   // Ajustar horario automáticamente según disponibilidad
   useEffect(() => {
@@ -426,47 +419,23 @@ export default function PriceManagementPanelV2({
           </Label>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            {/* Combobox de Combustible - Buscable */}
-            <Popover open={comboOpen} onOpenChange={setComboOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  ref={comboButtonRef}
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={comboOpen}
-                  className="w-full sm:w-[200px] justify-between h-9 text-sm"
-                  disabled={loading}
-                >
-                  {newTipo
-                    ? getCombustibleLabel(newTipo)
-                    : "Buscar combustible..."}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Buscar..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>No encontrado</CommandEmpty>
-                    <CommandGroup>
-                      {combustiblesDisponibles.map((tipo) => (
-                        <CommandItem
-                          key={tipo.value}
-                          value={tipo.keywords.join(' ')}
-                          onSelect={() => {
-                            setNewTipo(tipo.value)
-                            setComboOpen(false)
-                          }}
-                          className="text-sm"
-                        >
-                          {tipo.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            {/* Selector de Combustible */}
+            <Select 
+              value={newTipo} 
+              onValueChange={(value) => setNewTipo(value)}
+              disabled={loading}
+            >
+              <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm">
+                <SelectValue placeholder="Seleccionar combustible" />
+              </SelectTrigger>
+              <SelectContent>
+                {combustiblesDisponibles.map(tipo => (
+                  <SelectItem key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Input de Precio */}
             <Input
@@ -481,42 +450,26 @@ export default function PriceManagementPanelV2({
               className="h-9 flex-1"
             />
 
-            {/* Selector de Horario - Compacto */}
-            <Popover open={horarioOpen} onOpenChange={setHorarioOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full sm:w-[180px] justify-between h-9 text-sm"
-                  disabled={loading || !newTipo}
-                >
-                  {HORARIOS.find(h => h.value === newHorario)?.label || 'Horario'}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-0" align="start">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {horariosDisponibles.map((horario) => (
-                        <CommandItem
-                          key={horario.value}
-                          value={horario.value}
-                          onSelect={() => {
-                            setNewHorario(horario.value as any)
-                            setHorarioOpen(false)
-                            newPriceInputRef.current?.focus()
-                          }}
-                          className="text-sm"
-                        >
-                          {horario.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            {/* Selector de Horario */}
+            <Select 
+              value={newHorario} 
+              onValueChange={(value) => {
+                setNewHorario(value as any)
+                setTimeout(() => newPriceInputRef.current?.focus(), 100)
+              }}
+              disabled={loading || !newTipo}
+            >
+              <SelectTrigger className="w-full sm:w-auto sm:min-w-[200px] h-9 text-sm">
+                <SelectValue placeholder="Horario" />
+              </SelectTrigger>
+              <SelectContent>
+                {horariosDisponibles.map(horario => (
+                  <SelectItem key={horario.value} value={horario.value}>
+                    {horario.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Botón Agregar */}
             <Button 
@@ -543,7 +496,7 @@ export default function PriceManagementPanelV2({
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 p-2 rounded border border-blue-200 dark:border-blue-900">
               <span>⚡</span>
               <span>
-                <strong>Tip:</strong> Escribe para buscar combustible →{' '}
+                <strong>Tip:</strong> Seleccioná combustible →{' '}
                 <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Tab</kbd> →{' '}
                 Precio →{' '}
                 <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> para guardar
