@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // Intentar extraer Place ID primero (flujo directo, más rápido)
-        const placeId = getPlaceIdFromUrl(url)
+        const placeId = await getPlaceIdFromUrl(url)
         
         if (placeId) {
           safeLog(`📍 Place ID extracted: ${placeId}`)
@@ -120,36 +120,41 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        // Buscar estaciones cercanas (radio 100m)
+        // Buscar estaciones cercanas (radio 150m - ampliado para capturar URLs cortas)
         const nearbyStations = await searchNearbyGasStations(
           searchCoordinates.latitud,
           searchCoordinates.longitud,
-          100,
+          150,
           apiKey
         )
         
         if (nearbyStations.length === 0) {
           safeLog('⚠️ No gas stations found nearby, trying larger radius')
           
-          // Intentar con radio más grande (250m)
+          // Intentar con radio más grande (300m)
           const nearbyStationsLarger = await searchNearbyGasStations(
             searchCoordinates.latitud,
             searchCoordinates.longitud,
-            250,
+            300,
             apiKey
           )
           
           if (nearbyStationsLarger.length === 0) {
             return NextResponse.json(
               { 
-                error: 'No se encontraron estaciones de servicio cerca de esta ubicación',
-                details: 'Intenta con una ubicación más cercana a la estación o verifica que la URL sea correcta.'
+                error: 'No se encontraron estaciones de servicio en un radio de 300 metros',
+                details: 'El punto en Google Maps debe corresponder a una estación de servicio o estar a menos de 300 metros de distancia. Intenta pegando la URL directa de la estación desde Google Maps (busca el nombre de la estación, no solo un punto en el mapa).',
+                searchRadius: 300,
+                coordinates: {
+                  lat: searchCoordinates.latitud,
+                  lng: searchCoordinates.longitud
+                }
               },
               { status: 404 }
             )
           }
           
-          safeLog(`✅ Found ${nearbyStationsLarger.length} gas stations nearby (250m radius)`)
+          safeLog(`✅ Found ${nearbyStationsLarger.length} gas stations nearby (300m radius)`)
           
           return NextResponse.json({
             success: true,
@@ -165,7 +170,7 @@ export async function POST(request: NextRequest) {
           })
         }
         
-        safeLog(`✅ Found ${nearbyStations.length} gas stations nearby (100m radius)`)
+        safeLog(`✅ Found ${nearbyStations.length} gas stations nearby (150m radius)`)
         
         return NextResponse.json({
           success: true,

@@ -304,54 +304,71 @@ export function areCoordinatesInArgentina(lat: number, lng: number): boolean {
  * Extrae el Place ID de una URL de Google Maps
  * Soporta múltiples formatos de URL incluyendo URLs cortas (goo.gl)
  */
-export function getPlaceIdFromUrl(url: string): string | null {
+export async function getPlaceIdFromUrl(url: string): Promise<string | null> {
   try {
+    let urlToCheck = url;
+    
+    // Si es un shortlink (goo.gl), seguir el redirect primero
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+      try {
+        urlToCheck = await followRedirect(url);
+        safeLog(`🔗 Resolved short URL to: ${urlToCheck.substring(0, 100)}...`);
+      } catch (error) {
+        safeLog(`⚠️ Could not resolve short URL, attempting extraction anyway`);
+      }
+    }
+    
     // Formato 1: place_id en query parameter (más directo y confiable)
     // Ejemplo: ?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4
-    const placeIdMatch = url.match(/place_id=([A-Za-z0-9_-]+)/);
+    const placeIdMatch = urlToCheck.match(/place_id=([A-Za-z0-9_-]+)/);
     if (placeIdMatch) {
       return placeIdMatch[1];
     }
 
-    // Formato 2: Place ID corto en formato /g/... (común en URLs redirigidas)
-    // Ejemplo: !16s%2Fg%2F11m5fxktlk (URL encoded) o /g/11m5fxktlk (decoded)
-    const shortPlaceIdMatch = url.match(/!16s%2Fg%2F([A-Za-z0-9_-]+)/);
-    if (shortPlaceIdMatch) {
-      return shortPlaceIdMatch[1];
-    }
-
-    // Formato 2b: Versión decodificada del Place ID /g/...
-    const decodedPlaceIdMatch = url.match(/\/g\/([A-Za-z0-9_-]+)/);
-    if (decodedPlaceIdMatch) {
-      return decodedPlaceIdMatch[1];
-    }
-
-    // Formato 3: ChIJ format (Place ID estándar de Google)
+    // Formato 2: ChIJ format (Place ID estándar de Google) - PRIORIDAD ALTA
     // Ejemplo: ChIJN1t_tDeuEmsRUsoyG83frY4
-    const chiJMatch = url.match(/ChIJ[A-Za-z0-9_-]+/);
+    // Este formato es compatible con Places API (New)
+    const chiJMatch = urlToCheck.match(/ChIJ[A-Za-z0-9_-]+/);
     if (chiJMatch) {
       return chiJMatch[0];
     }
 
-    // Formato 4: Feature ID completo en data parameter (con dos puntos)
+    // Formato 3: Feature ID completo en data parameter (con dos puntos)
     // Ejemplo: !1s0x9681411e668775b7:0xc3284df363e157a1
-    const ftidDataMatch = url.match(/!1s(0x[a-f0-9]+:0x[a-f0-9]+)/i);
+    const ftidDataMatch = urlToCheck.match(/!1s(0x[a-f0-9]+:0x[a-f0-9]+)/i);
     if (ftidDataMatch) {
       return ftidDataMatch[1];
     }
 
-    // Formato 5: ftid (Feature ID) en query parameter
+    // Formato 4: ftid (Feature ID) en query parameter
     // Ejemplo: ftid=0x9681411e668775b7:0xc3284df363e157a1
-    const ftidMatch = url.match(/ftid=(0x[a-f0-9]+:0x[a-f0-9]+)/i);
+    const ftidMatch = urlToCheck.match(/ftid=(0x[a-f0-9]+:0x[a-f0-9]+)/i);
     if (ftidMatch) {
       return ftidMatch[1];
     }
 
-    // Formato 6: CID (Customer ID) en la URL
+    // Formato 5: CID (Customer ID) en la URL
     // Ejemplo: cid=12345678901234567890
-    const cidMatch = url.match(/cid=(\d+)/);
+    const cidMatch = urlToCheck.match(/cid=(\d+)/);
     if (cidMatch) {
       return `cid:${cidMatch[1]}`;
+    }
+
+    // Formato 6 (BAJA PRIORIDAD): Place ID corto en formato /g/...
+    // Ejemplo: !16s%2Fg%2F11m5fxktlk (URL encoded) o /g/11m5fxktlk (decoded)
+    // NOTA: Este formato NO es compatible con Places API (New), solo con legacy API
+    // Por eso tiene prioridad BAJA - solo se usa si no hay otras opciones
+    const shortPlaceIdMatch = urlToCheck.match(/!16s%2Fg%2F([A-Za-z0-9_-]+)/);
+    if (shortPlaceIdMatch) {
+      safeLog(`⚠️ Extracted short Place ID format (/g/...) which may not be compatible with Places API (New)`);
+      return shortPlaceIdMatch[1];
+    }
+
+    // Formato 6b: Versión decodificada del Place ID /g/...
+    const decodedPlaceIdMatch = urlToCheck.match(/\/g\/([A-Za-z0-9_-]+)/);
+    if (decodedPlaceIdMatch) {
+      safeLog(`⚠️ Extracted short Place ID format (/g/...) which may not be compatible with Places API (New)`);
+      return decodedPlaceIdMatch[1];
     }
 
     return null;

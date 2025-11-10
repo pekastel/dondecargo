@@ -238,13 +238,15 @@ export function CreateStationForm() {
         
         // Caso 2: No se encontraron estaciones en el radio (404)
         if (response.status === 404) {
+          const searchRadius = data.searchRadius || 300
           setValidationStatus({
             validated: false,
             isGasStation: null,
-            message: data.error || 'No se encontraron estaciones de servicio cerca'
+            message: data.error || `No se encontraron estaciones de servicio en un radio de ${searchRadius} metros`
           })
-          toast.error(data.error || 'No se encontraron estaciones de servicio cerca de esta ubicación', {
-            description: data.details || 'Intenta con una ubicación más cercana a la estación o verifica que la URL sea correcta.'
+          toast.error(data.error || `No se encontraron estaciones en un radio de ${searchRadius} metros`, {
+            description: data.details || `El punto debe corresponder a una estación o estar a menos de ${searchRadius}m de distancia.`,
+            duration: 6000
           })
           return
         }
@@ -558,14 +560,25 @@ export function CreateStationForm() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-orange-700 dark:text-orange-400">
-                    No se encontraron estaciones cerca
+                    No se encontraron estaciones de servicio en el área
                   </p>
                   <p className="text-sm text-orange-600 dark:text-orange-500 mt-1">
                     {validationStatus.message}
                   </p>
-                  <p className="text-xs text-orange-600 dark:text-orange-500 mt-2">
-                    💡 Consejo: Intenta pegando la URL directa de la estación desde Google Maps, no solo un punto en el mapa.
-                  </p>
+                  <div className="mt-3 space-y-1.5 text-xs text-orange-600 dark:text-orange-500">
+                    <p className="font-medium">📍 Requisitos:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-1">
+                      <li>El punto debe ser una estación de servicio registrada en Google Maps</li>
+                      <li>O estar a menos de 300 metros de una estación</li>
+                    </ul>
+                    <p className="font-medium mt-2">💡 Cómo solucionarlo:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-1">
+                      <li>Busca el nombre de tu estación en Google Maps (ej: "YPF Ruta 9")</li>
+                      <li>Haz clic en la estación en el mapa</li>
+                      <li>Copia la URL completa desde la barra de direcciones</li>
+                      <li>No uses un punto genérico en el mapa</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
