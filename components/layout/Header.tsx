@@ -11,13 +11,16 @@ import { Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
-import { mainNavigation } from '@/components/layout/Navigation'
+import { getMainNavigation } from '@/components/layout/Navigation'
 
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
   const { hasStations, loading } = useUserStations()
+  
+  // Obtener navegación dinámica con item de estaciones
+  const mainNavigation = getMainNavigation(!!session?.user, hasStations)
 
   return (
     <header className="sticky top-0 z-2200 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -132,24 +135,13 @@ export function Header() {
                         Mi perfil
                       </Link>
                     </Button>
-                    {session.user.role === 'admin' ? (
+                    {session.user.role === 'admin' && (
                       <Button variant="ghost" className="w-full justify-start" asChild>
                         <Link href="/estaciones-pendientes" onClick={() => setMobileMenuOpen(false)}>
                           <Shield className="h-4 w-4 mr-2" />
                           Administrar Estaciones
                         </Link>
                       </Button>
-                    ) : (
-                      !loading && (
-                        <Button variant="ghost" className="w-full justify-start" asChild>
-                          <Link 
-                            href={hasStations ? '/mis-estaciones' : '/crear-estacion'}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            {hasStations ? 'Mis estaciones' : 'Agregar mi estación'}
-                          </Link>
-                        </Button>
-                      )
                     )}
                     <Button 
                       variant="ghost" 

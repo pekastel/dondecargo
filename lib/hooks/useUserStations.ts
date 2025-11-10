@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { authClient } from '@/lib/authClient'
 
 interface UserStationsStatus {
   hasStations: boolean
@@ -8,23 +9,31 @@ interface UserStationsStatus {
 }
 
 export function useUserStations(): UserStationsStatus {
+  const { data: session } = authClient.useSession()
+  
+  // Incluir el userId en la key para forzar revalidación cuando cambie la sesión
+  const swrKey = session?.user?.id 
+    ? `/api/estaciones/mis-estaciones?userId=${session.user.id}` 
+    : null
+
   const { data, isLoading } = useSWR(
-    '/api/estaciones/mis-estaciones',
+    swrKey,
     async (url) => {
-      const res = await fetch(url)
+      const res = await fetch('/api/estaciones/mis-estaciones')
       if (!res.ok) return null
       return res.json()
     },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 60000, // Cache 1 minuto
+      revalidateOnMount: true, // Siempre revalidar al montar
+      dedupingInterval: 30000, // Cache reducido a 30 segundos
     }
   )
 
   return {
     hasStations: data?.estaciones?.length > 0,
-    loading: isLoading,
+    loading: isLoading || !session,
   }
 }
 

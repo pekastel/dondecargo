@@ -29,7 +29,8 @@ interface NavigationItem {
   description?: string
 }
 
-export const mainNavigation: NavigationItem[] = [
+// Items de navegación estáticos (sin autenticación)
+export const staticMainNavigation: NavigationItem[] = [
   {
     name: 'Buscar Precios',
     href: '/buscar',
@@ -68,6 +69,21 @@ export function getStationsNavigationItem(hasStations: boolean): NavigationItem 
     }
   }
 }
+
+// Función para obtener la navegación principal con item de estaciones
+export function getMainNavigation(isAuthenticated: boolean, hasStations: boolean): NavigationItem[] {
+  const navItems = [...staticMainNavigation]
+  
+  // Agregar item de estaciones solo si el usuario está autenticado
+  if (isAuthenticated) {
+    navItems.push(getStationsNavigationItem(hasStations))
+  }
+  
+  return navItems
+}
+
+// Export por compatibilidad con código existente
+export const mainNavigation = staticMainNavigation
 
 // Items estáticos de herramientas (sin el de estaciones)
 export const staticToolsNavigation: NavigationItem[] = [
@@ -128,10 +144,11 @@ export function Navigation({ isAdmin = false, className }: NavigationProps) {
   const { data: session } = authClient.useSession()
   const { hasStations, loading } = useUserStations()
 
+  // Construir mainNavigation dinámicamente con item de estaciones
+  const dynamicMainNavigation = getMainNavigation(!!session?.user, hasStations)
+
   // Construir toolsNavigation dinámicamente
-  const toolsNavigation = session?.user && !loading
-    ? [getStationsNavigationItem(hasStations), ...staticToolsNavigation]
-    : staticToolsNavigation
+  const toolsNavigation = staticToolsNavigation
 
   const renderNavigationSection = (items: NavigationItem[], title: string) => (
     <div className="space-y-2">
@@ -186,7 +203,7 @@ export function Navigation({ isAdmin = false, className }: NavigationProps) {
   return (
     <Card className={cn("p-4", className)}>
       <nav className="space-y-6">
-        {renderNavigationSection(mainNavigation, "Principal")}
+        {renderNavigationSection(dynamicMainNavigation, "Principal")}
         {renderNavigationSection(toolsNavigation, "Herramientas")}
         {isAdmin && renderNavigationSection(adminNavigation, "Admin")}
       </nav>
