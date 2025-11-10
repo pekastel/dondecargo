@@ -273,6 +273,19 @@ export async function POST(request: NextRequest) {
     
     // Enviar email de agradecimiento
     try {
+      // Construir lista de tipos de combustible
+      const fuelTypeLabels: Record<string, string> = {
+        'nafta': 'Nafta',
+        'nafta_premium': 'Nafta Premium',
+        'gasoil': 'Gasoil Grado 2',
+        'gasoil_premium': 'Gasoil Grado 3',
+        'gnc': 'GNC',
+      }
+      
+      const fuelTypes = validatedData.precios && validatedData.precios.length > 0
+        ? validatedData.precios.map(p => fuelTypeLabels[p.tipoCombustible] || p.tipoCombustible).join(', ')
+        : 'Sin precios cargados'
+      
       await sendStationCreatedEmail({
         user: {
           id: userId,
@@ -281,6 +294,7 @@ export async function POST(request: NextRequest) {
         },
         stationName: validatedData.nombre,
         address: validatedData.direccion,
+        fuelTypes: fuelTypes,
         status: 'pendiente',
       })
       

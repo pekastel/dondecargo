@@ -83,6 +83,7 @@ export interface StationCreatedEmailData {
   };
   stationName: string;
   address: string;
+  fuelTypes: string;
   status: 'pendiente' | 'aprobado';
 }
 
@@ -94,6 +95,7 @@ export interface StationApprovedEmailData {
   };
   stationName: string;
   address: string;
+  stationUrl: string;
 }
 
 export interface StationRejectedEmailData {
@@ -299,7 +301,7 @@ export async function sendContactMessageEmail(data: ContactEmailData): Promise<v
 
 export async function sendStationCreatedEmail(data: StationCreatedEmailData): Promise<void> {
   const baseURL = getBaseUrl();
-  const { user, stationName, address, status } = data;
+  const { user, stationName, address, fuelTypes, status } = data;
   
   // Check if Loops.js is configured
   if (!loops) {
@@ -325,6 +327,7 @@ export async function sendStationCreatedEmail(data: StationCreatedEmailData): Pr
         homeurl: baseURL,
         stationName: stationName,
         address: address,
+        fuelTypes: fuelTypes,
         status: statusText,
       }
     });
@@ -348,7 +351,7 @@ export async function sendStationCreatedEmail(data: StationCreatedEmailData): Pr
 
 export async function sendStationApprovedEmail(data: StationApprovedEmailData): Promise<void> {
   const baseURL = getBaseUrl();
-  const { user, stationName, address } = data;
+  const { user, stationName, address, stationUrl } = data;
   
   // Check if Loops.js is configured
   if (!loops) {
@@ -371,6 +374,7 @@ export async function sendStationApprovedEmail(data: StationApprovedEmailData): 
         dashboardurl: `${baseURL}/mis-estaciones`,
         stationName: stationName,
         address: address,
+        stationUrl: stationUrl,
       }
     });
     

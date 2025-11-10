@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { createErrorResponse, handleDatabaseError, safeLog } from '@/lib/utils/errors'
 import { sendStationApprovedEmail, sendStationRejectedEmail } from '@/lib/email'
+import { getBaseUrl } from '@/lib/utils/url'
 
 // Create connection with error handling
 function createDbConnection() {
@@ -146,6 +147,9 @@ export async function PATCH(
         
         try {
           if (validatedData.action === 'aprobar') {
+            const baseUrl = getBaseUrl()
+            const stationUrl = `${baseUrl}/estacion/${id}`
+            
             await sendStationApprovedEmail({
               user: {
                 id: usuario.id,
@@ -154,6 +158,7 @@ export async function PATCH(
               },
               stationName: updated[0].nombre,
               address: updated[0].direccion,
+              stationUrl: stationUrl,
             })
             safeLog(`✅ Approval email sent to ${usuario.email}`)
           } else {
