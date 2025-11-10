@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/drizzle/connection'
 import { estaciones, precios } from '@/drizzle/schema'
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       where: and(
         eq(precios.estacionId, validatedData.estacionId),
         eq(precios.tipoCombustible, validatedData.tipoCombustible),
-        eq(precios.fuente, 'usuario')
+        eq(precios.fuente, 'oficial') // Buscar precios oficiales del dueño
       ),
     })
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
           tipoCombustible: validatedData.tipoCombustible,
           precio: validatedData.precio,
           horario: 'diurno' as const,
-          fuente: 'usuario' as const,
+          fuente: 'oficial' as const, // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
           esValidado: true,
           fechaVigencia: new Date(),
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
           tipoCombustible: validatedData.tipoCombustible,
           precio: validatedData.precio,
           horario: 'nocturno' as const,
-          fuente: 'usuario' as const,
+          fuente: 'oficial' as const, // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
           esValidado: true,
           fechaVigencia: new Date(),
@@ -126,9 +127,16 @@ export async function POST(request: NextRequest) {
             and(
               eq(precios.estacionId, validatedData.estacionId),
               eq(precios.tipoCombustible, validatedData.tipoCombustible),
-              eq(precios.fuente, 'usuario')
+              eq(precios.fuente, 'oficial')
             )
           )
+        
+        // Invalidar cache
+        revalidateTag('estaciones')
+        revalidateTag(`estacion:${validatedData.estacionId}`)
+        revalidateTag(`combustible:${validatedData.tipoCombustible}`)
+        revalidateTag('horario:diurno')
+        revalidateTag('horario:nocturno')
         
         return NextResponse.json({
           success: true,
@@ -152,9 +160,15 @@ export async function POST(request: NextRequest) {
               eq(precios.estacionId, validatedData.estacionId),
               eq(precios.tipoCombustible, validatedData.tipoCombustible),
               eq(precios.horario, validatedData.horario),
-              eq(precios.fuente, 'usuario')
+              eq(precios.fuente, 'oficial')
             )
           )
+        
+        // Invalidar cache
+        revalidateTag('estaciones')
+        revalidateTag(`estacion:${validatedData.estacionId}`)
+        revalidateTag(`combustible:${validatedData.tipoCombustible}`)
+        revalidateTag(`horario:${validatedData.horario}`)
         
         return NextResponse.json({
           success: true,
@@ -167,13 +181,26 @@ export async function POST(request: NextRequest) {
           tipoCombustible: validatedData.tipoCombustible,
           precio: validatedData.precio,
           horario: validatedData.horario,
-          fuente: 'usuario',
+          fuente: 'oficial', // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
           esValidado: true,
           fechaVigencia: new Date(),
           fechaReporte: new Date(),
         }).returning()
       }
+    }
+
+    // Invalidar cache para que el mapa muestre los precios actualizados
+    revalidateTag('estaciones')
+    revalidateTag(`estacion:${validatedData.estacionId}`)
+    revalidateTag(`combustible:${validatedData.tipoCombustible}`)
+    
+    // Invalidar por horario
+    if (validatedData.horario === 'ambos') {
+      revalidateTag('horario:diurno')
+      revalidateTag('horario:nocturno')
+    } else {
+      revalidateTag(`horario:${validatedData.horario}`)
     }
 
     return NextResponse.json({

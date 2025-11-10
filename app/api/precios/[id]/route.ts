@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { db } from '@/drizzle/connection'
 import { estaciones, precios } from '@/drizzle/schema'
@@ -73,6 +74,12 @@ export async function PATCH(
       .where(eq(precios.id, precioId))
       .returning()
 
+    // Invalidar cache
+    revalidateTag('estaciones')
+    revalidateTag(`estacion:${precioExistente.estacionId}`)
+    revalidateTag(`combustible:${precioActualizado.tipoCombustible}`)
+    revalidateTag(`horario:${precioActualizado.horario}`)
+
     return NextResponse.json({
       success: true,
       precio: precioActualizado,
@@ -138,6 +145,12 @@ export async function DELETE(
 
     // Eliminar el precio
     await db.delete(precios).where(eq(precios.id, precioId))
+
+    // Invalidar cache
+    revalidateTag('estaciones')
+    revalidateTag(`estacion:${precioExistente.estacionId}`)
+    revalidateTag(`combustible:${precioExistente.tipoCombustible}`)
+    revalidateTag(`horario:${precioExistente.horario}`)
 
     return NextResponse.json({
       success: true,

@@ -262,9 +262,11 @@ export async function GET(request: NextRequest) {
             return (Date.now() - date.getTime()) > (days * 24 * 60 * 60 * 1000)
           }
 
-          const stationsAugmented = result.map(station => ({
-            ...station,
-            precios: (pricesByStation[station.id] || []).map(p => {
+          const stationsAugmented = result.map(station => {
+            const stationOfficialPrices = pricesByStation[station.id] || []
+            
+            // Map official prices with user reports overlay
+            const augmentedOfficialPrices = stationOfficialPrices.map(p => {
               const key = `${station.id}::${p.tipoCombustible}`
               const agg = reportsByStationFuel[key]
               const stale = isOlderThanDays(p.fechaVigencia as unknown as Date, 30)
@@ -284,7 +286,38 @@ export async function GET(request: NextRequest) {
                 usandoPrecioUsuario: false,
               }
             })
-          }))
+
+            // Find user reports that don't have official prices
+            const officialFuelTypes = new Set(stationOfficialPrices.map(p => p.tipoCombustible))
+            const userOnlyPrices = Object.entries(reportsByStationFuel)
+              .filter(([key]) => {
+                const [stationId, fuelType] = key.split('::')
+                return stationId === station.id && !officialFuelTypes.has(fuelType as any)
+              })
+              .map(([key, agg]) => {
+                const fuelType = key.split('::')[1]
+                return {
+                  id: `user-${key}`,
+                  estacionId: station.id,
+                  tipoCombustible: fuelType as any,
+                  precio: agg.precioPromedio,
+                  horario: horarioSel,
+                  fechaVigencia: agg.ultimoReporte || new Date(),
+                  fechaReporte: agg.ultimoReporte || new Date(),
+                  fuente: 'usuario' as any,
+                  esValidado: false,
+                  precioAjustado: agg.precioPromedio,
+                  precioAjustadoFuente: 'usuario' as any,
+                  usandoPrecioUsuario: true,
+                  fechaUltimoReporteUsuario: agg.ultimoReporte,
+                }
+              })
+
+            return {
+              ...station,
+              precios: [...augmentedOfficialPrices, ...userOnlyPrices]
+            }
+          })
 
           return stationsAugmented
         } catch (e) {

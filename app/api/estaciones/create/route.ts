@@ -260,9 +260,9 @@ export async function POST(request: NextRequest) {
         precio: p.precio.toString(),
         horario: p.horario,
         fechaVigencia: new Date(),
-        fuente: 'usuario' as const,
+        fuente: 'oficial' as const, // Los precios del dueño de la estación son oficiales
         usuarioId: userId,
-        esValidado: false, // Los precios de usuarios requieren validación
+        esValidado: true, // Los precios oficiales están pre-validados
         fechaReporte: new Date(),
       }))
       
