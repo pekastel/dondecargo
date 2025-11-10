@@ -35,6 +35,13 @@ export interface OpeningHours {
 }
 
 // Tipos para Places API (New)
+export interface AddressComponentNew {
+  longText: string;
+  shortText?: string;
+  types?: string[];
+  languageCode?: string;
+}
+
 export interface PlaceDetailsNew {
   id: string;
   displayName: {
@@ -42,7 +49,7 @@ export interface PlaceDetailsNew {
     languageCode: string;
   };
   formattedAddress: string;
-  addressComponents: AddressComponent[];
+  addressComponents: AddressComponentNew[];
   location: {
     latitude: number;
     longitude: number;
@@ -431,11 +438,18 @@ export async function getPlaceDetails(
   const data: PlaceDetailsNew = JSON.parse(responseText);
   safeLog(`✅ [NEW API] Place Details retrieved: ${data.displayName?.text || 'Unknown'}`)
 
+  // Convertir addressComponents del formato nuevo al legacy
+  const convertedAddressComponents: AddressComponent[] = (data.addressComponents || []).map(component => ({
+    long_name: component.longText || '',
+    short_name: component.shortText || component.longText || '',
+    types: component.types || [],
+  }));
+
   // Convertir respuesta de New API a formato legacy para compatibilidad
   const legacyFormat: PlaceDetails = {
     name: data.displayName?.text || '',
     formatted_address: data.formattedAddress || '',
-    address_components: data.addressComponents || [],
+    address_components: convertedAddressComponents,
     geometry: {
       location: {
         lat: data.location?.latitude || 0,
@@ -473,7 +487,8 @@ function parseAddressComponents(components: AddressComponent[]): {
 } {
   safeLog(`🔍 Parsing ${components.length} address components:`)
   components.forEach(c => {
-    safeLog(`  📍 ${c.long_name}: [${c.types.join(', ')}]`)
+    const types = c.types || []
+    safeLog(`  📍 ${c.long_name}: [${types.join(', ')}]`)
   })
 
   const result = {
