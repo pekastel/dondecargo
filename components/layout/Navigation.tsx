@@ -71,12 +71,23 @@ export function getStationsNavigationItem(hasStations: boolean): NavigationItem 
 }
 
 // Función para obtener la navegación principal con item de estaciones
-export function getMainNavigation(isAuthenticated: boolean, hasStations: boolean): NavigationItem[] {
+export function getMainNavigation(isAuthenticated: boolean, hasStations: boolean, isAdmin: boolean = false): NavigationItem[] {
   const navItems = [...staticMainNavigation]
   
   // Agregar item de estaciones solo si el usuario está autenticado
   if (isAuthenticated) {
-    navItems.push(getStationsNavigationItem(hasStations))
+    if (isAdmin) {
+      // Para administradores, mostrar link a administración
+      navItems.push({
+        name: 'Administrar Estaciones',
+        href: '/estaciones-pendientes',
+        icon: <CheckCircle className="h-4 w-4" />,
+        description: 'Gestiona todas las estaciones',
+      })
+    } else {
+      // Para usuarios regulares, mostrar según tengan o no estaciones
+      navItems.push(getStationsNavigationItem(hasStations))
+    }
   }
   
   return navItems
@@ -145,7 +156,7 @@ export function Navigation({ isAdmin = false, className }: NavigationProps) {
   const { hasStations, loading } = useUserStations()
 
   // Construir mainNavigation dinámicamente con item de estaciones
-  const dynamicMainNavigation = getMainNavigation(!!session?.user, hasStations)
+  const dynamicMainNavigation = getMainNavigation(!!session?.user, hasStations, isAdmin)
 
   // Construir toolsNavigation dinámicamente
   const toolsNavigation = staticToolsNavigation

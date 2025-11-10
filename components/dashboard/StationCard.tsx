@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapPin, DollarSign, Edit, Clock, Phone, Navigation, Send } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import PriceManagementPanelV2 from './PriceManagementPanelV2'
 import EditStationModal from './EditStationModal'
 import Link from 'next/link'
@@ -76,6 +84,7 @@ const COMBUSTIBLE_LABELS: Record<string, string> = {
 export default function StationCard({ estacion, onPrecioCreado, onEstacionEditada }: StationCardProps) {
   const [mostrarFormPrecio, setMostrarFormPrecio] = useState(false)
   const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false)
+  const [mostrarModalReenvio, setMostrarModalReenvio] = useState(false)
   const [reenviando, setReenviando] = useState(false)
   const estadoConfig = ESTADO_CONFIG[estacion.estado]
 
@@ -85,6 +94,29 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
       currency: 'ARS',
       minimumFractionDigits: 2,
     }).format(price)
+  }
+
+  const handleReenviar = async () => {
+    setReenviando(true)
+    try {
+      const response = await fetch(`/api/estaciones/${estacion.id}/reenviar`, {
+        method: 'PATCH',
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al re-enviar')
+      }
+      
+      toast.success('Estación re-enviada para moderación')
+      setMostrarModalReenvio(false)
+      onEstacionEditada() // Refrescar lista
+    } catch (error) {
+      console.error('Error al re-enviar:', error)
+      toast.error(error instanceof Error ? error.message : 'Error al re-enviar')
+    } finally {
+      setReenviando(false)
+    }
   }
 
   return (
@@ -195,41 +227,10 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
               variant="default" 
               size="sm"
               className="w-full"
-              onClick={async () => {
-                if (!confirm('¿Ya corregiste los datos de la estación y deseas re-enviarla para moderación?')) {
-                  return
-                }
-                
-                setReenviando(true)
-                try {
-                  const response = await fetch(`/api/estaciones/${estacion.id}/reenviar`, {
-                    method: 'PATCH',
-                  })
-                  
-                  if (!response.ok) {
-                    const error = await response.json()
-                    throw new Error(error.error || 'Error al re-enviar')
-                  }
-                  
-                  toast.success('Estación re-enviada para moderación')
-                  onEstacionEditada() // Refrescar lista
-                } catch (error) {
-                  console.error('Error al re-enviar:', error)
-                  toast.error(error instanceof Error ? error.message : 'Error al re-enviar')
-                } finally {
-                  setReenviando(false)
-                }
-              }}
-              disabled={reenviando}
+              onClick={() => setMostrarModalReenvio(true)}
             >
-              {reenviando ? (
-                <>Enviando...</>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Re-enviar para Moderación
-                </>
-              )}
+              <Send className="h-4 w-4 mr-2" />
+              Re-enviar para Moderación
             </Button>
           </div>
         )}
@@ -290,6 +291,76 @@ export default function StationCard({ estacion, onPrecioCreado, onEstacionEditad
           }}
           estacion={estacion}
         />
+
+        {/* Modal de confirmación de reenvío */}
+        <Dialog open={mostrarModalReenvio} onOpenChange={setMostrarModalReenvio}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Send className="h-5 w-5 text-primary" />
+                Re-enviar Estación para Moderación
+              </DialogTitle>
+              <DialogDescription className="pt-2">
+                ¿Ya corregiste los datos de la estación según las observaciones recibidas?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <p className="font-medium text-sm">{estacion.nombre}</p>
+                <p className="text-sm text-muted-foreground">
+                  {estacion.direccion}, {estacion.localidad}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {estacion.empresa}
+                </p>
+              </div>
+
+              {estacion.ultimaModeracion?.motivo && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-xs font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                    Motivo del rechazo anterior:
+                  </p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    {estacion.ultimaModeracion.motivo}
+                  </p>
+                </div>
+              )}
+
+              <p className="text-sm text-muted-foreground mt-4">
+                Al confirmar, la estación volverá a estado <strong>pendiente</strong> y será revisada 
+                nuevamente por el equipo de moderación.
+              </p>
+            </div>
+
+            <DialogFooter className="sm:justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setMostrarModalReenvio(false)}
+                disabled={reenviando}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleReenviar}
+                disabled={reenviando}
+              >
+                {reenviando ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Confirmar Re-envío
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )

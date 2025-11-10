@@ -31,7 +31,7 @@ const moderateStationSchema = z.object({
   action: z.enum(['aprobar', 'rechazar'], {
     errorMap: () => ({ message: 'La acción debe ser "aprobar" o "rechazar"' })
   }),
-  motivo: z.string().optional(), // Opcional, útil para explicar rechazo
+  reason: z.string().optional(), // Opcional, útil para explicar rechazo
 })
 
 export async function PATCH(
@@ -129,7 +129,7 @@ export async function PATCH(
       estacionId: id,
       moderadorId: session.user.id,
       accion: validatedData.action,
-      motivo: validatedData.motivo || null,
+      motivo: validatedData.reason || null,
     })
     
     safeLog(`✅ Moderation history saved`)
@@ -160,7 +160,6 @@ export async function PATCH(
               address: updated[0].direccion,
               stationUrl: stationUrl,
             })
-            safeLog(`✅ Approval email sent to ${usuario.email}`)
           } else {
             await sendStationRejectedEmail({
               user: {
@@ -170,9 +169,8 @@ export async function PATCH(
               },
               stationName: updated[0].nombre,
               address: updated[0].direccion,
-              motivo: validatedData.motivo,
+              reason: validatedData.reason,
             })
-            safeLog(`✅ Rejection email sent to ${usuario.email}`)
           }
         } catch (emailError) {
           // Email is non-critical, log but don't fail the moderation
@@ -189,7 +187,7 @@ export async function PATCH(
         id: updated[0].id,
         nombre: updated[0].nombre,
         estado: updated[0].estado,
-        motivo: validatedData.motivo,
+        reason: validatedData.reason,
       }
     })
     

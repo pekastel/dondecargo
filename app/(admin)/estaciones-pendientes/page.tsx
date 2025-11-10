@@ -9,9 +9,6 @@ export default async function EstacionesPendientesPage() {
     headers: await headers()
   })
 
-  console.log('🔍 SERVER DEBUG Session:', session)
-  console.log('🔍 SERVER DEBUG User role:', session?.user?.role)
-
   if (!session?.user) {
     redirect('/login?redirect=/estaciones-pendientes')
   }

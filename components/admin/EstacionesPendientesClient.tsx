@@ -60,7 +60,7 @@ export default function EstacionesPendientesClient() {
   const [loadingUsuarios, setLoadingUsuarios] = useState(false)
   const [selectedEstacion, setSelectedEstacion] = useState<EstacionPendiente | null>(null)
   const [action, setAction] = useState<'aprobar' | 'rechazar' | null>(null)
-  const [motivo, setMotivo] = useState('')
+  const [reason, setReason] = useState('')
   const [moderating, setModerating] = useState(false)
   const [activeTab, setActiveTab] = useState('pendientes')
   
@@ -140,7 +140,7 @@ export default function EstacionesPendientesClient() {
         },
         body: JSON.stringify({
           action,
-          motivo: motivo.trim() || undefined,
+          reason: reason.trim() || undefined,
         }),
       })
 
@@ -161,7 +161,7 @@ export default function EstacionesPendientesClient() {
       // Cerrar diálogo
       setSelectedEstacion(null)
       setAction(null)
-      setMotivo('')
+      setReason('')
     } catch (error) {
       console.error('Error moderating station:', error)
       toast.error(error instanceof Error ? error.message : 'Error al moderar estación')
@@ -173,7 +173,7 @@ export default function EstacionesPendientesClient() {
   function openModerateDialog(estacion: EstacionPendiente, moderateAction: 'aprobar' | 'rechazar') {
     setSelectedEstacion(estacion)
     setAction(moderateAction)
-    setMotivo('')
+    setReason('')
   }
 
   function openEditDialog(estacion: EstacionUsuario) {
@@ -557,11 +557,11 @@ export default function EstacionesPendientesClient() {
 
               {action === 'rechazar' && (
                 <div className="mt-4 space-y-2">
-                  <Label htmlFor="motivo">Motivo del rechazo (opcional)</Label>
+                  <Label htmlFor="reason">Motivo del rechazo (opcional)</Label>
                   <Textarea
-                    id="motivo"
-                    value={motivo}
-                    onChange={(e) => setMotivo(e.target.value)}
+                    id="reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
                     placeholder="Explica por qué se rechaza esta estación..."
                     rows={3}
                   />

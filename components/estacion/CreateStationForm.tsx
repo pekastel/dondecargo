@@ -225,6 +225,7 @@ export function CreateStationForm() {
       
       // Si la API retorna error (lugar no es estación de servicio)
       if (!response.ok) {
+        // Caso 1: No es estación de servicio (400)
         if (data.isGasStation === false) {
           setValidationStatus({
             validated: true,
@@ -232,10 +233,24 @@ export function CreateStationForm() {
             message: data.error || 'Este lugar no es una estación de servicio'
           })
           toast.error(data.error || 'Este lugar no es una estación de servicio')
-        } else {
-          throw new Error(data.error || 'Error al extraer datos')
+          return
         }
-        return
+        
+        // Caso 2: No se encontraron estaciones en el radio (404)
+        if (response.status === 404) {
+          setValidationStatus({
+            validated: false,
+            isGasStation: null,
+            message: data.error || 'No se encontraron estaciones de servicio cerca'
+          })
+          toast.error(data.error || 'No se encontraron estaciones de servicio cerca de esta ubicación', {
+            description: data.details || 'Intenta con una ubicación más cercana a la estación o verifica que la URL sea correcta.'
+          })
+          return
+        }
+        
+        // Caso 3: Otros errores
+        throw new Error(data.error || 'Error al extraer datos')
       }
       
       // Si necesita selección (Nearby Search retornó opciones)
@@ -526,6 +541,30 @@ export function CreateStationForm() {
                   </p>
                   <p className="text-sm text-destructive/80 mt-1">
                     {validationStatus.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Mensaje cuando no se encuentran estaciones en el radio */}
+          {!validationStatus.validated && validationStatus.message.includes('No se encontraron estaciones') && (
+            <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 p-4 rounded-md">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5">
+                  <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-orange-700 dark:text-orange-400">
+                    No se encontraron estaciones cerca
+                  </p>
+                  <p className="text-sm text-orange-600 dark:text-orange-500 mt-1">
+                    {validationStatus.message}
+                  </p>
+                  <p className="text-xs text-orange-600 dark:text-orange-500 mt-2">
+                    💡 Consejo: Intenta pegando la URL directa de la estación desde Google Maps, no solo un punto en el mapa.
                   </p>
                 </div>
               </div>

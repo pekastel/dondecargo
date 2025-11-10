@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { db } from '@/drizzle/connection'
-import { estaciones } from '@/drizzle/schema'
-import { eq, and } from 'drizzle-orm'
+import { estaciones, user, moderacionesEstaciones } from '@/drizzle/schema'
+import { eq, and, desc } from 'drizzle-orm'
+import { sendStationResubmittedEmail } from '@/lib/email'
+import { safeLog } from '@/lib/utils/errors'
 
 export async function PATCH(
   request: NextRequest,
@@ -50,6 +52,15 @@ export async function PATCH(
       )
     }
 
+    // Obtener el motivo previo de rechazo (última moderación de tipo 'rechazar')
+    const ultimaModeracion = await db.query.moderacionesEstaciones.findFirst({
+      where: and(
+        eq(moderacionesEstaciones.estacionId, estacionId),
+        eq(moderacionesEstaciones.accion, 'rechazar')
+      ),
+      orderBy: desc(moderacionesEstaciones.fechaModeracion),
+    })
+
     // Cambiar estado a pendiente nuevamente
     await db.update(estaciones)
       .set({
@@ -57,6 +68,33 @@ export async function PATCH(
         fechaActualizacion: new Date(),
       })
       .where(eq(estaciones.id, estacionId))
+
+    // Enviar emails de notificación
+    try {
+      // Obtener datos completos del usuario para los emails
+      const userData = await db.query.user.findFirst({
+        where: eq(user.id, session.user.id),
+      })
+
+      if (userData?.email) {
+        await sendStationResubmittedEmail({
+          user: {
+            id: session.user.id,
+            email: userData.email,
+            name: userData.name || 'Usuario',
+          },
+          stationName: estacion.nombre,
+          address: estacion.direccion,
+          previousReason: ultimaModeracion?.motivo || undefined,
+        })
+
+        safeLog(`✅ Resubmission emails sent for station: ${estacion.nombre}`)
+      }
+    } catch (emailError) {
+      // No fallar la resubmisión si el email falla
+      console.error('Failed to send resubmission emails:', emailError)
+      safeLog('⚠️ Email sending failed, but station was resubmitted')
+    }
 
     return NextResponse.json({
       success: true,

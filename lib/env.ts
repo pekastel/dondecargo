@@ -57,6 +57,11 @@ export const env = createEnv({
       .optional()
       .describe("Station rejected template ID for Loops.js"),
 
+    LOOPS_STATION_RESUBMITTED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station resubmitted template ID for Loops.js"),
+
     LOOPS_WELCOME_TEMPLATE_ID: z
       .string()
       .optional()
@@ -163,6 +168,9 @@ export const env = createEnv({
     LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
     LOOPS_REPORT_COMMENT_TEMPLATE_ID: process.env.LOOPS_REPORT_COMMENT_TEMPLATE_ID,
     LOOPS_CREATE_STATION_TEMPLATE_ID: process.env.LOOPS_CREATE_STATION_TEMPLATE_ID,
+    LOOPS_STATION_APPROVED_TEMPLATE_ID: process.env.LOOPS_STATION_APPROVED_TEMPLATE_ID,
+    LOOPS_STATION_REJECTED_TEMPLATE_ID: process.env.LOOPS_STATION_REJECTED_TEMPLATE_ID,
+    LOOPS_STATION_RESUBMITTED_TEMPLATE_ID: process.env.LOOPS_STATION_RESUBMITTED_TEMPLATE_ID,
     LOOPS_WELCOME_TEMPLATE_ID: process.env.LOOPS_WELCOME_TEMPLATE_ID,
     LOOPS_CONTACT_TEMPLATE_ID: process.env.LOOPS_CONTACT_TEMPLATE_ID,
     LOOPS_NEWS_TEMPLATE_ID: process.env.LOOPS_NEWS_TEMPLATE_ID,

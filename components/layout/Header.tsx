@@ -20,7 +20,8 @@ export function Header() {
   const { hasStations, loading } = useUserStations()
   
   // Obtener navegación dinámica con item de estaciones
-  const mainNavigation = getMainNavigation(!!session?.user, hasStations)
+  const isAdmin = session?.user?.role === 'admin'
+  const mainNavigation = getMainNavigation(!!session?.user, hasStations, isAdmin)
 
   return (
     <header className="sticky top-0 z-2200 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
