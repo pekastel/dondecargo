@@ -788,7 +788,7 @@ export async function searchNearbyGasStations(
 
   safeLog(`✅ [NEW API] Found ${data.places.length} places`)
 
-  const results: NearbyGasStation[] = data.places.map((place: any) => {
+  const results: NearbyGasStation[] = data.places.map((place: { id: string; displayName?: { text: string }; formattedAddress?: string; location: { latitude: number; longitude: number }; types?: string[] }) => {
     const distance = calculateDistance(lat, lng, place.location.latitude, place.location.longitude);
 
     return {

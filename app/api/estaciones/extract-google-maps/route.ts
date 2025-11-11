@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
     
     const apiKey = env.GOOGLE_MAPS_API_KEY
-    let enrichedData = null
+    const enrichedData = null
     let validated = false
     let isGasStation: boolean | null = null
     

@@ -248,7 +248,7 @@ export default function PriceManagementPanelV2({
       // Si el horario actual no está disponible, seleccionar el primero disponible
       const horarioActualDisponible = horariosDisponibles.some(h => h.value === newHorario)
       if (!horarioActualDisponible) {
-        setNewHorario(horariosDisponibles[0].value as any)
+        setNewHorario(horariosDisponibles[0].value as 'diurno' | 'nocturno' | 'ambos')
       }
     }
   }, [newTipo, horariosDisponibles, newHorario])
@@ -454,7 +454,7 @@ export default function PriceManagementPanelV2({
             <Select 
               value={newHorario} 
               onValueChange={(value) => {
-                setNewHorario(value as any)
+                setNewHorario(value as 'diurno' | 'nocturno' | 'ambos')
                 setTimeout(() => newPriceInputRef.current?.focus(), 100)
               }}
               disabled={loading || !newTipo}

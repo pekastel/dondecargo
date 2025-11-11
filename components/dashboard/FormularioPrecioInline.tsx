@@ -85,7 +85,7 @@ export default function FormularioPrecioInline({ estacionId, onSuccess, onCancel
               value={selectedTipo}
               onValueChange={(value) => {
                 setSelectedTipo(value)
-                setValue('tipoCombustible', value as any)
+                setValue('tipoCombustible', value as 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc')
               }}
             >
               <SelectTrigger>
@@ -126,7 +126,7 @@ export default function FormularioPrecioInline({ estacionId, onSuccess, onCancel
               value={selectedHorario}
               onValueChange={(value) => {
                 setSelectedHorario(value)
-                setValue('horario', value as any)
+                setValue('horario', value as 'diurno' | 'nocturno')
               }}
             >
               <SelectTrigger>
