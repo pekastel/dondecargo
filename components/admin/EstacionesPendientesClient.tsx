@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, MapPin, Building2, Phone, Clock, Check, X, ExternalLink, Pencil, Trash2, Map } from 'lucide-react'
+import { Loader2, MapPin, Building2, Phone, Clock, Check, X, ExternalLink, Pencil, Trash2, Map, RefreshCw } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -58,11 +58,12 @@ export default function EstacionesPendientesClient() {
   const [estaciones, setEstaciones] = useState<EstacionPendiente[]>([])
   const [estacionesUsuarios, setEstacionesUsuarios] = useState<EstacionUsuario[]>([])
   const [loadingUsuarios, setLoadingUsuarios] = useState(false)
-  const [selectedEstacion, setSelectedEstacion] = useState<EstacionPendiente | null>(null)
+  const [selectedEstacion, setSelectedEstacion] = useState<EstacionPendiente | EstacionUsuario | null>(null)
   const [action, setAction] = useState<'aprobar' | 'rechazar' | null>(null)
   const [reason, setReason] = useState('')
   const [moderating, setModerating] = useState(false)
   const [activeTab, setActiveTab] = useState('pendientes')
+  const [refreshing, setRefreshing] = useState(false)
   
   // Estados para edición
   const [estacionToEdit, setEstacionToEdit] = useState<EstacionUsuario | null>(null)
@@ -90,8 +91,9 @@ export default function EstacionesPendientesClient() {
     }
   }, [activeTab])
 
-  async function fetchEstacionesPendientes() {
+  async function fetchEstacionesPendientes(silent = false) {
     try {
+      if (!silent) setLoading(true)
       const response = await fetch('/api/estaciones/pendientes')
       
       if (!response.ok) {
@@ -104,12 +106,12 @@ export default function EstacionesPendientesClient() {
       console.error('Error fetching pending stations:', error)
       toast.error('Error al cargar estaciones pendientes')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
-  async function fetchEstacionesUsuarios() {
-    setLoadingUsuarios(true)
+  async function fetchEstacionesUsuarios(silent = false) {
+    if (!silent) setLoadingUsuarios(true)
     try {
       const response = await fetch('/api/estaciones/usuarios')
       
@@ -123,7 +125,7 @@ export default function EstacionesPendientesClient() {
       console.error('Error fetching user stations:', error)
       toast.error('Error al cargar estaciones de usuarios')
     } finally {
-      setLoadingUsuarios(false)
+      if (!silent) setLoadingUsuarios(false)
     }
   }
 
@@ -152,11 +154,16 @@ export default function EstacionesPendientesClient() {
       toast.success(
         action === 'aprobar' 
           ? 'Estación aprobada exitosamente' 
-          : 'Estación rechazada'
+          : 'Estación rechazada exitosamente'
       )
 
-      // Actualizar lista
-      setEstaciones(estaciones.filter(e => e.id !== selectedEstacion.id))
+      // Actualizar listas según corresponda
+      if (activeTab === 'pendientes') {
+        setEstaciones(estaciones.filter(e => e.id !== selectedEstacion.id))
+      } else if (activeTab === 'usuarios') {
+        // Recargar lista de estaciones de usuarios para reflejar el cambio de estado
+        await fetchEstacionesUsuarios()
+      }
       
       // Cerrar diálogo
       setSelectedEstacion(null)
@@ -170,7 +177,7 @@ export default function EstacionesPendientesClient() {
     }
   }
 
-  function openModerateDialog(estacion: EstacionPendiente, moderateAction: 'aprobar' | 'rechazar') {
+  function openModerateDialog(estacion: EstacionPendiente | EstacionUsuario, moderateAction: 'aprobar' | 'rechazar') {
     setSelectedEstacion(estacion)
     setAction(moderateAction)
     setReason('')
@@ -263,6 +270,23 @@ export default function EstacionesPendientesClient() {
     }
   }
 
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      if (activeTab === 'pendientes') {
+        await fetchEstacionesPendientes(true)
+      } else {
+        await fetchEstacionesUsuarios(true)
+      }
+      toast.success('Datos actualizados correctamente')
+    } catch (error) {
+      console.error('Error refreshing:', error)
+      toast.error('Error al actualizar los datos')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   function getEstadoBadge(estado: string) {
     switch (estado) {
       case 'aprobado':
@@ -286,11 +310,23 @@ export default function EstacionesPendientesClient() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Administración de Estaciones</h1>
-        <p className="text-muted-foreground mt-2">
-          Gestiona estaciones pendientes y creadas por usuarios
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Administración de Estaciones</h1>
+          <p className="text-muted-foreground mt-2">
+            Gestiona estaciones pendientes y creadas por usuarios
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing || loading || loadingUsuarios}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Actualizando...' : 'Actualizar'}
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -504,25 +540,38 @@ export default function EstacionesPendientesClient() {
                           </div>
                         )}
 
-                        <div className="flex gap-2 pt-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => openEditDialog(estacion)}
-                          >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() => openDeleteDialog(estacion)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Eliminar
-                          </Button>
+                        <div className="flex flex-col gap-2 pt-4">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => openEditDialog(estacion)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => openDeleteDialog(estacion)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Eliminar
+                            </Button>
+                          </div>
+                          {estacion.estado === 'aprobado' && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="w-full bg-orange-600 hover:bg-orange-700"
+                              onClick={() => openModerateDialog(estacion, 'rechazar')}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Rechazar Estación
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -544,7 +593,9 @@ export default function EstacionesPendientesClient() {
             <DialogDescription>
               {action === 'aprobar'
                 ? '¿Estás seguro de que deseas aprobar esta estación? Será visible para todos los usuarios.'
-                : '¿Estás seguro de que deseas rechazar esta estación?'}
+                : (selectedEstacion && 'estado' in selectedEstacion && selectedEstacion.estado === 'aprobado')
+                  ? '¿Estás seguro de que deseas rechazar esta estación aprobada? Dejará de ser visible para los usuarios.'
+                  : '¿Estás seguro de que deseas rechazar esta estación?'}
             </DialogDescription>
           </DialogHeader>
 
@@ -557,12 +608,18 @@ export default function EstacionesPendientesClient() {
 
               {action === 'rechazar' && (
                 <div className="mt-4 space-y-2">
-                  <Label htmlFor="reason">Motivo del rechazo (opcional)</Label>
+                  <Label htmlFor="reason">
+                    Motivo del rechazo {('estado' in selectedEstacion && selectedEstacion.estado === 'aprobado') ? '(recomendado)' : '(opcional)'}
+                  </Label>
                   <Textarea
                     id="reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="Explica por qué se rechaza esta estación..."
+                    placeholder={
+                      ('estado' in selectedEstacion && selectedEstacion.estado === 'aprobado')
+                        ? "Explica por qué se rechaza esta estación aprobada. El usuario recibirá esta explicación..."
+                        : "Explica por qué se rechaza esta estación..."
+                    }
                     rows={3}
                   />
                 </div>

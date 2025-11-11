@@ -101,12 +101,23 @@ export async function PATCH(
       )
     }
     
-    // Verificar que la estación está pendiente
-    if (station.estado !== 'pendiente') {
-      return NextResponse.json(
-        { error: `La estación ya está en estado "${station.estado}"` },
-        { status: 400 }
-      )
+    // Validar transiciones de estado permitidas
+    if (validatedData.action === 'aprobar') {
+      // Solo se pueden aprobar estaciones pendientes
+      if (station.estado !== 'pendiente') {
+        return NextResponse.json(
+          { error: `No se puede aprobar una estación en estado "${station.estado}". Solo se pueden aprobar estaciones pendientes.` },
+          { status: 400 }
+        )
+      }
+    } else if (validatedData.action === 'rechazar') {
+      // Se pueden rechazar estaciones pendientes o aprobadas
+      if (station.estado !== 'pendiente' && station.estado !== 'aprobado') {
+        return NextResponse.json(
+          { error: `No se puede rechazar una estación en estado "${station.estado}". Solo se pueden rechazar estaciones pendientes o aprobadas.` },
+          { status: 400 }
+        )
+      }
     }
     
     // Determinar nuevo estado

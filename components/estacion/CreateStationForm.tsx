@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { extractCompanyFromName } from '@/lib/services/google-maps-service'
+import PriceFormInline, { PrecioFormData } from '@/components/PriceFormInline'
 
 const PROVINCIAS = [
   'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes',
@@ -42,13 +43,6 @@ const DIAS_SEMANA_DISPLAY = [
   { key: 'domingo', label: 'Domingo' },
 ]
 
-const TIPOS_COMBUSTIBLE = [
-  { value: 'nafta', label: 'Nafta' },
-  { value: 'nafta_premium', label: 'Nafta Premium' },
-  { value: 'gasoil', label: 'Diesel' },
-  { value: 'gasoil_premium', label: 'Diesel Premium' },
-  { value: 'gnc', label: 'GNC' },
-]
 
 const formSchema = z.object({
   googleMapsUrl: z.string().url('Debe ser una URL válida').min(1, 'URL requerida'),
@@ -70,12 +64,6 @@ type FormData = z.infer<typeof formSchema> & {
   estacionamiento: boolean
 }
 
-interface Precio {
-  tipoCombustible: string
-  precio: string
-  horario: 'diurno' | 'nocturno'
-}
-
 interface NearbyStation {
   placeId: string
   name: string
@@ -89,7 +77,7 @@ export function CreateStationForm() {
   const [submitting, setSubmitting] = useState(false)
   const [coordenadas, setCoordenadas] = useState<{ latitud: number; longitud: number } | null>(null)
   const [horarios, setHorarios] = useState<Record<string, string>>({})
-  const [precios, setPrecios] = useState<Precio[]>([])
+  const [precios, setPrecios] = useState<PrecioFormData[]>([])
   const [validationStatus, setValidationStatus] = useState<{
     validated: boolean
     isGasStation: boolean | null
@@ -200,6 +188,10 @@ export function CreateStationForm() {
     }
     
     return { completedFields: autoCompletedFields, warnings }
+  }
+
+  function handlePreciosChange(newPrecios: PrecioFormData[]) {
+    setPrecios(newPrecios)
   }
 
   async function extractGoogleMapsData() {
@@ -391,20 +383,6 @@ export function CreateStationForm() {
     } finally {
       setEnrichingSelection(false)
     }
-  }
-
-  function addPrecio() {
-    setPrecios([...precios, { tipoCombustible: 'nafta', precio: '', horario: 'diurno' }])
-  }
-
-  function removePrecio(index: number) {
-    setPrecios(precios.filter((_, i) => i !== index))
-  }
-
-  function updatePrecio(index: number, field: keyof Precio, value: string) {
-    const newPrecios = [...precios]
-    newPrecios[index] = { ...newPrecios[index], [field]: value }
-    setPrecios(newPrecios)
   }
 
   async function onSubmit(data: FormData) {
@@ -1023,66 +1001,12 @@ export function CreateStationForm() {
           </CardTitle>
           <CardDescription>Agrega los precios actuales de combustibles</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {precios.map((precio, index) => (
-            <div key={index} className="flex gap-2 items-end">
-              <div className="flex-1 space-y-2">
-                <Label>Combustible</Label>
-                <Select
-                  value={precio.tipoCombustible}
-                  onValueChange={(value) => updatePrecio(index, 'tipoCombustible', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_COMBUSTIBLE.map((tipo) => (
-                      <SelectItem key={tipo.value} value={tipo.value}>
-                        {tipo.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label>Precio ($)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="1250.50"
-                  value={precio.precio}
-                  onChange={(e) => updatePrecio(index, 'precio', e.target.value)}
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label>Horario</Label>
-                <Select
-                  value={precio.horario}
-                  onValueChange={(value) => updatePrecio(index, 'horario', value as 'diurno' | 'nocturno')}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="diurno">Diurno</SelectItem>
-                    <SelectItem value="nocturno">Nocturno</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                onClick={() => removePrecio(index)}
-              >
-                ×
-              </Button>
-            </div>
-          ))}
-          
-          <Button type="button" variant="outline" onClick={addPrecio}>
-            + Agregar Precio
-          </Button>
+        <CardContent>
+          <PriceFormInline
+            precios={precios}
+            onChange={handlePreciosChange}
+            disabled={submitting}
+          />
         </CardContent>
       </Card>
 
