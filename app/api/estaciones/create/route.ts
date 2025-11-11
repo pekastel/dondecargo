@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       safeLog('🔑 Validating with Google Places API')
       
       try {
-        const placeId = getPlaceIdFromUrl(validatedData.googleMapsUrl)
+        const placeId = await getPlaceIdFromUrl(validatedData.googleMapsUrl)
         
         if (placeId) {
           const enriched = await enrichPlaceData(placeId, apiKey)
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
         error,
         400,
         'Datos de estación inválidos',
-        error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        { errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) }
       );
     }
 

@@ -279,16 +279,19 @@ async function main() {
     log(`Place ID esperado: ${expectedPlaceId}`, 'reset')
   }
   
-  if (result.success) {
+  if (result && result.success) {
     log(`\n✅ DIAGNÓSTICO EXITOSO (método: ${result.method})`, 'green')
     if (result.method === 'direct' && result.data) {
       log(`   └─ Estación: ${result.data.name}`, 'green')
     } else if (result.stations && result.stations.length > 0) {
       log(`   └─ Estaciones encontradas: ${result.stations.length}`, 'green')
     }
-  } else {
+  } else if (result) {
     log(`\n❌ DIAGNÓSTICO FALLIDO`, 'red')
     log(`   └─ Razón: ${result.reason || 'desconocida'}`, 'red')
+  } else {
+    log(`\n❌ DIAGNÓSTICO FALLIDO`, 'red')
+    log(`   └─ Razón: resultado no disponible`, 'red')
   }
   
   console.log('\n')

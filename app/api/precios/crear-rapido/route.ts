@@ -74,17 +74,17 @@ export async function POST(request: NextRequest) {
     const tieneNocturno = preciosExistentes.some(p => p.horario === 'nocturno')
 
     // Crear el precio (o precios si es 'ambos')
-    let nuevosPrecios = []
+    let nuevosPrecios: typeof precios.$inferSelect[] = []
 
     if (validatedData.horario === 'ambos') {
       // Crear los horarios que no existan
-      const valoresAInsertar = []
+      const valoresAInsertar: (typeof precios.$inferInsert)[] = []
       
       if (!tieneDiurno) {
         valoresAInsertar.push({
           estacionId: validatedData.estacionId,
           tipoCombustible: validatedData.tipoCombustible,
-          precio: validatedData.precio,
+          precio: validatedData.precio.toString(),
           horario: 'diurno' as const,
           fuente: 'oficial' as const, // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         valoresAInsertar.push({
           estacionId: validatedData.estacionId,
           tipoCombustible: validatedData.tipoCombustible,
-          precio: validatedData.precio,
+          precio: validatedData.precio.toString(),
           horario: 'nocturno' as const,
           fuente: 'oficial' as const, // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         
         await db.update(precios)
           .set({ 
-            precio: validatedData.precio,
+            precio: validatedData.precio.toString(),
             fechaVigencia: new Date(),
             fechaReporte: new Date(),
           })
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
         // Actualizar el existente
         await db.update(precios)
           .set({
-            precio: validatedData.precio,
+            precio: validatedData.precio.toString(),
             fechaVigencia: new Date(),
             fechaReporte: new Date(),
           })
@@ -179,8 +179,8 @@ export async function POST(request: NextRequest) {
         nuevosPrecios = await db.insert(precios).values({
           estacionId: validatedData.estacionId,
           tipoCombustible: validatedData.tipoCombustible,
-          precio: validatedData.precio,
-          horario: validatedData.horario,
+          precio: validatedData.precio.toString(),
+          horario: validatedData.horario as 'diurno' | 'nocturno',
           fuente: 'oficial', // Los precios del dueño de la estación son oficiales
           usuarioId: session.user.id,
           esValidado: true,

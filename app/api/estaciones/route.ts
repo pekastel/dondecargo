@@ -289,25 +289,27 @@ export async function GET(request: NextRequest) {
 
             // Find user reports that don't have official prices
             const officialFuelTypes = new Set(stationOfficialPrices.map(p => p.tipoCombustible))
+            type ValidFuelType = 'nafta' | 'nafta_premium' | 'gasoil' | 'gasoil_premium' | 'gnc'
+            const validFuelTypes: ValidFuelType[] = ['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']
             const userOnlyPrices = Object.entries(reportsByStationFuel)
               .filter(([key]) => {
                 const [stationId, fuelType] = key.split('::')
-                return stationId === station.id && !officialFuelTypes.has(fuelType as any)
+                return stationId === station.id && !officialFuelTypes.has(fuelType as ValidFuelType) && validFuelTypes.includes(fuelType as ValidFuelType)
               })
               .map(([key, agg]) => {
-                const fuelType = key.split('::')[1]
+                const fuelType = key.split('::')[1] as ValidFuelType
                 return {
                   id: `user-${key}`,
                   estacionId: station.id,
-                  tipoCombustible: fuelType as any,
+                  tipoCombustible: fuelType,
                   precio: agg.precioPromedio,
-                  horario: horarioSel,
+                  horario: horarioSel as 'diurno' | 'nocturno',
                   fechaVigencia: agg.ultimoReporte || new Date(),
                   fechaReporte: agg.ultimoReporte || new Date(),
-                  fuente: 'usuario' as any,
+                  fuente: 'usuario' as const,
                   esValidado: false,
                   precioAjustado: agg.precioPromedio,
-                  precioAjustadoFuente: 'usuario' as any,
+                  precioAjustadoFuente: 'usuario' as const,
                   usandoPrecioUsuario: true,
                   fechaUltimoReporteUsuario: agg.ultimoReporte,
                 }

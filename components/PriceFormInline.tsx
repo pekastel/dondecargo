@@ -141,7 +141,7 @@ export default function PriceFormInline({ precios, onChange, disabled = false }:
     if (newTipo && horariosDisponibles.length > 0) {
       const horarioActualDisponible = horariosDisponibles.some(h => h.value === newHorario)
       if (!horarioActualDisponible) {
-        setNewHorario(horariosDisponibles[0].value as any)
+        setNewHorario(horariosDisponibles[0].value as 'diurno' | 'nocturno' | 'ambos')
       }
     }
   }, [newTipo, horariosDisponibles, newHorario])
@@ -245,7 +245,7 @@ export default function PriceFormInline({ precios, onChange, disabled = false }:
             <Select 
               value={newHorario} 
               onValueChange={(value) => {
-                setNewHorario(value as any)
+                setNewHorario(value as 'diurno' | 'nocturno' | 'ambos')
                 setTimeout(() => newPriceInputRef.current?.focus(), 100)
               }}
               disabled={disabled || !newTipo}

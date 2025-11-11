@@ -66,7 +66,7 @@ export async function PATCH(
     const validatedData = editarEstacionSchema.parse(body)
 
     // Actualizar datos de la estación (excepto ubicación)
-    const updateData: any = {}
+    const updateData: Partial<typeof estaciones.$inferInsert> = {}
     
     if (validatedData.nombre !== undefined) updateData.nombre = validatedData.nombre
     if (validatedData.empresa !== undefined) updateData.empresa = validatedData.empresa
@@ -93,7 +93,7 @@ export async function PATCH(
         where: eq(estacionesDatosAdicionales.estacionId, estacionId),
       })
 
-      const datosUpdate: any = {}
+      const datosUpdate: Partial<typeof estacionesDatosAdicionales.$inferInsert> = {}
       if (validatedData.datosAdicionales.telefono !== undefined) {
         datosUpdate.telefono = validatedData.datosAdicionales.telefono || null
       }

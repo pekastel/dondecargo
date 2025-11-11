@@ -53,16 +53,15 @@ const formSchema = z.object({
   provincia: z.string().min(1, 'Seleccione una provincia'),
   cuit: z.string().optional(),
   telefono: z.string().max(50).optional(),
+  tienda: z.boolean(),
+  banios: z.boolean(),
+  lavadero: z.boolean(),
+  wifi: z.boolean(),
+  restaurante: z.boolean(),
+  estacionamiento: z.boolean(),
 })
 
-type FormData = z.infer<typeof formSchema> & {
-  tienda: boolean
-  banios: boolean
-  lavadero: boolean
-  wifi: boolean
-  restaurante: boolean
-  estacionamiento: boolean
-}
+type FormData = z.infer<typeof formSchema>
 
 interface NearbyStation {
   placeId: string
@@ -90,7 +89,7 @@ export function CreateStationForm() {
   const [horarioMode, setHorarioMode] = useState<'auto' | '24h' | 'mismo' | 'semana' | 'personalizado'>('auto')
   
   const {register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(formSchema),
     defaultValues: {
       tienda: false,
       banios: false,
@@ -104,21 +103,34 @@ export function CreateStationForm() {
   const googleMapsUrl = watch('googleMapsUrl')
 
   // Función auxiliar para auto-completar campos
-  async function autoCompleteFields(enrichedData: any) {
-    let autoCompletedFields: string[] = []
+  async function autoCompleteFields(enrichedData: {
+    name?: string;
+    address?: string;
+    addressComponents?: {
+      locality?: string;
+      province?: string;
+      [key: string]: unknown;
+    };
+    phone?: string;
+    hours?: Record<string, string>;
+    [key: string]: unknown;
+  }) {
+    const autoCompletedFields: string[] = []
     
     // DEBUG: Log completo de enrichedData
     console.log('🔍 DEBUG enrichedData completo:', JSON.stringify(enrichedData, null, 2))
     console.log('🔍 DEBUG addressComponents:', enrichedData.addressComponents)
     
     // 1. Nombre (directo de Google)
-    if (enrichedData.name) {
+    if (enrichedData.name && typeof enrichedData.name === 'string') {
       setValue('nombre', enrichedData.name)
       autoCompletedFields.push('nombre')
     }
     
     // 2. Empresa (extraída del nombre)
-    const extractedCompany = extractCompanyFromName(enrichedData.name)
+    const extractedCompany = enrichedData.name && typeof enrichedData.name === 'string' 
+      ? extractCompanyFromName(enrichedData.name)
+      : null
     if (extractedCompany) {
       setValue('empresa', extractedCompany)
       autoCompletedFields.push('empresa')
@@ -128,13 +140,13 @@ export function CreateStationForm() {
     }
     
     // 3. Dirección (directa de Google)
-    if (enrichedData.address) {
+    if (enrichedData.address && typeof enrichedData.address === 'string') {
       setValue('direccion', enrichedData.address)
       autoCompletedFields.push('dirección')
     }
     
     // 4. Localidad (parseada correctamente)
-    if (enrichedData.addressComponents?.locality) {
+    if (enrichedData.addressComponents?.locality && typeof enrichedData.addressComponents.locality === 'string') {
       setValue('localidad', enrichedData.addressComponents.locality)
       autoCompletedFields.push('localidad')
       console.log(`📍 Localidad: ${enrichedData.addressComponents.locality}`)
@@ -143,7 +155,7 @@ export function CreateStationForm() {
     }
     
     // 5. Provincia (parseada correctamente)
-    if (enrichedData.addressComponents?.province) {
+    if (enrichedData.addressComponents?.province && typeof enrichedData.addressComponents.province === 'string') {
       const provinciaValue = enrichedData.addressComponents.province
       setSelectedProvincia(provinciaValue)
       setValue('provincia', provinciaValue, { 
@@ -157,13 +169,13 @@ export function CreateStationForm() {
     }
     
     // 6. Teléfono (si existe)
-    if (enrichedData.phone) {
+    if (enrichedData.phone && typeof enrichedData.phone === 'string') {
       setValue('telefono', enrichedData.phone)
       autoCompletedFields.push('teléfono')
     }
     
     // 7. Horarios (si existen)
-    if (enrichedData.hours) {
+    if (enrichedData.hours && typeof enrichedData.hours === 'object') {
       setHorarios(enrichedData.hours)
       autoCompletedFields.push('horarios')
     }
@@ -551,7 +563,7 @@ export function CreateStationForm() {
                     </ul>
                     <p className="font-medium mt-2">💡 Cómo solucionarlo:</p>
                     <ul className="list-disc list-inside space-y-1 ml-1">
-                      <li>Busca el nombre de tu estación en Google Maps (ej: "YPF Ruta 9")</li>
+                      <li>Busca el nombre de tu estación en Google Maps (ej: &quot;YPF Ruta 9&quot;)</li>
                       <li>Haz clic en la estación en el mapa</li>
                       <li>Copia la URL completa desde la barra de direcciones</li>
                       <li>No uses un punto genérico en el mapa</li>

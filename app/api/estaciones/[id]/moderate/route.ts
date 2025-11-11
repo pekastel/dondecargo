@@ -210,7 +210,7 @@ export async function PATCH(
         error,
         400,
         'Datos de moderación inválidos',
-        error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        { errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) }
       );
     }
 

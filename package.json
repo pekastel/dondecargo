@@ -15,7 +15,7 @@
     "dev": "next dev --turbopack",
     "build": "node scripts/run-migrations.js && node scripts/generate-terms-hash.js && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --quiet",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

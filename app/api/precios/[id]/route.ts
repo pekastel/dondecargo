@@ -58,8 +58,8 @@ export async function PATCH(
     }
 
     // Actualizar el precio
-    const updateData: any = {
-      precio: validatedData.precio,
+    const updateData: Partial<typeof precios.$inferInsert> = {
+      precio: validatedData.precio.toString(),
       fechaVigencia: new Date(),
       fechaReporte: new Date(),
     }
