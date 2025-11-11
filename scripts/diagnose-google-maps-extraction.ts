@@ -6,8 +6,12 @@
  * - URLs largas con Place ID
  * - Coordenadas directas
  * 
- * Ejecutar con:
- * npx tsx scripts/diagnose-google-maps-extraction.ts
+ * Uso:
+ * npx tsx scripts/diagnose-google-maps-extraction.ts <URL> [PLACE_ID_ESPERADO]
+ * 
+ * Ejemplos:
+ * npx tsx scripts/diagnose-google-maps-extraction.ts "https://maps.app.goo.gl/XfBjmVAqQWHP3E3S8"
+ * npx tsx scripts/diagnose-google-maps-extraction.ts "https://maps.app.goo.gl/XfBjmVAqQWHP3E3S8" "ChIJ5_cDA2EBvb0RpQJ1H9dVPfY"
  */
 
 import { config } from 'dotenv'
@@ -241,42 +245,51 @@ async function diagnoseUrl(url: string, expectedPlaceId?: string) {
   return { success: false, reason: 'no_stations_found' }
 }
 
-// Casos de prueba
+// Main function
 async function main() {
   console.clear()
   log('🚀 SCRIPT DE DIAGNÓSTICO - EXTRACCIÓN GOOGLE MAPS', 'bright')
   log('═'.repeat(80), 'bright')
   
-  // Caso reportado por el usuario
-  const testCases = [
-    {
-      name: 'Caso reportado: YPF El Chalten',
-      url: 'https://maps.app.goo.gl/XfBjmVAqQWHP3E3S8',
-      expectedPlaceId: 'ChIJ5_cDA2EBvb0RpQJ1H9dVPfY',
-    },
-    // Puedes agregar más casos aquí
-  ]
+  // Obtener argumentos de línea de comandos
+  const args = process.argv.slice(2)
   
-  const results = []
-  
-  for (const testCase of testCases) {
-    const result = await diagnoseUrl(testCase.url, testCase.expectedPlaceId)
-    results.push({ ...testCase, result })
+  if (args.length === 0) {
+    log('\n❌ ERROR: Debes proporcionar una URL como parámetro', 'red')
+    log('\n📖 USO:', 'yellow')
+    log('   npx tsx scripts/diagnose-google-maps-extraction.ts <URL> [PLACE_ID_ESPERADO]', 'cyan')
+    log('\n💡 EJEMPLOS:', 'yellow')
+    log('   npx tsx scripts/diagnose-google-maps-extraction.ts "https://maps.app.goo.gl/XfBjmVAqQWHP3E3S8"', 'cyan')
+    log('   npx tsx scripts/diagnose-google-maps-extraction.ts "https://maps.app.goo.gl/XfBjmVAqQWHP3E3S8" "ChIJ5_cDA2EBvb0RpQJ1H9dVPfY"', 'cyan')
+    console.log('')
+    process.exit(1)
   }
   
-  // Resumen final
-  section('📊 RESUMEN DE RESULTADOS')
+  const url = args[0]
+  const expectedPlaceId = args[1]
   
-  results.forEach((test, idx) => {
-    log(`\n${idx + 1}. ${test.name}`, 'bright')
-    log(`   URL: ${test.url}`, 'reset')
-    
-    if (test.result.success) {
-      log(`   ✅ Éxito (método: ${test.result.method})`, 'green')
-    } else {
-      log(`   ❌ Fallo (razón: ${test.result.reason || 'desconocida'})`, 'red')
+  // Ejecutar diagnóstico
+  const result = await diagnoseUrl(url, expectedPlaceId)
+  
+  // Resumen final
+  section('📊 RESUMEN FINAL')
+  
+  log(`URL analizada: ${url}`, 'reset')
+  if (expectedPlaceId) {
+    log(`Place ID esperado: ${expectedPlaceId}`, 'reset')
+  }
+  
+  if (result.success) {
+    log(`\n✅ DIAGNÓSTICO EXITOSO (método: ${result.method})`, 'green')
+    if (result.method === 'direct' && result.data) {
+      log(`   └─ Estación: ${result.data.name}`, 'green')
+    } else if (result.stations && result.stations.length > 0) {
+      log(`   └─ Estaciones encontradas: ${result.stations.length}`, 'green')
     }
-  })
+  } else {
+    log(`\n❌ DIAGNÓSTICO FALLIDO`, 'red')
+    log(`   └─ Razón: ${result.reason || 'desconocida'}`, 'red')
+  }
   
   console.log('\n')
 }
