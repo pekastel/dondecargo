@@ -41,6 +41,27 @@ export const env = createEnv({
       .default("cmd7ideu22tzlzg0jlw2hb99b")
       .describe("Custom report comment template ID for Loops.js"),
 
+    LOOPS_CREATE_STATION_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .default("cmd7ideu22tzlzg0jlw2hb99b")
+      .describe("Create station template ID for Loops.js"),
+
+    LOOPS_STATION_APPROVED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station approved template ID for Loops.js"),
+
+    LOOPS_STATION_REJECTED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station rejected template ID for Loops.js"),
+
+    LOOPS_STATION_RESUBMITTED_TEMPLATE_ID: z
+      .string()
+      .optional()
+      .describe("Station resubmitted template ID for Loops.js"),
+
     LOOPS_WELCOME_TEMPLATE_ID: z
       .string()
       .optional()
@@ -75,6 +96,12 @@ export const env = createEnv({
       .default("true")
       .transform((val) => val === "true")
       .describe("Enable email verification for new user registrations"),
+    
+    // Google Maps API (Optional)
+    GOOGLE_MAPS_API_KEY: z
+      .string()
+      .optional()
+      .describe("Google Maps API key for Places API integration (validation and auto-complete)"),
     
     // Redis (Optional)
     REDIS_URL: z
@@ -140,12 +167,17 @@ export const env = createEnv({
     LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID: process.env.LOOPS_EMAIL_VERIFICATION_TEMPLATE_ID,
     LOOPS_REPORT_PRICE_TEMPLATE_ID: process.env.LOOPS_REPORT_PRICE_TEMPLATE_ID,
     LOOPS_REPORT_COMMENT_TEMPLATE_ID: process.env.LOOPS_REPORT_COMMENT_TEMPLATE_ID,
+    LOOPS_CREATE_STATION_TEMPLATE_ID: process.env.LOOPS_CREATE_STATION_TEMPLATE_ID,
+    LOOPS_STATION_APPROVED_TEMPLATE_ID: process.env.LOOPS_STATION_APPROVED_TEMPLATE_ID,
+    LOOPS_STATION_REJECTED_TEMPLATE_ID: process.env.LOOPS_STATION_REJECTED_TEMPLATE_ID,
+    LOOPS_STATION_RESUBMITTED_TEMPLATE_ID: process.env.LOOPS_STATION_RESUBMITTED_TEMPLATE_ID,
     LOOPS_WELCOME_TEMPLATE_ID: process.env.LOOPS_WELCOME_TEMPLATE_ID,
     LOOPS_CONTACT_TEMPLATE_ID: process.env.LOOPS_CONTACT_TEMPLATE_ID,
     LOOPS_NEWS_TEMPLATE_ID: process.env.LOOPS_NEWS_TEMPLATE_ID,
     NEWS_EMAIL_TO: process.env.NEWS_EMAIL_TO,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
     ENABLE_EMAIL_VERIFICATION: process.env.ENABLE_EMAIL_VERIFICATION,
+    GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
     REDIS_URL: process.env.REDIS_URL,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,

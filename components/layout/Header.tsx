@@ -6,20 +6,26 @@ import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/mode-toggle'
 import UserMenu from '@/components/navigation/UserMenu'
 import { authClient } from '@/lib/authClient'
-import { Menu, X } from 'lucide-react'
+import { useUserStations } from '@/lib/hooks/useUserStations'
+import { Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
-import { mainNavigation } from '@/components/layout/Navigation'
+import { getMainNavigation } from '@/components/layout/Navigation'
 
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session } = authClient.useSession()
+  const { hasStations, loading } = useUserStations()
+  
+  // Obtener navegación dinámica con item de estaciones
+  const isAdmin = session?.user?.role === 'admin'
+  const mainNavigation = getMainNavigation(!!session?.user, hasStations, isAdmin)
 
   return (
     <header className="sticky top-0 z-2200 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 lg:max-w-none lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
@@ -130,6 +136,14 @@ export function Header() {
                         Mi perfil
                       </Link>
                     </Button>
+                    {session.user.role === 'admin' && (
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link href="/estaciones-pendientes" onClick={() => setMobileMenuOpen(false)}>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Administrar Estaciones
+                        </Link>
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useUserStations } from '@/lib/hooks/useUserStations'
+import { authClient } from '@/lib/authClient'
 import { 
   MapPin, 
   DollarSign, 
@@ -15,6 +17,8 @@ import {
   HelpCircle,
   BarChart3,
   Users,
+  PlusCircle,
+  CheckCircle,
 } from 'lucide-react'
 
 interface NavigationItem {
@@ -25,7 +29,8 @@ interface NavigationItem {
   description?: string
 }
 
-export const mainNavigation: NavigationItem[] = [
+// Items de navegación estáticos (sin autenticación)
+export const staticMainNavigation: NavigationItem[] = [
   {
     name: 'Buscar Precios',
     href: '/buscar',
@@ -46,7 +51,53 @@ export const mainNavigation: NavigationItem[] = [
   }
 ]
 
-export const toolsNavigation: NavigationItem[] = [
+// Función para obtener el item de estaciones adaptativo
+export function getStationsNavigationItem(hasStations: boolean): NavigationItem {
+  if (hasStations) {
+    return {
+      name: 'Mis Estaciones',
+      href: '/mis-estaciones',
+      icon: <MapPin className="h-4 w-4" />,
+      description: 'Gestiona tus estaciones',
+    }
+  } else {
+    return {
+      name: 'Agregar mi estación',
+      href: '/crear-estacion',
+      icon: <PlusCircle className="h-4 w-4" />,
+      description: 'Da de alta tu estación',
+    }
+  }
+}
+
+// Función para obtener la navegación principal con item de estaciones
+export function getMainNavigation(isAuthenticated: boolean, hasStations: boolean, isAdmin: boolean = false): NavigationItem[] {
+  const navItems = [...staticMainNavigation]
+  
+  // Agregar item de estaciones solo si el usuario está autenticado
+  if (isAuthenticated) {
+    if (isAdmin) {
+      // Para administradores, mostrar link a administración
+      navItems.push({
+        name: 'Administrar Estaciones',
+        href: '/estaciones-pendientes',
+        icon: <CheckCircle className="h-4 w-4" />,
+        description: 'Gestiona todas las estaciones',
+      })
+    } else {
+      // Para usuarios regulares, mostrar según tengan o no estaciones
+      navItems.push(getStationsNavigationItem(hasStations))
+    }
+  }
+  
+  return navItems
+}
+
+// Export por compatibilidad con código existente
+export const mainNavigation = staticMainNavigation
+
+// Items estáticos de herramientas (sin el de estaciones)
+export const staticToolsNavigation: NavigationItem[] = [
   {
     name: 'Reportar Precios',
     href: '/reportar',
@@ -69,6 +120,18 @@ export const toolsNavigation: NavigationItem[] = [
 
 const adminNavigation: NavigationItem[] = [
   {
+    name: 'Estaciones Pendientes',
+    href: '/estaciones-pendientes',
+    icon: <CheckCircle className="h-4 w-4" />,
+    description: 'Aprobar/rechazar estaciones'
+  },
+  {
+    name: 'Usuarios con Estaciones',
+    href: '/usuarios-estaciones',
+    icon: <Users className="h-4 w-4" />,
+    description: 'Estadísticas de usuarios'
+  },
+  {
     name: 'Usuarios',
     href: '/usuarios',
     icon: <Users className="h-4 w-4" />,
@@ -89,6 +152,14 @@ interface NavigationProps {
 
 export function Navigation({ isAdmin = false, className }: NavigationProps) {
   const pathname = usePathname()
+  const { data: session } = authClient.useSession()
+  const { hasStations, loading } = useUserStations()
+
+  // Construir mainNavigation dinámicamente con item de estaciones
+  const dynamicMainNavigation = getMainNavigation(!!session?.user, hasStations, isAdmin)
+
+  // Construir toolsNavigation dinámicamente
+  const toolsNavigation = staticToolsNavigation
 
   const renderNavigationSection = (items: NavigationItem[], title: string) => (
     <div className="space-y-2">
@@ -143,7 +214,7 @@ export function Navigation({ isAdmin = false, className }: NavigationProps) {
   return (
     <Card className={cn("p-4", className)}>
       <nav className="space-y-6">
-        {renderNavigationSection(mainNavigation, "Principal")}
+        {renderNavigationSection(dynamicMainNavigation, "Principal")}
         {renderNavigationSection(toolsNavigation, "Herramientas")}
         {isAdmin && renderNavigationSection(adminNavigation, "Admin")}
       </nav>

@@ -217,7 +217,7 @@ export function StationDetail({ station }: StationDetailProps) {
               className="flex-1 sm:flex-initial"
             >
               <Map className="h-4 w-4 mr-2" />
-              Ver cercanas
+              Ver en el mapa
             </Button>
             <Button variant="outline" size="sm" onClick={handleDirections} className="flex-1 sm:flex-initial">
               <ExternalLink className="h-4 w-4 mr-2" />

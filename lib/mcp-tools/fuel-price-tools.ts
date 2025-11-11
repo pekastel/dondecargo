@@ -328,3 +328,63 @@ export const getRegionalSummaryTool = {
     }
   },
 };
+
+export const createStationTool = {
+  name: "create_station",
+  description: "Create a new gas station in the system. Requires authentication. The station will be pending approval by admin.",
+  schema: {
+    googleMapsUrl: z.string().url("Must be a valid Google Maps URL"),
+    nombre: z.string().min(3).max(200).describe("Station name"),
+    empresa: z.string().min(2).max(100).describe("Company/Brand name"),
+    direccion: z.string().min(5).max(300).describe("Street address"),
+    localidad: z.string().min(2).max(100).describe("City/locality"),
+    provincia: z.string().min(2).max(100).describe("Province"),
+    cuit: z.string().optional().describe("Tax ID (optional)"),
+    telefono: z.string().max(50).optional().describe("Phone number (optional)"),
+    servicios: z.object({
+      tienda: z.boolean().optional(),
+      banios: z.boolean().optional(),
+      lavadero: z.boolean().optional(),
+      wifi: z.boolean().optional(),
+      restaurante: z.boolean().optional(),
+      estacionamiento: z.boolean().optional(),
+    }).optional().describe("Available services"),
+  },
+  handler: async (params: {
+    googleMapsUrl: string;
+    nombre: string;
+    empresa: string;
+    direccion: string;
+    localidad: string;
+    provincia: string;
+    cuit?: string;
+    telefono?: string;
+    servicios?: {
+      tienda?: boolean;
+      banios?: boolean;
+      lavadero?: boolean;
+      wifi?: boolean;
+      restaurante?: boolean;
+      estacionamiento?: boolean;
+    };
+  }) => {
+    try {
+      // This would need to be called with authentication context
+      // For now, return an error indicating authentication is required
+      return createMcpError(
+        "La creación de estaciones requiere autenticación. Por favor, usa la interfaz web en /crear-estacion para dar de alta una estación."
+      );
+      
+      // TODO: Implement authenticated MCP tool call when auth context is available
+      // const response = await fetch('/api/estaciones/create', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(params),
+      // });
+    } catch (error) {
+      return createMcpError(
+        `Error creando estación: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      );
+    }
+  },
+};

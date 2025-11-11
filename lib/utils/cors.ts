@@ -2,6 +2,8 @@
  * CORS utilities for secure cross-origin request handling
  */
 
+// Eliminado import de getBaseUrl para evitar dependencias y errores de resolución de módulos
+
 /**
  * Get allowed origins for CORS based on environment
  */
@@ -10,6 +12,21 @@ export const getAllowedOrigins = (): string[] => {
   
   // Development origins
   if (process.env.NODE_ENV === 'development') {
+    const portEnv = process.env.PORT && Number.isFinite(Number(process.env.PORT))
+      ? Number(process.env.PORT)
+      : undefined;
+
+    // Conjunto de puertos de respaldo comunes usados por Next.js cuando 3000 está ocupado
+    const fallbackPorts = new Set<number>([3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010]);
+    if (portEnv) fallbackPorts.add(portEnv);
+
+    // Mapear a origins http/https para localhost
+    for (const p of fallbackPorts) {
+      origins.push(`http://localhost:${p}`);
+      origins.push(`https://localhost:${p}`);
+    }
+
+    // Mantener entradas explícitas existentes por compatibilidad
     origins.push(
       'http://localhost:3000',
       'https://localhost:3000',
@@ -30,6 +47,18 @@ export const getAllowedOrigins = (): string[] => {
     origins.push(process.env.NEXT_PUBLIC_APP_URL);
   }
   
+  // Netlify deploy URL (preview/branch/prod)
+  if (process.env.DEPLOY_URL) {
+    const url = process.env.DEPLOY_URL;
+    origins.push(url.startsWith('http') ? url : `https://${url}`);
+  }
+  
+  // Netlify site primary URL (usually production)
+  if (process.env.URL) {
+    const url = process.env.URL;
+    origins.push(url.startsWith('http') ? url : `https://${url}`);
+  }
+  
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
   }
@@ -47,9 +76,24 @@ export const getAllowedOrigins = (): string[] => {
  */
 export const getPrimaryAllowedOrigin = (): string => {
   if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
+    const portEnv = process.env.PORT && Number.isFinite(Number(process.env.PORT))
+      ? Number(process.env.PORT)
+      : 3000;
+    return `http://localhost:${portEnv}`;
   }
   
+  // Netlify deploy URL (preview/branch/prod)
+  if (process.env.DEPLOY_URL) {
+    const url = process.env.DEPLOY_URL;
+    return url.startsWith('http') ? url : `https://${url}`;
+  }
+
+  // Netlify site primary URL (usually production)
+  if (process.env.URL) {
+    const url = process.env.URL;
+    return url.startsWith('http') ? url : `https://${url}`;
+  }
+
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
@@ -63,7 +107,7 @@ export const getPrimaryAllowedOrigin = (): string => {
   }
   
   // Fallback
-  return 'https://dondecargo.vercel.app';
+  return `https://${process.env.VERCEL_URL}`;
 };
 
 /**
@@ -71,6 +115,14 @@ export const getPrimaryAllowedOrigin = (): string => {
  */
 export const isOriginAllowed = (origin: string | null): boolean => {
   if (!origin) return false;
+  
+  // Permitir cualquier localhost:{puerto} sólo en development
+  if (process.env.NODE_ENV === 'development') {
+    const localhostRegex = /^https?:\/\/localhost(:\d+)?$/;
+    if (localhostRegex.test(origin)) {
+      return true;
+    }
+  }
   
   const allowedOrigins = getAllowedOrigins();
   return allowedOrigins.includes(origin);

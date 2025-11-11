@@ -11,17 +11,29 @@ function LoginContent() {
   const searchParams = useSearchParams();
 
   const redirectTarget = useMemo(() => {
-    const raw = searchParams?.get("callbackURL")
+    // Check if there's an explicit redirect parameter
+    const explicitRedirect = searchParams?.get("callbackURL")
       || searchParams?.get("callbackUrl")
       || searchParams?.get("redirectTo")
       || searchParams?.get("redirect")
       || searchParams?.get("returnTo")
-      || searchParams?.get("next")
-      || "/buscar";
-    // Sanitize: only allow same-origin absolute-path redirects
-    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+      || searchParams?.get("next");
+    
+    if (explicitRedirect) {
+      // Sanitize: only allow same-origin absolute-path redirects
+      if (explicitRedirect.startsWith("/") && !explicitRedirect.startsWith("//")) {
+        return explicitRedirect;
+      }
+    }
+    
+    // If no explicit redirect and user is admin, redirect to admin dashboard
+    if (session?.user?.role === "admin") {
+      return "/estaciones-pendientes";
+    }
+    
+    // Default redirect for regular users
     return "/buscar";
-  }, [searchParams]);
+  }, [searchParams, session?.user?.role]);
 
   useEffect(() => {
     if (session && !isPending) {
