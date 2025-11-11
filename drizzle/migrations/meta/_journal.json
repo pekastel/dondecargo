@@ -36,6 +36,20 @@
       "when": 1755867962373,
       "tag": "20250822130602_glorious_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1762436466158,
+      "tag": "20251106134106_careful_morbius",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762541934507,
+      "tag": "20251107185854_breezy_mastermind",
+      "breakpoints": true
     }
   ]
 }

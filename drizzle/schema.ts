@@ -7,6 +7,9 @@ import * as betterAuthSchema from './better-auth-schema';
 // Export Better Auth schema for Drizzle awareness
 export * from './better-auth-schema';
 
+// Re-export user table for easier imports
+const { user: betterAuthUser } = betterAuthSchema;
+
 // Estaciones de servicio
 export const estaciones = pgTable('estaciones', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
@@ -21,6 +24,10 @@ export const estaciones = pgTable('estaciones', {
   latitud: doublePrecision('latitud').notNull(),
   longitud: doublePrecision('longitud').notNull(),
   geojson: json('geojson'),
+  fuente: text('fuente', { enum: ['oficial', 'usuario'] }).notNull().default('oficial'),
+  estado: text('estado', { enum: ['pendiente', 'aprobado', 'rechazado'] }).notNull().default('aprobado'),
+  usuarioCreadorId: text('usuario_creador_id').references(() => betterAuthUser.id, { onDelete: 'set null' }),
+  googleMapsUrl: text('google_maps_url'),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
   fechaActualizacion: timestamp('fecha_actualizacion').defaultNow().notNull(),
 }, (table) => ({
@@ -29,6 +36,43 @@ export const estaciones = pgTable('estaciones', {
   empresaIdx: index('estaciones_empresa_idx').on(table.empresa),
   cuitIdx: index('estaciones_cuit_idx').on(table.cuit),
   idempresaIdx: index('estaciones_idempresa_idx').on(table.idempresa),
+  fuenteIdx: index('estaciones_fuente_idx').on(table.fuente),
+  estadoIdx: index('estaciones_estado_idx').on(table.estado),
+  usuarioCreadorIdx: index('estaciones_usuario_creador_idx').on(table.usuarioCreadorId),
+}));
+
+// Datos adicionales de estaciones (horarios, teléfono, servicios)
+export const estacionesDatosAdicionales = pgTable('estaciones_datos_adicionales', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull().unique(),
+  horarios: json('horarios').$type<Record<string, string>>(),
+  telefono: text('telefono'),
+  servicios: json('servicios').$type<{
+    tienda?: boolean;
+    banios?: boolean;
+    lavadero?: boolean;
+    wifi?: boolean;
+    restaurante?: boolean;
+    estacionamiento?: boolean;
+  }>(),
+  fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
+  fechaActualizacion: timestamp('fecha_actualizacion').defaultNow().notNull(),
+}, (table) => ({
+  estacionIdx: index('estaciones_datos_adicionales_estacion_idx').on(table.estacionId),
+}));
+
+// Historial de moderaciones de estaciones
+export const moderacionesEstaciones = pgTable('moderaciones_estaciones', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull(),
+  moderadorId: text('moderador_id').references(() => betterAuthUser.id, { onDelete: 'set null' }),
+  accion: text('accion', { enum: ['aprobar', 'rechazar'] }).notNull(),
+  motivo: text('motivo'),
+  fechaModeracion: timestamp('fecha_moderacion').defaultNow().notNull(),
+}, (table) => ({
+  estacionIdx: index('moderaciones_estaciones_estacion_idx').on(table.estacionId),
+  moderadorIdx: index('moderaciones_estaciones_moderador_idx').on(table.moderadorId),
+  fechaIdx: index('moderaciones_estaciones_fecha_idx').on(table.fechaModeracion),
 }));
 
 // Precios de combustibles
@@ -42,7 +86,7 @@ export const precios = pgTable('precios', {
   horario: text('horario', { enum: ['diurno', 'nocturno'] }).notNull(),
   fechaVigencia: timestamp('fecha_vigencia').notNull(),
   fuente: text('fuente', { enum: ['oficial', 'usuario'] }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'set null' }),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'set null' }),
   esValidado: boolean('es_validado').default(false).notNull(),
   fechaReporte: timestamp('fecha_reporte').defaultNow().notNull(),
   notas: text('notas'),
@@ -69,7 +113,7 @@ export const preciosHistorico = pgTable('precios_historico', {
   horario: text('horario', { enum: ['diurno', 'nocturno'] }).notNull(),
   fechaVigencia: timestamp('fecha_vigencia').notNull(),
   fuente: text('fuente', { enum: ['oficial', 'usuario'] }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'set null' }),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'set null' }),
   esValidado: boolean('es_validado').notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
 }, (table) => ({
@@ -81,7 +125,7 @@ export const preciosHistorico = pgTable('precios_historico', {
 export const reportesPrecios = pgTable('reportes_precios', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   tipoCombustible: text('tipo_combustible', { 
     enum: ['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] 
   }).notNull(),
@@ -99,7 +143,7 @@ export const reportesPrecios = pgTable('reportes_precios', {
 export const confirmacionesPrecios = pgTable('confirmaciones_precios', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   precioId: text('precio_id').references(() => precios.id, { onDelete: 'cascade' }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
 }, (table) => ({
   precioUsuarioIdx: index('confirmaciones_precios_precio_usuario_idx').on(table.precioId, table.usuarioId),
@@ -110,7 +154,7 @@ export const confirmacionesPrecios = pgTable('confirmaciones_precios', {
 // Favoritos de usuarios (estaciones guardadas)
 export const favoritos = pgTable('favoritos', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
 }, (table) => ({
@@ -120,7 +164,7 @@ export const favoritos = pgTable('favoritos', {
 // Comentarios de usuarios en estaciones
 export const comentarios = pgTable('comentarios', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   estacionId: text('estacion_id').references(() => estaciones.id, { onDelete: 'cascade' }).notNull(),
   comentario: text('comentario').notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
@@ -138,7 +182,7 @@ export const comentarios = pgTable('comentarios', {
 export const votosComentarios = pgTable('votos_comentarios', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   comentarioId: text('comentario_id').references(() => comentarios.id, { onDelete: 'cascade' }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   fechaCreacion: timestamp('fecha_creacion').defaultNow().notNull(),
 }, (table) => ({
   comentarioUsuarioIdx: index('votos_comentarios_comentario_usuario_idx').on(table.comentarioId, table.usuarioId),
@@ -153,7 +197,7 @@ export const votosComentarios = pgTable('votos_comentarios', {
 export const reportesComentarios = pgTable('reportes_comentarios', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   comentarioId: text('comentario_id').references(() => comentarios.id, { onDelete: 'cascade' }).notNull(),
-  usuarioId: text('usuario_id').references(() => betterAuthSchema.user.id, { onDelete: 'cascade' }).notNull(),
+  usuarioId: text('usuario_id').references(() => betterAuthUser.id, { onDelete: 'cascade' }).notNull(),
   motivo: text('motivo', { 
     enum: ['spam', 'contenido_inapropiado', 'informacion_falsa', 'otro'] 
   }).notNull(),
@@ -170,12 +214,39 @@ export const reportesComentarios = pgTable('reportes_comentarios', {
 }));
 
 // Relaciones
-export const estacionesRelations = relations(estaciones, ({ many }) => ({
+export const estacionesRelations = relations(estaciones, ({ one, many }) => ({
   precios: many(precios),
   preciosHistorico: many(preciosHistorico),
   reportesPrecios: many(reportesPrecios),
   favoritos: many(favoritos),
   comentarios: many(comentarios),
+  moderaciones: many(moderacionesEstaciones),
+  datosAdicionales: one(estacionesDatosAdicionales, {
+    fields: [estaciones.id],
+    references: [estacionesDatosAdicionales.estacionId],
+  }),
+  usuarioCreador: one(betterAuthUser, {
+    fields: [estaciones.usuarioCreadorId],
+    references: [betterAuthUser.id],
+  }),
+}));
+
+export const moderacionesEstacionesRelations = relations(moderacionesEstaciones, ({ one }) => ({
+  estacion: one(estaciones, {
+    fields: [moderacionesEstaciones.estacionId],
+    references: [estaciones.id],
+  }),
+  moderador: one(betterAuthUser, {
+    fields: [moderacionesEstaciones.moderadorId],
+    references: [betterAuthUser.id],
+  }),
+}));
+
+export const estacionesDatosAdicionalesRelations = relations(estacionesDatosAdicionales, ({ one }) => ({
+  estacion: one(estaciones, {
+    fields: [estacionesDatosAdicionales.estacionId],
+    references: [estaciones.id],
+  }),
 }));
 
 export const preciosRelations = relations(precios, ({ one, many }) => ({
@@ -183,9 +254,9 @@ export const preciosRelations = relations(precios, ({ one, many }) => ({
     fields: [precios.estacionId],
     references: [estaciones.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [precios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
   confirmaciones: many(confirmacionesPrecios),
 }));
@@ -195,9 +266,9 @@ export const preciosHistoricoRelations = relations(preciosHistorico, ({ one }) =
     fields: [preciosHistorico.estacionId],
     references: [estaciones.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [preciosHistorico.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
 }));
 
@@ -206,9 +277,9 @@ export const reportesPreciosRelations = relations(reportesPrecios, ({ one }) => 
     fields: [reportesPrecios.estacionId],
     references: [estaciones.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [reportesPrecios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
 }));
 
@@ -217,16 +288,16 @@ export const confirmacionesPreciosRelations = relations(confirmacionesPrecios, (
     fields: [confirmacionesPrecios.precioId],
     references: [precios.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [confirmacionesPrecios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
 }))
 
 export const favoritosRelations = relations(favoritos, ({ one }) => ({
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [favoritos.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
   estacion: one(estaciones, {
     fields: [favoritos.estacionId],
@@ -235,9 +306,9 @@ export const favoritosRelations = relations(favoritos, ({ one }) => ({
 }));
 
 export const comentariosRelations = relations(comentarios, ({ one, many }) => ({
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [comentarios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
   estacion: one(estaciones, {
     fields: [comentarios.estacionId],
@@ -252,9 +323,9 @@ export const votosComentariosRelations = relations(votosComentarios, ({ one }) =
     fields: [votosComentarios.comentarioId],
     references: [comentarios.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [votosComentarios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
 }));
 
@@ -263,15 +334,19 @@ export const reportesComentariosRelations = relations(reportesComentarios, ({ on
     fields: [reportesComentarios.comentarioId],
     references: [comentarios.id],
   }),
-  usuario: one(betterAuthSchema.user, {
+  usuario: one(betterAuthUser, {
     fields: [reportesComentarios.usuarioId],
-    references: [betterAuthSchema.user.id],
+    references: [betterAuthUser.id],
   }),
 }));
 
 // Tipos TypeScript derivados del esquema
 export type Estacion = typeof estaciones.$inferSelect;
 export type NuevaEstacion = typeof estaciones.$inferInsert;
+export type EstacionDatosAdicionales = typeof estacionesDatosAdicionales.$inferSelect;
+export type NuevaEstacionDatosAdicionales = typeof estacionesDatosAdicionales.$inferInsert;
+export type ModeracionEstacion = typeof moderacionesEstaciones.$inferSelect;
+export type NuevaModeracionEstacion = typeof moderacionesEstaciones.$inferInsert;
 export type Precio = typeof precios.$inferSelect;
 export type NuevoPrecio = typeof precios.$inferInsert;
 export type PrecioHistorico = typeof preciosHistorico.$inferSelect;

@@ -51,6 +51,8 @@ interface ProcessedStation {
   region: string
   latitud: number
   longitud: number
+  fuente: 'oficial'
+  estado: 'aprobado'
 }
 
 interface ProcessedPrice {
@@ -230,7 +232,9 @@ class OfficialDataLoader {
             provincia: row.provincia,
             region: row.region || PROVINCE_TO_REGION[row.provincia] || 'Otra',
             latitud: lat,
-            longitud: lng
+            longitud: lng,
+            fuente: 'oficial' as const,
+            estado: 'aprobado' as const
           }
           
           stationsMap.set(stationKey, station)
@@ -317,6 +321,8 @@ class OfficialDataLoader {
               region: estaciones.region,
               latitud: estaciones.latitud,
               longitud: estaciones.longitud,
+              fuente: estaciones.fuente,
+              estado: estaciones.estado,
             })
             .from(estaciones)
             .where(inArray(estaciones.id, stationIds))
@@ -341,7 +347,11 @@ class OfficialDataLoader {
         const chunk = toInsert.slice(i, i + insertChunkSize)
         if (chunk.length === 0) continue
         try {
-          await this.db.insert(estaciones).values(chunk)
+          await this.db.insert(estaciones).values(chunk.map(s => ({
+            ...s,
+            fuente: 'oficial' as const,
+            estado: 'aprobado' as const
+          })))
           stationsInserted += chunk.length
           console.log(`  • Stations inserted ${Math.min(i + chunk.length, toInsert.length)}/${toInsert.length}`)
         } catch (error) {
@@ -383,6 +393,8 @@ class OfficialDataLoader {
                 region: station.region,
                 latitud: station.latitud,
                 longitud: station.longitud,
+                fuente: 'oficial',
+                estado: 'aprobado',
                 fechaActualizacion: new Date()
               })
               .where(eq(estaciones.id, station.id))

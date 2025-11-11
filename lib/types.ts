@@ -15,11 +15,29 @@ export const FUEL_LABELS: Record<FuelType, string> = {
 // Tipos de horarios
 export type HorarioType = 'diurno' | 'nocturno' | 'ambos'
 
-// Tipos de fuentes
+// Tipos de fuentes de estaciones
+export type EstacionFuente = 'oficial' | 'usuario'
 export type FuenteType = 'oficial' | 'usuario'
+
+// Tipos de estado de estaciones
+export type EstacionEstado = 'pendiente' | 'aprobado' | 'rechazado'
 
 // Tipos de estado para reportes
 export type EstadoReporteType = 'pendiente' | 'aprobado' | 'rechazado'
+
+// Tipos para datos adicionales de estaciones
+export interface EstacionDatosAdicionales {
+  horarios?: Record<string, string> // { lunes: "00:00-23:59", ... }
+  telefono?: string
+  servicios?: {
+    tienda?: boolean
+    banios?: boolean
+    lavadero?: boolean
+    wifi?: boolean
+    restaurante?: boolean
+    estacionamiento?: boolean
+  }
+}
 
 // Interfaz para filtros de búsqueda
 export interface SearchFilters {
@@ -50,4 +68,8 @@ export interface Station {
   latitud: number
   longitud: number
   precios: Price[]
+  fuente?: EstacionFuente
+  estado?: EstacionEstado
+  googleMapsUrl?: string
+  datosAdicionales?: EstacionDatosAdicionales
 }
