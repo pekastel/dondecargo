@@ -10,6 +10,7 @@ import {
   Search,
   Heart,
   PlusCircle,
+  ExternalLink,
 } from "lucide-react";
 
 export default function Home() {
@@ -35,7 +36,7 @@ export default function Home() {
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              <Image src="/brand.png" alt="Logo" width={256} height={256} className="inline-block border-2 border-blue-600 rounded-lg" />
+              <Image src="/brand.png" alt="Logo" width={256} height={256} className="inline-block border-2 border-blue-600 rounded-lg mb-6" />
             </span>
             <br />
             Precios de Combustibles
@@ -60,7 +61,7 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="container mx-auto px-6 py-20">
+      <section className="container mx-auto px-6 py-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
@@ -114,6 +115,26 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* Open Source Notice */}
+      <section className="container mx-auto px-6 py-12">
+        <div className="max-w-3xl mx-auto text-center space-y-6">
+          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            Este proyecto es de código abierto (open source). El código es público: podés verlo, aprender cómo funciona, proponer mejoras y usarlo de forma gratuita.
+          </p>
+          <div className="flex justify-center">
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={() => window.open('https://github.com/pekastel/dondecargo', '_blank', 'noopener,noreferrer')}
+              className="gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ver repositorio en GitHub
+            </Button>
+          </div>
         </div>
       </section>
 

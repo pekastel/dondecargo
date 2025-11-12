@@ -1,6 +1,6 @@
 {
   "name": "dondecargo",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "DondeCargo",
   "license": "MIT",
   "author": "Lumile Argentina S.A. - https://lumile.com.ar",
@@ -28,7 +28,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx scripts/seed-data-simple.ts",
+    "db:seed": "tsx scripts/load-official-data.ts",
     "data:load": "tsx scripts/load-official-data.ts",
     "data:load-sample": "tsx scripts/load-official-data.ts --limit 100",
     "data:load-test": "tsx scripts/load-official-data.ts --limit 10 --dry-run",
