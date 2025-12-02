@@ -153,6 +153,11 @@ export const env = createEnv({
       .url("NEXT_PUBLIC_APP_URL must be a valid URL")
       .optional()
       .describe("Custom domain URL that takes precedence over Vercel URLs"),
+
+    NEXT_PUBLIC_ADSENSE_PUBLISHER_ID: z
+      .string()
+      .optional()
+      .describe("Google AdSense Publisher ID for client-side ads integration"),
   },
 
   /**
@@ -187,6 +192,7 @@ export const env = createEnv({
     
     // Client-side
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_ADSENSE_PUBLISHER_ID: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID,
   },
 
   /**
