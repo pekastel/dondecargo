@@ -11,6 +11,7 @@ import { Filter, List, Settings, RotateCcw, Info, Map as MapIcon } from 'lucide-
 import { FUEL_LABELS, FuelType, FUEL_TYPES } from '@/lib/types'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { useFuelPreference } from '@/lib/stores/useFuelPreference'
+import { MapSidebarAd, MapMobileFooterAd } from '@/components/ads/AdSenseUnit'
 
 export type PriceRange = { min: number; max: number }
 export type SearchFilters = {
@@ -741,8 +742,13 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         </div>
       </div>
 
+      {/* Desktop Right Sidebar Ad */}
+      <MapSidebarAd />
+
       {/* Mobile Quick Filter Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-400 safe-area-bottom">
+        {/* Mobile Footer Ad */}
+        <MapMobileFooterAd />
         <div className="container px-4 py-3 mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
