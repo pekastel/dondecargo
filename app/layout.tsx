@@ -7,7 +7,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import Script from 'next/script';
 import { env } from "@/lib/env";
 
 const geistSans = Geist({
@@ -32,14 +31,17 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="es">
+			<head>
+				{/* Google AdSense script - placed in head to avoid data-nscript attribute issue */}
+				{env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID && (
+					<script
+						async
+						src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
+						crossOrigin="anonymous"
+					/>
+				)}
+			</head>
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				{/* Google AdSense script */}
-				<Script
-				async
-				src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
-				crossOrigin="anonymous"
-				strategy="afterInteractive"
-				/>
 				<ThemeProvider>
 					<div className="min-h-screen flex flex-col">
 						<Header />
