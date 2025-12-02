@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Script from 'next/script';
+import { env } from "@/lib/env";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -35,7 +36,7 @@ export default function RootLayout({
 				{/* Google AdSense script */}
 				<Script
 				async
-				src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
+				src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID}`}
 				crossOrigin="anonymous"
 				strategy="afterInteractive"
 				/>
