@@ -14,6 +14,7 @@ import { authClient } from '@/lib/authClient'
 import { toast } from 'sonner'
 import { getCompanyLogoPath } from '@/lib/companyLogos'
 import { StationComments } from '@/components/station/StationComments'
+import { InlineContentAd } from '@/components/ads/AdSenseUnit'
 
 export interface StationPrice {
   id: string
@@ -703,6 +704,9 @@ export function StationDetailClient({ station }: StationDetailClientProps) {
                 )}
               </Card>
             )}
+
+            {/* Inline Ad */}
+            <InlineContentAd className="my-2" />
 
             {/* Price History */}
             {/* <PriceHistory 

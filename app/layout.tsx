@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { CafecitoButton } from '@/components/layout/CafecitoButton'
 import { env } from "@/lib/env";
 
 const geistSans = Geist({
@@ -51,18 +52,7 @@ export default function RootLayout({
 						<Footer />
 					</div>
 				</ThemeProvider>
-				<a
-					href="https://cafecito.app/dondecargo"
-					rel="noopener"
-					target="_blank"
-					className="fixed left-3 bottom-24 md:left-4 md:bottom-30 lg:left-4 lg:bottom-8 z-9000"
-				>
-					<img
-						srcSet="https://cdn.cafecito.app/imgs/buttons/button_1.png 1x, https://cdn.cafecito.app/imgs/buttons/button_1_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_1_3.75x.png 3.75x"
-						src="https://cdn.cafecito.app/imgs/buttons/button_1.png"
-						alt="Invitame un café en cafecito.app"
-					/>
-				</a>
+				<CafecitoButton />
 				<Analytics />
 				<SpeedInsights />
 			</body>

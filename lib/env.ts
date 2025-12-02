@@ -158,6 +158,22 @@ export const env = createEnv({
       .string()
       .optional()
       .describe("Google AdSense Publisher ID for client-side ads integration"),
+
+    // AdSense Ad Slot IDs
+    NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR: z
+      .string()
+      .optional()
+      .describe("AdSense slot ID for map search sidebar ad"),
+
+    NEXT_PUBLIC_ADSENSE_SLOT_MAP_MOBILE: z
+      .string()
+      .optional()
+      .describe("AdSense slot ID for map search mobile footer ad"),
+
+    NEXT_PUBLIC_ADSENSE_SLOT_STATION_INLINE: z
+      .string()
+      .optional()
+      .describe("AdSense slot ID for station detail inline ad"),
   },
 
   /**
@@ -193,6 +209,9 @@ export const env = createEnv({
     // Client-side
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_ADSENSE_PUBLISHER_ID: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID,
+    NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR: process.env.NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR,
+    NEXT_PUBLIC_ADSENSE_SLOT_MAP_MOBILE: process.env.NEXT_PUBLIC_ADSENSE_SLOT_MAP_MOBILE,
+    NEXT_PUBLIC_ADSENSE_SLOT_STATION_INLINE: process.env.NEXT_PUBLIC_ADSENSE_SLOT_STATION_INLINE,
   },
 
   /**
