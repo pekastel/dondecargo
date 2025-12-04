@@ -8,7 +8,7 @@ const fuelService = new FuelService();
 export const searchStationsTool = {
   name: "search_stations",
   description: "Search gas stations by location, company, fuel type, and price range. Returns stations with current fuel prices.",
-  schema: z.object({
+  paramsShape: {
     lat: z.number().describe("Latitude for location-based search"),
     lng: z.number().describe("Longitude for location-based search"),
     radius: z.number().min(1).max(50).optional().default(10).describe("Search radius in kilometers (max 50km)"),
@@ -21,7 +21,7 @@ export const searchStationsTool = {
     precioMax: z.number().max(5000).optional().describe("Maximum price filter"),
     limit: z.number().min(1).max(100).optional().default(20).describe("Maximum number of results (max 100)"),
     offset: z.number().min(0).optional().default(0).describe("Offset for pagination"),
-  }),
+  },
   handler: async (params: {
     lat?: number;
     lng?: number;
@@ -84,9 +84,9 @@ export const searchStationsTool = {
 export const getStationDetailsTool = {
   name: "get_station_details",
   description: "Get detailed information and all fuel prices for a specific gas station by ID.",
-  schema: z.object({
+  paramsShape: {
     stationId: z.string().min(1, "Station ID is required"),
-  }),
+  },
   handler: async (params: { stationId: string }) => {
     try {
       const station = await fuelService.getStationDetails(params.stationId);
@@ -137,14 +137,14 @@ export const getStationDetailsTool = {
 export const findCheapestFuelTool = {
   name: "find_cheapest_fuel",
   description: "Find the cheapest fuel prices for a specific fuel type in an area.",
-  schema: z.object({
+  paramsShape: {
     fuelType: z.enum(FUEL_TYPES as [string, ...string[]]).describe("Type of fuel to search for"),
     lat: z.number().optional().describe("Latitude for location-based search"),
     lng: z.number().optional().describe("Longitude for location-based search"),
     radius: z.number().min(1).max(50).optional().default(20).describe("Search radius in kilometers (max 50km)"),
     horario: z.enum(['diurno', 'nocturno'] as const).optional().default('diurno').describe("Schedule: diurno (daytime) or nocturno (nighttime)"),
     limit: z.number().min(1).max(20).optional().default(10).describe("Maximum number of results (max 20)"),
-  }),
+  },
   handler: async (params: {
     fuelType: string;
     lat?: number;
@@ -195,12 +195,12 @@ export const findCheapestFuelTool = {
 export const getPriceHistoryTool = {
   name: "get_price_history",
   description: "Get historical fuel price data for a specific gas station.",
-  schema: z.object({
+  paramsShape: {
     stationId: z.string().min(1, "Station ID is required"),
     fuelType: z.enum(FUEL_TYPES as [string, ...string[]]).optional().describe("Specific fuel type to get history for"),
     horario: z.enum(['diurno', 'nocturno'] as const).optional().default('diurno').describe("Schedule: diurno (daytime) or nocturno (nighttime)"),
     days: z.number().min(1).max(90).optional().default(30).describe("Number of days of history to retrieve (max 90)"),
-  }),
+  },
   handler: async (params: {
     stationId: string;
     fuelType?: string;
@@ -260,9 +260,9 @@ export const getPriceHistoryTool = {
 export const getRegionalSummaryTool = {
   name: "get_regional_summary",
   description: "Get a regional summary of fuel stations and average prices by province, locality, and company.",
-  schema: z.object({
+  paramsShape: {
     provincia: z.string().optional().describe("Province name to filter summary by"),
-  }),
+  },
   handler: async (params: { provincia?: string }) => {
     try {
       const summary = await fuelService.getRegionalSummary(params.provincia);
@@ -332,7 +332,7 @@ export const getRegionalSummaryTool = {
 export const createStationTool = {
   name: "create_station",
   description: "Create a new gas station in the system. Requires authentication. The station will be pending approval by admin.",
-  schema: z.object({
+  paramsShape: {
     googleMapsUrl: z.string().url("Must be a valid Google Maps URL"),
     nombre: z.string().min(3).max(200).describe("Station name"),
     empresa: z.string().min(2).max(100).describe("Company/Brand name"),
@@ -349,7 +349,7 @@ export const createStationTool = {
       restaurante: z.boolean().optional(),
       estacionamiento: z.boolean().optional(),
     }).optional().describe("Available services"),
-  }),
+  },
   handler: async (params: {
     googleMapsUrl: string;
     nombre: string;

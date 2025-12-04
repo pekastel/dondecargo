@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { createMcpHandler } from "@vercel/mcp-adapter";
 import { withMcpAuth } from "better-auth/plugins";
@@ -21,46 +22,46 @@ const handler = withMcpAuth(auth, (req, session) => {
 	return createMcpHandler(
 		(server) => {
 			// Register fuel price search tools
-			server.tool(
+			(server.tool as any)(
 				searchStationsTool.name,
 				searchStationsTool.description,
-				searchStationsTool.schema as any,
-				async (params: any) => searchStationsTool.handler(params as any)
+				searchStationsTool.paramsShape,
+				async (params: any) => searchStationsTool.handler(params)
 			);
 
-			server.tool(
+			(server.tool as any)(
 				getStationDetailsTool.name,
 				getStationDetailsTool.description,
-				getStationDetailsTool.schema as any,
-				async (params: any) => getStationDetailsTool.handler(params as any)
+				getStationDetailsTool.paramsShape,
+				async (params: any) => getStationDetailsTool.handler(params)
 			);
 
-			server.tool(
+			(server.tool as any)(
 				findCheapestFuelTool.name,
 				findCheapestFuelTool.description,
-				findCheapestFuelTool.schema as any,
-				async (params: any) => findCheapestFuelTool.handler(params as any)
+				findCheapestFuelTool.paramsShape,
+				async (params: any) => findCheapestFuelTool.handler(params)
 			);
 
-			server.tool(
+			(server.tool as any)(
 				getPriceHistoryTool.name,
 				getPriceHistoryTool.description,
-				getPriceHistoryTool.schema as any,
-				async (params: any) => getPriceHistoryTool.handler(params as any)
+				getPriceHistoryTool.paramsShape,
+				async (params: any) => getPriceHistoryTool.handler(params)
 			);
 
-			server.tool(
+			(server.tool as any)(
 				getRegionalSummaryTool.name,
 				getRegionalSummaryTool.description,
-				getRegionalSummaryTool.schema as any,
-				async (params: any) => getRegionalSummaryTool.handler(params as any)
+				getRegionalSummaryTool.paramsShape,
+				async (params: any) => getRegionalSummaryTool.handler(params)
 			);
 
-			server.tool(
+			(server.tool as any)(
 				createStationTool.name,
 				createStationTool.description,
-				createStationTool.schema as any,
-				async (params: any) => createStationTool.handler(params as any)
+				createStationTool.paramsShape,
+				async (params: any) => createStationTool.handler(params)
 			);
 		},
 		{
