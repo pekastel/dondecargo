@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 const actualizarPrecioSchema = z.object({
   precio: z.number().positive('El precio debe ser mayor a 0'),
-  horario: z.enum(['diurno', 'nocturno']).optional(),
+  horario: z.enum(['diurno', 'nocturno'] as const).optional(),
 })
 
 export async function PATCH(
@@ -88,7 +88,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
+        { error: 'Datos inválidos', details: error.issues },
         { status: 400 }
       )
     }

@@ -9,9 +9,9 @@ const connection = postgres(process.env.DATABASE_URL!)
 const db = drizzle(connection)
 
 const searchParamsSchema = z.object({
-  tipo: z.enum(['general', 'precios', 'empresas', 'regiones']).optional(),
-  periodo: z.enum(['7d', '30d', '90d', '365d']).optional(),
-  combustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
+  tipo: z.enum(['general', 'precios', 'empresas', 'regiones'] as const).optional(),
+  periodo: z.enum(['7d', '30d', '90d', '365d'] as const).optional(),
+  combustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const).optional(),
   empresa: z.string().optional(),
   provincia: z.string().optional(),
 })

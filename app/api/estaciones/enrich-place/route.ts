@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         error,
         400,
         'Place ID inválido',
-        { errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) }
+        { errors: error.issues.map(e => ({ field: e.path.join('.'), message: e.message })) }
       );
     }
 

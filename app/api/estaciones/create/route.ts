@@ -38,7 +38,7 @@ const createStationSchema = z.object({
   cuit: z.string().optional(),
   
   // Datos adicionales opcionales
-  horarios: z.record(z.string()).optional(),
+  horarios: z.record(z.string(), z.string()).optional(),
   telefono: z.string().max(50).optional(),
   servicios: z.object({
     tienda: z.boolean().optional(),
@@ -51,9 +51,9 @@ const createStationSchema = z.object({
   
   // Precios opcionales
   precios: z.array(z.object({
-    tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
+    tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const),
     precio: z.number().positive('El precio debe ser mayor a 0').max(10000, 'El precio no puede exceder $10,000'),
-    horario: z.enum(['diurno', 'nocturno']).default('diurno'),
+    horario: z.enum(['diurno', 'nocturno'] as const).default('diurno'),
   })).optional(),
 })
 
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
         error,
         400,
         'Datos de estación inválidos',
-        { errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) }
+        { errors: error.issues.map(e => ({ field: e.path.join('.'), message: e.message })) }
       );
     }
 

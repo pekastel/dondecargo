@@ -8,9 +8,9 @@ import { z } from 'zod'
 
 const crearPrecioRapidoSchema = z.object({
   estacionId: z.string().min(1, 'ID de estación requerido'),
-  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const),
   precio: z.number().positive(),
-  horario: z.enum(['diurno', 'nocturno', 'ambos']),
+  horario: z.enum(['diurno', 'nocturno', 'ambos'] as const),
 })
 
 export async function POST(request: NextRequest) {
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
+        { error: 'Datos inválidos', details: error.issues },
         { status: 400 }
       )
     }

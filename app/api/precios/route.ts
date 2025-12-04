@@ -24,9 +24,9 @@ function createDbConnection() {
 
 const searchParamsSchema = z.object({
   estacionId: z.string().optional(),
-  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
-  horario: z.enum(['diurno', 'nocturno']).optional(),
-  fuente: z.enum(['oficial', 'usuario']).optional(),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const).optional(),
+  horario: z.enum(['diurno', 'nocturno'] as const).optional(),
+  fuente: z.enum(['oficial', 'usuario'] as const).optional(),
   esValidado: z.string().optional(),
   fechaDesde: z.string().optional(),
   fechaHasta: z.string().optional(),
@@ -34,8 +34,8 @@ const searchParamsSchema = z.object({
   provincia: z.string().optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
-  orderBy: z.enum(['precio', 'fecha', 'estacion']).optional(),
-  orderDir: z.enum(['asc', 'desc']).optional(),
+  orderBy: z.enum(['precio', 'fecha', 'estacion'] as const).optional(),
+  orderDir: z.enum(['asc', 'desc'] as const).optional(),
 })
 
 export async function GET(request: NextRequest) {

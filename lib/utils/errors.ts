@@ -65,10 +65,10 @@ export const createErrorResponse = (
   // Handle Zod validation errors specifically
   if (error instanceof ZodError) {
     return NextResponse.json(
-      { 
+      {
         error: publicMessage || 'Datos inválidos',
         code: 'VALIDATION_ERROR',
-        ...(isDevelopment && { details: error.errors })
+        ...(isDevelopment && { details: error.issues })
       },
       { status: 400 }
     );
