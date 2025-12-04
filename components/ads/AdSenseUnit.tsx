@@ -83,7 +83,7 @@ export function AdSenseUnit({
   // Format-specific styles
   const formatStyles: Record<AdFormat, string> = {
     horizontal: 'min-h-[90px] w-full',
-    vertical: 'min-h-[600px] w-[160px]',
+    vertical: 'min-h-[600px] w-[336px]',
     rectangle: 'min-h-[250px] w-[300px]',
     auto: 'min-h-[100px] w-full',
   }
@@ -106,11 +106,33 @@ export function AdSenseUnit({
   )
 }
 
+interface TopStation {
+  id: string
+  nombre: string
+  empresa: string
+  precio: number
+  distancia: number
+}
+
+interface SidebarStats {
+  averagePrice: number
+  priceChange?: number
+  cheapestStation?: TopStation
+  topStations: TopStation[]
+}
+
 /**
- * Sidebar ad wrapper for map search page.
- * Shows a vertical skyscraper ad on desktop, hidden on mobile.
+ * Floating sidebar ad wrapper for map search page.
+ * Shows a vertical skyscraper ad on desktop with useful stats below.
+ * Floats over the map to maximize viewing area.
  */
-export function MapSidebarAd({ slot }: { slot?: string }) {
+export function MapSidebarAd({ 
+  slot,
+  stats
+}: { 
+  slot?: string
+  stats?: SidebarStats
+}) {
   const adSlot = slot || env.NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR
   
   // Don't render container if no ad slot configured
@@ -119,15 +141,77 @@ export function MapSidebarAd({ slot }: { slot?: string }) {
   }
 
   return (
-    <div className="hidden xl:flex flex-col items-center justify-start w-[180px] min-w-[180px] py-4 px-2 border-l border-border bg-card/30">
-      <div className="sticky top-20">
-        <p className="text-[10px] text-muted-foreground text-center mb-1">Publicidad</p>
-        <AdSenseUnit
-          slot={adSlot}
-          format="vertical"
-          showOnMobile={false}
-          showOnDesktop={true}
-        />
+    <div className="hidden lg:block fixed right-4 top-32 w-[336px] z-[1100] pointer-events-auto">
+      <div className="bg-card/95 backdrop-blur-sm rounded-lg shadow-xl border border-border overflow-hidden">
+        {/* Ad Section */}
+        <div className="p-3 border-b border-border">
+          <p className="text-[10px] text-muted-foreground text-center mb-2">Publicidad</p>
+          <AdSenseUnit
+            slot={adSlot}
+            format="vertical"
+            showOnMobile={false}
+            showOnDesktop={true}
+          />
+        </div>
+        
+        {/* Stats Section */}
+        {stats && (
+          <div className="p-4 space-y-4">
+            {/* Average Price */}
+            {stats.averagePrice > 0 && (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Promedio en zona</p>
+                <p className="text-2xl font-bold text-primary">
+                  {new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    maximumFractionDigits: 0
+                  }).format(stats.averagePrice)}
+                </p>
+                {stats.priceChange !== undefined && (
+                  <p className={`text-xs mt-1 ${stats.priceChange > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {stats.priceChange > 0 ? '↑' : '↓'} {Math.abs(stats.priceChange).toFixed(1)}% vs. ayer
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Top 3 Cheapest Stations */}
+            {stats.topStations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold flex items-center gap-1">
+                  🏆 Más baratas cerca
+                </h4>
+                <div className="space-y-2">
+                  {stats.topStations.slice(0, 3).map((station, idx) => (
+                    <a
+                      key={station.id}
+                      href={`/estacion/${station.id}`}
+                      className="flex items-center gap-2 p-2 bg-muted/30 rounded hover:bg-muted/60 cursor-pointer transition-colors group"
+                    >
+                      <span className="text-xs font-bold text-primary min-w-[20px]">#{idx + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                          {station.nombre}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {station.distancia.toFixed(1)}km • {station.empresa}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-primary">
+                        {new Intl.NumberFormat('es-AR', {
+                          style: 'currency',
+                          currency: 'ARS',
+                          maximumFractionDigits: 0
+                        }).format(station.precio)}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -370,6 +370,75 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
       .sort((a, b) => a.promedio - b.promedio)
   }, [stations, filters.fuelTypes, filters.timeOfDay]) as Array<{ tipo: FuelType; promedio: number; count: number }>
 
+  // Calculate sidebar stats (average price and top 3 cheapest)
+  const sidebarStats = useMemo(() => {
+    if (stations.length === 0 || !filters.location) {
+      return {
+        averagePrice: 0,
+        topStations: []
+      }
+    }
+
+    // Calculate distance helper
+    const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371 // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180
+      const dLng = (lng2 - lng1) * Math.PI / 180
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      return R * c
+    }
+
+    // Get prices for selected fuel type
+    const stationsWithPrice = stations.map(station => {
+      const precios = station.precios.filter(
+        p => (!selectedFuelType || p.tipoCombustible === selectedFuelType) &&
+             (!filters.timeOfDay || p.horario === filters.timeOfDay)
+      )
+      
+      if (precios.length === 0) return null
+
+      const minPrice = Math.min(...precios.map(p => p.precio))
+      const distance = calculateDistance(
+        filters.location!.lat,
+        filters.location!.lng,
+        station.latitud,
+        station.longitud
+      )
+
+      return {
+        id: station.id,
+        nombre: station.nombre,
+        empresa: station.empresa,
+        precio: minPrice,
+        distancia: distance
+      }
+    }).filter(Boolean) as Array<{
+      id: string
+      nombre: string
+      empresa: string
+      precio: number
+      distancia: number
+    }>
+
+    // Calculate average
+    const averagePrice = stationsWithPrice.length > 0
+      ? stationsWithPrice.reduce((sum, s) => sum + s.precio, 0) / stationsWithPrice.length
+      : 0
+
+    // Get top 3 cheapest sorted by price
+    const topStations = [...stationsWithPrice]
+      .sort((a, b) => a.precio - b.precio)
+      .slice(0, 3)
+
+    return {
+      averagePrice,
+      topStations
+    }
+  }, [stations, selectedFuelType, filters.timeOfDay, filters.location])
+
   // Infinite scroll sentinel for list view
   useEffect(() => {
     if (viewMode !== 'list') return
@@ -742,8 +811,8 @@ export function MapSearchClient({ initialCoords }: MapSearchClientProps) {
         </div>
       </div>
 
-      {/* Desktop Right Sidebar Ad */}
-      <MapSidebarAd />
+      {/* Desktop Floating Sidebar Ad */}
+      <MapSidebarAd stats={sidebarStats} />
 
       {/* Mobile Quick Filter Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t border-border z-400 safe-area-bottom">
