@@ -17,8 +17,8 @@ const editarEstacionSchema = z.object({
   ]).optional(),
   datosAdicionales: z.object({
     telefono: z.string().optional(),
-    horarios: z.record(z.string()).optional(),
-    servicios: z.record(z.boolean()).optional(),
+    horarios: z.record(z.string(), z.string()).optional(),
+    servicios: z.record(z.string(), z.boolean()).optional(),
   }).optional(),
 })
 
@@ -125,7 +125,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
+        { error: 'Datos inválidos', details: error.issues },
         { status: 400 }
       )
     }

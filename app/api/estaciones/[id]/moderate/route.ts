@@ -28,9 +28,7 @@ function createDbConnection() {
 
 // Schema de validación para moderar estación
 const moderateStationSchema = z.object({
-  action: z.enum(['aprobar', 'rechazar'], {
-    errorMap: () => ({ message: 'La acción debe ser "aprobar" o "rechazar"' })
-  }),
+  action: z.enum(['aprobar', 'rechazar'] as const).describe('La acción debe ser "aprobar" o "rechazar"'),
   reason: z.string().optional(), // Opcional, útil para explicar rechazo
 })
 
@@ -210,7 +208,7 @@ export async function PATCH(
         error,
         400,
         'Datos de moderación inválidos',
-        { errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) }
+        { errors: error.issues.map(e => ({ field: e.path.join('.'), message: e.message })) }
       );
     }
 

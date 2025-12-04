@@ -23,8 +23,8 @@ function createDbConnection() {
 }
 
 const searchParamsSchema = z.object({
-  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']).optional(),
-  horario: z.enum(['diurno', 'nocturno']).optional(),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const).optional(),
+  horario: z.enum(['diurno', 'nocturno'] as const).optional(),
   dias: z.string().optional(), // Number of days to look back
 })
 

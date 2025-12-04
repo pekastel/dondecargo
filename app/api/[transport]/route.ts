@@ -24,43 +24,43 @@ const handler = withMcpAuth(auth, (req, session) => {
 			server.tool(
 				searchStationsTool.name,
 				searchStationsTool.description,
-				searchStationsTool.schema,
-				async (params) => searchStationsTool.handler(params)
+				searchStationsTool.schema as any,
+				async (params: any) => searchStationsTool.handler(params as any)
 			);
-			
+
 			server.tool(
 				getStationDetailsTool.name,
 				getStationDetailsTool.description,
-				getStationDetailsTool.schema,
-				async (params) => getStationDetailsTool.handler(params)
+				getStationDetailsTool.schema as any,
+				async (params: any) => getStationDetailsTool.handler(params as any)
 			);
-			
+
 			server.tool(
 				findCheapestFuelTool.name,
 				findCheapestFuelTool.description,
-				findCheapestFuelTool.schema,
-				async (params) => findCheapestFuelTool.handler(params)
+				findCheapestFuelTool.schema as any,
+				async (params: any) => findCheapestFuelTool.handler(params as any)
 			);
-			
+
 			server.tool(
 				getPriceHistoryTool.name,
 				getPriceHistoryTool.description,
-				getPriceHistoryTool.schema,
-				async (params) => getPriceHistoryTool.handler(params)
+				getPriceHistoryTool.schema as any,
+				async (params: any) => getPriceHistoryTool.handler(params as any)
 			);
-			
+
 			server.tool(
 				getRegionalSummaryTool.name,
 				getRegionalSummaryTool.description,
-				getRegionalSummaryTool.schema,
-				async (params) => getRegionalSummaryTool.handler(params)
+				getRegionalSummaryTool.schema as any,
+				async (params: any) => getRegionalSummaryTool.handler(params as any)
 			);
-			
+
 			server.tool(
 				createStationTool.name,
 				createStationTool.description,
-				createStationTool.schema,
-				async (params) => createStationTool.handler(params)
+				createStationTool.schema as any,
+				async (params: any) => createStationTool.handler(params as any)
 			);
 		},
 		{

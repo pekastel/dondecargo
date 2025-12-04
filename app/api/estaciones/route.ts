@@ -33,7 +33,7 @@ const searchParamsSchema = z.object({
   provincia: z.string().optional(),
   localidad: z.string().optional(),
   combustible: z.string().optional(),
-  horario: z.enum(['diurno', 'nocturno']).optional(),
+  horario: z.enum(['diurno', 'nocturno'] as const).optional(),
   precioMin: z.string().refine((val) => val === undefined || !isNaN(Number(val)), {
     message: "precioMin debe ser un número válido"
   }).optional(),

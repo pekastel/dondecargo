@@ -15,9 +15,9 @@ const db = drizzle(connection)
 
 const createReporteSchema = z.object({
   estacionId: z.string(),
-  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc']),
+  tipoCombustible: z.enum(['nafta', 'nafta_premium', 'gasoil', 'gasoil_premium', 'gnc'] as const),
   precio: z.number().positive(),
-  horario: z.enum(['diurno', 'nocturno', 'ambos']),
+  horario: z.enum(['diurno', 'nocturno', 'ambos'] as const),
   notas: z.string().optional(),
 })
 

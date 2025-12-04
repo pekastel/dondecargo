@@ -12,7 +12,7 @@ interface RouteParams {
 }
 
 const createReportSchema = z.object({
-  motivos: z.array(z.enum(['spam', 'contenido_inapropiado', 'informacion_falsa', 'otro']))
+  motivos: z.array(z.enum(['spam', 'contenido_inapropiado', 'informacion_falsa', 'otro'] as const))
     .min(1, 'Debe seleccionar al menos un motivo'),
   observaciones: z.string()
     .max(288, 'Las observaciones no pueden exceder 288 caracteres')
@@ -120,7 +120,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
+        { error: 'Datos inválidos', details: error.issues },
         { status: 400 }
       );
     }
