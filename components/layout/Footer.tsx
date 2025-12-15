@@ -105,7 +105,16 @@ export function Footer() {
           </div>
           
           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span>Datos: oficiales de datos.energia.gob.ar + aportes de la comunidad</span>
+            <span className="hidden sm:inline">
+              Datos: oficiales de datos.energia.gob.ar + aportes de la comunidad
+            </span>
+            <Link
+              href="/contexto-datos"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 underline underline-offset-4"
+              aria-label="Conocer el contexto de los datos y cómo ayudar a mantener actualizados los precios"
+            >
+              Ayudá a mantener actualizados los precios
+            </Link>
           </div>
         </div>
       </div>
