@@ -1,7 +1,7 @@
  "use client";
 
 import Script from "next/script";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { env } from "@/lib/env";
 
@@ -9,19 +9,18 @@ const GA_ID = env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export function GoogleAnalytics() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!GA_ID) return;
     if (typeof window === "undefined") return;
 
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    const url = window.location.pathname + window.location.search;
 
     // @ts-expect-error - gtag is injected by the GA script
     window.gtag?.("event", "page_view", {
       page_path: url,
     });
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   if (!GA_ID) return null;
 
@@ -46,5 +45,6 @@ export function GoogleAnalytics() {
     </>
   );
 }
+
 
 
