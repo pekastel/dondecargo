@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { CafecitoButton } from '@/components/layout/CafecitoButton'
 import { env } from "@/lib/env";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -46,13 +47,12 @@ export default function RootLayout({
 				<ThemeProvider>
 					<div className="min-h-screen flex flex-col">
 						<Header />
-						<main className="flex-1">
-							{children}
-						</main>
+						<main className="flex-1">{children}</main>
 						<Footer />
 					</div>
 				</ThemeProvider>
 				<CafecitoButton />
+				<GoogleAnalytics />
 				<Analytics />
 				<SpeedInsights />
 			</body>

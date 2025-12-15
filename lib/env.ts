@@ -154,6 +154,12 @@ export const env = createEnv({
       .optional()
       .describe("Custom domain URL that takes precedence over Vercel URLs"),
 
+    // Google Analytics (Optional)
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: z
+      .string()
+      .optional()
+      .describe("Google Analytics 4 measurement ID (G-XXXXXXX)"),
+
     NEXT_PUBLIC_ADSENSE_PUBLISHER_ID: z
       .string()
       .optional()
@@ -208,6 +214,7 @@ export const env = createEnv({
     
     // Client-side
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
     NEXT_PUBLIC_ADSENSE_PUBLISHER_ID: process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID,
     NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR: process.env.NEXT_PUBLIC_ADSENSE_SLOT_MAP_SIDEBAR,
     NEXT_PUBLIC_ADSENSE_SLOT_MAP_MOBILE: process.env.NEXT_PUBLIC_ADSENSE_SLOT_MAP_MOBILE,
