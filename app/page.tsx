@@ -36,7 +36,13 @@ export default function Home() {
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-              <Image src="/brand.png" alt="Logo" width={256} height={256} className="inline-block border-2 border-blue-600 rounded-lg mb-6" />
+              <Image
+                src="/brand.png"
+                alt="Logo"
+                width={256}
+                height={256}
+                className="inline-block border-2 border-blue-600 rounded-lg mb-6"
+              />
             </span>
             <br />
             Precios de Combustibles
@@ -58,6 +64,40 @@ export default function Home() {
           </div>
 
         </div>
+      </section>
+
+      {/* Contexto de datos */}
+      <section className="container mx-auto px-6 pb-8">
+        <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-lg md:text-xl">
+              Contexto actual de los datos de combustibles
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm md:text-base text-muted-foreground">
+            <p>
+              Desde 2025, en Argentina se derogó la obligación de informar los
+              precios minoristas de combustibles en tiempo real al Estado
+              (Resolución 717/2025). Esto hizo que las fuentes oficiales que
+              históricamente usaba DondeCargo ya no tengan la misma cobertura.
+            </p>
+            <p>
+              Por eso hoy nos apoyamos mucho más en los aportes de la comunidad
+              y de las propias estaciones, que pueden cargar y actualizar
+              precios directamente en la plataforma. En algunas zonas los datos
+              pueden no estar tan actualizados como nos gustaría, pero seguimos
+              trabajando para mejorar la cobertura.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/contexto-datos")}
+              className="mt-2 inline-flex items-center text-sm font-medium text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 underline underline-offset-4"
+            >
+              Ver más sobre el contexto y cómo podés ayudar
+              <ExternalLink className="ml-1 h-4 w-4" />
+            </button>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Features Grid */}
